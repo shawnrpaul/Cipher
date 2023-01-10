@@ -1,0 +1,31 @@
+{
+    "default": {
+        "font": "Consolas",
+        "paper": "#1E1E1E",
+        "tabs": "#FFFFFF",
+        "color": "#D4D4D4"
+    },
+    "json": {
+        "font": "Consolas",
+        "paper": "#1E1E1E",
+        "tabs": "#FFFFFF",
+        "default": "#D4D4D4",
+        "string": "#CE9178",
+        "brackets": "#C586C0",
+        "bool": "#6796E6"
+    },
+    "python": {
+        "font": "Consolas",
+        "paper": "#1E1E1E",
+        "tabs": "#FFFFFF",
+        "default": "#D4D4D4",
+        "keyword": "#6796E6",
+        "types": "#00FF00",
+        "string": "#CE9178",
+        "variable": "#9CDCFE",
+        "brackets": "#C586C0",
+        "comments": "#6A9955",
+        "function": "#DCDCAA",
+        "class": "#4EC9B0"
+    }
+}
