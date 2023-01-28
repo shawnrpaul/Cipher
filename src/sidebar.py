@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .explorer import Explorer
-from .extensions import ExtensionList
+from .extensionlist import ExtensionList
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QMouseEvent, QPixmap
@@ -35,8 +35,9 @@ class Sidebar(QFrame):
     def createFolder(self, window: MainWindow) -> None:
         folder = QLabel()
         folder.setPixmap(
-            QPixmap(f"{window.localAppData}\\icons\\folder.svg").scaled(35, 38)
+            QPixmap(f"{window.localAppData}\\icons\\folder.svg").scaled(29, 29)
         )
+        folder.setContentsMargins(3, 0, 0, 4)
         folder.mousePressEvent = lambda _: self.folderMousePressEvent(window, _)
         self._layout.addWidget(folder)
 

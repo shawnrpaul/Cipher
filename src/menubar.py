@@ -1,11 +1,9 @@
 from __future__ import annotations
-from typing import Callable, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from PyQt6.QtWidgets import QMenuBar
 
 if TYPE_CHECKING:
     from .window import MainWindow
-
-T = TypeVar("T", bound=Callable[[], None])
 
 __all__ = ("Menubar",)
 
@@ -47,6 +45,10 @@ class Menubar(QMenuBar):
         openFile = fileMenu.addAction("Open File Path")
         openFile.setShortcut("Ctrl+Shift+P")
         openFile.triggered.connect(window.openFilePath)
+
+        reopen = fileMenu.addAction("Reopen Closed Tab")
+        reopen.setShortcut("Ctrl+Shift+T")
+        reopen.triggered.connect(window.tabView.reopenTab)
 
         openFolder = fileMenu.addAction("Open Folder")
         openFolder.setShortcut("Ctrl+Shift+O")

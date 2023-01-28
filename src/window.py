@@ -1,25 +1,34 @@
+from copy import copy
 from pathlib import Path
+from psutil import process_iter
 from shutil import rmtree
-from typing import Any, Dict, Tuple
+from functools import wraps
+from types import TracebackType
+from importlib import import_module
+from typing import Any, Callable, Dict, List, Optional, Type
 import logging
 import asyncio
 import json
+import traceback
 import sys
 import os
 
 from .body import Body
 from .editor import *
 from .explorer import *
-from .extensions import *
+from .extensionlist import *
 from .filemanager import *
 from .folder import *
 from .menubar import *
 from .sidebar import *
 from .tab import *
+from .terminal import *
 from .thread import *
+from ext.extension import Extension
+from ext.exceptions import EventTypeError
 
 from PyQt6.QtCore import QDir, Qt, QThreadPool
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QDropEvent, QIcon
 from PyQt6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -33,7 +42,7 @@ __all__ = ("run",)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
-format = logging.Formatter("%(levelname)s:%(asctime)s:%(message)s")
+format = logging.Formatter("%(levelname)s:%(asctime)s: %(message)s")
 fileHandler = logging.FileHandler(
     f"{os.path.dirname(os.path.dirname(__file__))}\\logs.log"
 )
@@ -45,24 +54,20 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Cipher")
+        self._threadPool = QThreadPool.globalInstance()
         self.localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
         settings = self.getSettings()
-        icons = f"{self.localAppData}\\icons"
+        self.setWindowIcon(QIcon(f"{self.localAppData}\\icons\\window.png"))
+        self.currentFolder = Folder(None)
         self.currentFile = None
-        self.setWindowIcon(QIcon(f"{icons}\\window.png"))
-        self.styles = settings.get("styles")
-        if not self.styles or not Path(self.styles).absolute().exists():
-            self.styles = f"{self.localAppData}\\styles"
-        self.currentFolder = Folder(settings.get("lastFolder"))
-        currentFile = settings.get("lastFile")
 
-        self.menubar = Menubar(self)
-        self.body = Body()
-        self.tabView = TabWidget()
+        self.body = Body(self)
+        self.tabView = TabWidget(self)
         self.fileManager = FileManager(self, settings.get("showHidden", False))
         self.explorer = Explorer(self)
         self.extensions = ExtensionList(self)
         self.sidebar = Sidebar(self)
+        self.menubar = Menubar(self)
 
         self.setMenuBar(self.menubar)
         self.body._layout.addWidget(self.sidebar)
@@ -71,26 +76,44 @@ class MainWindow(QMainWindow):
         self.hsplit.addWidget(self.tabView)
         self.body._layout.addWidget(self.hsplit)
         self.body.setLayout()
-
         self.setCentralWidget(self.body)
         self.statusbar = self.statusBar()
 
-        self.setStyleSheet(open(f"{self.styles}\\styles.qss").read())
+        self.setStyleSheet(open(f"{self.localAppData}\\styles\\styles.qss").read())
 
-        for path in settings.get("lastFilesList", ()):
-            path = Path(path)
-            if path.exists():
-                self.setEditorTab(path)
-                if currentFile == str(path):
-                    self.currentFile = self.tabView.currentWidget()
-
-        if self.currentFile:
-            self.tabView.setCurrentWidget(self.currentFile)
+        self.setupTabs()
+        self.tabView.currentChanged.connect(self.currentChanged)
 
         self._loop = asyncio.get_event_loop()
         self._thread = Thread(self.addExtensions)
         self._thread.start()
         self.showMaximized()
+
+    def setupTabs(self):
+        if len(sys.argv) > 1:
+            self.fileManager.changeFolder(None)
+            self.currentFile = self.setEditorTab(Path(sys.argv[1]))
+            return
+
+        settings = self.getSettings()
+        folder = settings.get("lastFolder")
+        if folder and not Path(folder).absolute().exists():
+            folder = None
+        self.fileManager.changeFolder(folder)
+        if self.currentFolder:
+            settings = self.fileManager.getWorkspaceSettings()
+            self.openTabs(settings.get("currentFile"), settings.get("openedFiles"))
+
+    def openTabs(self, currentFile: str, files: List[str]):
+        currentWidget = None
+        for path in files:
+            window = self.setEditorTab(Path(path))
+            if currentFile == path:
+                currentWidget = window
+
+        if currentWidget:
+            self.tabView.setCurrentWidget(currentWidget)
+            self.currentFile = currentWidget
 
     def ready(self) -> None:
         self.currentFile = self.tabView.currentWidget()
@@ -103,13 +126,12 @@ class MainWindow(QMainWindow):
             self._threadPool.start(Runnable(func, self.currentFile))
 
     def close(self) -> None:
+        self.currentFile = self.tabView.currentWidget()
         for func in self._events["onClose"]:
             self._threadPool.start(Runnable(func))
 
     def addExtensions(self) -> None:
-        sys.path.insert(0, f"{self.localAppData}\\extensions")
-        from ext.extension import Extension
-        from importlib import import_module
+        sys.path.insert(0, f"{self.localAppData}\\include")
 
         self._events = {}
         self._events["onReady"] = []
@@ -117,15 +139,18 @@ class MainWindow(QMainWindow):
         self._events["onClose"] = []
         items = []
 
-        self._threadPool = QThreadPool.globalInstance()
-        extensions = f"{self.localAppData}\\extensions\\extensions"
+        extensions = f"{self.localAppData}\\include\\extension"
         for folder in os.listdir(extensions):
             path = Path(f"{extensions}\\{folder}").absolute()
             settings = Path(f"{path}\\settings.json").absolute()
             if not path.exists() or not settings.exists():
                 continue
-            mod = import_module(f"extensions.{path.name}.run")
+            with open(settings) as f:
+                data = json.load(f)
+                if not data.get("enabled"):
+                    continue
             try:
+                mod = import_module(f"extension.{path.name}.run")
                 obj = mod.run(
                     currentFolder=self.currentFolder,
                     explorer=self.explorer,
@@ -133,8 +158,11 @@ class MainWindow(QMainWindow):
                     statusbar=self.statusbar,
                     loop=self._loop,
                 )
+            except EventTypeError:
+                pass
             except Exception as e:
-                logger.error(f"Failed to add Extension - {e.__class__}: {e}")
+                print(e.__class__, e)
+                logger.error(f"Failed to add Extension - {e.__class__.__name__}: {e}")
                 continue
             if not isinstance(obj, Extension):
                 continue
@@ -150,10 +178,16 @@ class MainWindow(QMainWindow):
                 items.append(
                     ExtensionItem(obj.__class__.__name__, f"{path}\\icon.ico", settings)
                 )
-        self.tabView.currentChanged.connect(self.currentChanged)
         for extension in items:
             self.extensions.addItem(extension)
         self.ready()
+
+    def fileDropped(self, a0: QDropEvent) -> bool:
+        path = a0.mimeData().urls()[0]
+        if path.isLocalFile():
+            self.setEditorTab(Path(path.toLocalFile()))
+            return True
+        return False
 
     def saveFile(self) -> None:
         editor = self.currentFile
@@ -196,8 +230,12 @@ class MainWindow(QMainWindow):
 
     def createFile(self) -> None:
         if not self.currentFolder:
-            return
-        index = self.fileManager.getIndex()
+            index = self.fileManager.selectedIndexes()
+            if not index:
+                return
+            index = index[0]
+        else:
+            index = self.fileManager.getIndex()
         name, ok = QInputDialog.getText(
             self, "File Name", "Give a name", QLineEdit.EchoMode.Normal, ""
         )
@@ -212,14 +250,18 @@ class MainWindow(QMainWindow):
             counter += 1
             path = Path(f"{name[0]} ({counter}).{'.'.join(name[1:])}").absolute()
         path.write_text("", "utf-8")
-        editor = Editor(path, styles=self.styles)
+        editor = Editor(window=self, path=path)
         index = self.tabView.addTab(editor, path.name)
         self.tabView.setCurrentIndex(index)
 
     def createFolder(self) -> None:
         if not self.currentFolder:
-            return
-        index = self.fileManager.getIndex()
+            index = self.fileManager.selectedIndexes()
+            if not index:
+                return
+            index = index[0]
+        else:
+            index = self.fileManager.getIndex()
         name, ok = QInputDialog.getText(
             self, "Folder Name", "Give a name", QLineEdit.EchoMode.Normal, ""
         )
@@ -264,17 +306,18 @@ class MainWindow(QMainWindow):
         if not folder:
             return
 
-        self.currentFolder.changeFolder(folder)
-        self.fileManager.systemModel.setRootPath(folder)
-        self.fileManager.setRootIndex(self.fileManager.systemModel.index(folder))
+        self.fileManager.changeFolder(folder)
+        settings = self.fileManager.getWorkspaceSettings()
+        self.openTabs(settings["currentFile"], settings["openedFiles"])
 
     def closeFolder(self) -> None:
-        self.currentFolder.changeFolder(None)
-        self.fileManager.systemModel.setRootPath(None)
-        self.fileManager.setRootIndex(self.fileManager.systemModel.index(None))
-        count = self.tabView.count()
-        for _ in range(count):
-            self.tabView.removeTab(0)
+        currentFile = self.currentFile.path if self.currentFile else None
+        files = copy(self.tabView.tabList)
+        self.tabView.closeTabs()
+        if not self.currentFolder:
+            return
+        self.fileManager.saveWorkspaceFiles(currentFile, files)
+        self.fileManager.changeFolder(None)
 
     def find(self):
         self.currentFile.find() if self.currentFile else ...
@@ -298,21 +341,18 @@ class MainWindow(QMainWindow):
         path = Path(self.fileManager.systemModel.filePath(index)).absolute()
         newPath = path.rename(name).absolute()
         if newPath.is_file():
-            for tab in range(self.tabView.count()):
-                widget = self.tabView.widget(tab)
+            for widget in self.tabView:
                 if str(widget.path) == str(path):
-                    self.tabView.setTabText(tab, name)
+                    self.tabView.setTabText(widget, name)
                     widget.path = newPath
                     break
             return
 
-        for tab in range(self.tabView.count()):
-            widget = self.tabView.widget(tab)
+        for widget in self.tabView:
             if widget.path.is_relative_to(str(path)):
                 widget.path = Path(
                     str(newPath) + str(widget.path).split(str(path))[1]
                 ).absolute()
-                break
 
     def delete(self) -> None:
         index = self.fileManager.getIndex()
@@ -321,25 +361,25 @@ class MainWindow(QMainWindow):
             return
 
         if path.is_file():
-            for tab in range(self.tabView.count()):
-                widget = self.tabView.widget(tab)
+            for widget in self.tabView:
                 if str(widget.path) == str(path):
-                    self.tabView.removeTab(tab)
+                    self.tabView.removeTab(widget)
                     break
+
             return path.unlink()
 
-        rmtree(path.absolute())
-        for tab in range(self.tabView.count()):
-            widget = self.tabView.widget(tab)
+        for widget in self.tabView:
             if widget.path.is_relative_to(str(path)):
-                self.tabView.removeTab(tab)
-                break
+                self.tabView.removeTab(widget)
+
+        rmtree(path.absolute())
 
     def isBinary(self, path) -> None:
         with open(path, "rb") as f:
             return b"\0" in f.read(1024)
 
-    def setEditorTab(self, path: Path) -> None:
+    def setEditorTab(self, path: Path) -> Editor:
+        path = path.absolute()
         if not path.exists():
             return
         if not path.is_file():
@@ -347,50 +387,66 @@ class MainWindow(QMainWindow):
         if self.isBinary(path):
             return
 
-        if str(path.absolute()) in tuple(
-            str(self.tabView.widget(i).path.absolute())
-            for i in range(self.tabView.count())
-        ):
-            return
+        for widget in self.tabView:
+            if path == widget.path:
+                return
 
-        editor = Editor(path=path, styles=self.styles)
+        editor = Editor(window=self, path=path)
         editor.setText(path.read_text(encoding="utf-8"))
         self.tabView.addTab(editor, path.name)
         self.tabView.setCurrentWidget(editor)
+
+        return editor
 
     def getSettings(self) -> Dict[str, Any]:
         with open(f"{self.localAppData}\\settings.json") as f:
             return json.load(f)
 
-    def changeLast(
-        self, folder: Folder = None, file: Path = None, tabs: Tuple[str] = None
-    ) -> None:
+    def saveSettings(self) -> None:
+        processes = tuple(process.name() for process in process_iter())
+        if processes.count("Cipher.exe") > 1:
+            return
         settings = self.getSettings()
-        if folder:
-            settings["lastFolder"] = str(folder)
-        else:
-            settings["lastFolder"] = None
-        if file:
-            settings["lastFile"] = str(file.absolute())
-        else:
-            settings["lastFile"] = None
-        settings["lastFilesList"] = tabs
+        settings["lastFolder"] = str(self.currentFolder) if self.currentFolder else None
+        if self.currentFolder:
+            self.fileManager.saveWorkspaceFiles(
+                self.currentFile.path if self.currentFile else None,
+                self.tabView.tabList,
+            )
         with open(f"{self.localAppData}\\settings.json", "w") as f:
             json.dump(settings, f, indent=4)
 
 
+def excepthook(
+    func: Callable[[Type[BaseException], Optional[BaseException], TracebackType], Any],
+    app: QApplication,
+) -> Any:
+    wraps(func)
+
+    def log(
+        exc_type: Type[BaseException],
+        exc_value: Optional[BaseException],
+        exc_tb: TracebackType,
+    ) -> Any:
+        tb = (
+            traceback.format_exception(exc_type, exc_value, exc_tb)[-2]
+            .split("\n")[0]
+            .split(",")
+        )
+        file = tb[0].split("\\")[-1].strip('"')
+        logger.error(
+            f"{file}({tb[1][1:]}) - {exc_value.__class__.__name__}: {exc_value}"
+        )
+        app.quit()
+        return func(exc_type, exc_value, exc_tb)
+
+    return log
+
+
 def run() -> None:
     app = QApplication([])
+    sys.excepthook = excepthook(sys.excepthook, app)
     window = MainWindow()
-    app.aboutToQuit.connect(
-        lambda: window.changeLast(
-            folder=window.currentFolder,
-            file=window.currentFile.path if window.currentFile else None,
-            tabs=tuple(
-                str(window.tabView.widget(i).path.absolute())
-                for i in range(window.tabView.count())
-            ),
-        )
-    )
+    app.aboutToQuit.connect(window.saveSettings)
     app.aboutToQuit.connect(window.close)
     app.exec()

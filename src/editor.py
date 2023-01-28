@@ -1,15 +1,21 @@
-from .lexer import DefaultLexer, JSONLexer, PyLexer
-from PyQt6.QtCore import QRect
-from PyQt6.Qsci import QsciScintilla
-from PyQt6.QtGui import QColor, QFont
+from __future__ import annotations
+from PyQt6.QtCore import QRect, QThread
+from PyQt6.Qsci import QsciAPIs, QsciLexerCustom, QsciScintilla
+from PyQt6.QtGui import QDropEvent, QFont
 from PyQt6.QtWidgets import QCheckBox, QDialog, QLabel, QLineEdit, QPushButton
+from importlib import util
 from pathlib import Path
+from typing import Dict, List, Tuple, TYPE_CHECKING, Union
+import json
+
+if TYPE_CHECKING:
+    from .window import MainWindow
 
 __all__ = ("Editor",)
 
 
 class Search(QDialog):
-    def __init__(self, editor: "Editor") -> None:
+    def __init__(self, editor: Editor) -> None:
         super().__init__()
         self.setObjectName("Search")
         self.textBox = QLineEdit(self)
@@ -56,17 +62,18 @@ class Search(QDialog):
 
 
 class Editor(QsciScintilla):
-    def __init__(self, path: Path, styles=None) -> None:
+    def __init__(self, window: MainWindow, path: Path = None) -> None:
         super().__init__()
         self.setObjectName(path.name)
-        self.path = path.absolute()
+        self.path = path
         self.setUtf8(True)
         self.zoomOut(2)
+        self.releaseShortcut(self.grabShortcut("Ctrl+Tab"))
 
-        self.setCaretForegroundColor(QColor("#AAAAAA"))
+        self.cursorPositionChanged.connect(self._cursorPositionChanged)
+
         self.setCaretLineVisible(True)
         self.setCaretWidth(2)
-        self.setCaretLineBackgroundColor(QColor("#2C2C2C"))
 
         self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAll)
         self.setAutoCompletionThreshold(1)
@@ -81,19 +88,44 @@ class Editor(QsciScintilla):
         self.setEolMode(QsciScintilla.EolMode.EolUnix)
         self.setEolVisibility(False)
 
-        if path.name.endswith(".py"):
-            self.pylexer = PyLexer(styles=styles)
-        elif path.name.endswith(".json"):
-            self.pylexer = JSONLexer(styles=styles)
-        else:
-            self.pylexer = DefaultLexer(styles=styles)
-        self.setLexer(self.pylexer)
+        styles = getStyling(window.localAppData)
+        self._lexer, self.autoCompleter = None, None
+        for data in styles.values():
+            if path.suffix in data.get("extensions", ()):
+                _path = Path(data.get("location", ".\\")).absolute()
+                if not _path.exists():
+                    break
+                self._lexer, self.api = loadLexerAndApi(self, _path)
+                if not data.get("autocomplete"):
+                    break
+                _path = Path(data.get("autocomplete", ".\\")).absolute()
+                if not _path.exists():
+                    break
+                workspace = window.fileManager.getWorkspaceSettings()
+                self.autoCompleter = loadAutoCompleter(_path, self.api, path, workspace)
+                break
+
+        if not self._lexer:
+            self._lexer, self.api = loadLexerAndApi(
+                self, f"{window.localAppData}\\include\\lexer\\Default"
+            )
+
+        self.setLexer(self._lexer)
 
         self.setMarginType(0, QsciScintilla.MarginType.NumberMargin)
         self.setMarginWidth(0, 30)
-        self.setMarginsForegroundColor(QColor("#FFFFFF"))
-        self.setMarginsBackgroundColor(QColor("#1E1E1E"))
         self.setMarginsFont(QFont("Consolas"))
+        self._fileDropped = window.fileDropped
+
+    def dropEvent(self, e: QDropEvent) -> None:
+        self._fileDropped(e)
+        return super().dropEvent(e)
+
+    def _cursorPositionChanged(self, line: int, index: int) -> None:
+        if not self.autoCompleter:
+            return
+        self.autoCompleter.setPos(line + 1, index, self.text())
+        self.autoCompleter.start()
 
     def find(self) -> None:
         Search(self).exec()
@@ -134,3 +166,23 @@ class Editor(QsciScintilla):
     def _highlight(self, string: str, pos: int) -> None:
         search = self.SendScintilla
         search(self.SCI_SETSEL, pos, pos + len(string))
+
+
+def loadLexerAndApi(editor: Editor, path: str) -> Tuple[QsciLexerCustom, QsciAPIs]:
+    spec = util.spec_from_file_location("lexer", f"{(path)}\\lexer.py")
+    mod = util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    lexer = mod.lexer(editor)
+    return lexer, QsciAPIs(lexer)
+
+
+def loadAutoCompleter(path: str, *args, **kwargs) -> QThread:
+    spec = util.spec_from_file_location("autocomplete", f"{(path)}\\autocomplete.py")
+    lexer = util.module_from_spec(spec)
+    spec.loader.exec_module(lexer)
+    return lexer.autocomplete(*args, **kwargs)
+
+
+def getStyling(localAppData: str) -> Dict[str, Dict[Union[str, List[str]]]]:
+    with open(f"{localAppData}\\styles\\syntax.json") as f:
+        return json.load(f)

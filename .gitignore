@@ -1,5 +1,9 @@
 __pycache__
+.Cipher
 .venv
 .vscode
+PyInstaller
 *logs.log
 *main.spec
+*terminal.py
+*QtDesigner.lnk

@@ -1,10 +1,16 @@
+from __future__ import annotations
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSizePolicy
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .window import MainWindow
 
 __all__ = ("Body",)
 
 
 class Body(QFrame):
-    def __init__(self) -> None:
+    def __init__(self, window: MainWindow) -> None:
         super().__init__()
         self.setObjectName("Body")
         self.setFrameShape(QFrame.Shape.NoFrame)

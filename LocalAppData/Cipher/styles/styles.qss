@@ -117,7 +117,7 @@ QScrollBar::add-page:horizontal,  QScrollBar::sub-page:horizontal {
     background: none;
 }
 
-QSplitter {
+ QSplitter {
     background-color: #1E1E1E;
 }
 
@@ -149,6 +149,10 @@ QTabBar::tab::selected {
     border-style: none;
     background-color: #252526;
     color: #FFFFFF;
+}
+
+QFrame#Body {
+    background-color: #FFFFFF;
 }
 
 QFrame#Sidebar {
@@ -201,11 +205,16 @@ QListView::item::selected {
     border: none;
 }
 
+QPlainTextEdit {
+    background-color: #1E1E1E;
+    color: #FFFFFF;
+    font-size: 13px;
+}
+
 QsciScintilla { 
     border: none;
     background-color: #1E1E1E;
     color: #1E1E1E;
-    
 }
 
 QStatusBar {

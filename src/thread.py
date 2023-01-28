@@ -1,5 +1,5 @@
 from PyQt6.QtCore import pyqtSignal, pyqtSlot, QObject, QRunnable, QThread
-from typing import Callable
+from typing import Any, Callable
 
 __all__ = ("Thread", "Runnable")
 
@@ -7,7 +7,7 @@ __all__ = ("Thread", "Runnable")
 class Worker(QObject):
     finished = pyqtSignal()
 
-    def __init__(self, func: Callable, *args, **kwargs) -> None:
+    def __init__(self, func: Callable[..., Any], *args, **kwargs) -> None:
         super().__init__()
         self.func = func
         self.args = args
@@ -19,15 +19,15 @@ class Worker(QObject):
 
 
 class Thread(QThread):
-    def __init__(self, worker: Callable) -> None:
+    def __init__(self, worker: Callable[..., Any], *args, **kwargs) -> None:
         QThread.__init__(self)
-        self.worker = Worker(worker)
+        self.worker = Worker(worker, *args, **kwargs)
         self.worker.moveToThread(self)
         self.started.connect(self.worker.run)
 
 
 class Runnable(QRunnable):
-    def __init__(self, func: Callable, *args, **kwargs) -> None:
+    def __init__(self, func: Callable[..., Any], *args, **kwargs) -> None:
         super().__init__()
         self.func = func
         self.args = args

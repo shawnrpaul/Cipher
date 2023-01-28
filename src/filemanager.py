@@ -2,11 +2,14 @@ from __future__ import annotations
 from PyQt6.QtCore import QDir, QModelIndex, Qt
 from PyQt6.QtGui import QFileSystemModel
 from PyQt6.QtWidgets import QMenu, QSizePolicy, QTreeView
+from typing import Any, Dict, Iterable, Optional, TYPE_CHECKING, Union
 from pathlib import Path
-from typing import TYPE_CHECKING
+import ctypes
+import json
 
 if TYPE_CHECKING:
     from .window import MainWindow
+    from .editor import Editor
 
 __all__ = ("FileManager",)
 
@@ -25,12 +28,10 @@ class FileManager(QTreeView):
     def __init__(self, window: MainWindow, showHidden: bool) -> None:
         super().__init__()
         self.setObjectName("FileManager")
-        currentDir = str(window.currentFolder) if window.currentFolder else None
-        self.styles = window.styles
+        self.currentFolder = window.currentFolder
         self.setEditorTab = window.setEditorTab
         self.createContextMenu(window)
         self.systemModel = FileSystem()
-        self.systemModel.setRootPath(currentDir)
         if not showHidden:
             self.systemModel.setFilter(
                 QDir.Filter.NoDotAndDotDot | QDir.Filter.AllDirs | QDir.Filter.Files
@@ -44,7 +45,6 @@ class FileManager(QTreeView):
             )
 
         self.setModel(self.systemModel)
-        self.setRootIndex(self.systemModel.index(currentDir))
         self.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
         self.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
         self.setEditTriggers(QTreeView.EditTrigger.NoEditTriggers)
@@ -62,6 +62,10 @@ class FileManager(QTreeView):
         self.setColumnHidden(2, True)
         self.setColumnHidden(3, True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+    def changeFolder(self, folder: Optional[str]):
+        self.currentFolder.changeFolder(folder)
+        self.setRootIndex(self.systemModel.setRootPath(folder))
 
     def createContextMenu(self, window: MainWindow) -> None:
         self.menu = QMenu(window)
@@ -81,11 +85,8 @@ class FileManager(QTreeView):
         if not index or self.systemModel.filePath(
             self.systemModel.modelIndex
         ) not in self.systemModel.filePath(index[0]):
-            index = self.systemModel.modelIndex
-        else:
-            index = index[0]
-
-        return index
+            return self.systemModel.modelIndex
+        return index[0]
 
     def view(self, index: QModelIndex) -> None:
         path = Path(self.systemModel.filePath(index))
@@ -95,3 +96,28 @@ class FileManager(QTreeView):
             return self.collapse(index)
 
         return self.setEditorTab(path)
+
+    def saveWorkspaceFiles(self, currentFile: Path, files: Iterable[Editor]) -> None:
+        settings = self.getWorkspaceSettings()
+        settings["currentFile"] = str(currentFile) if currentFile else None
+        settings["openedFiles"] = tuple(str(widget.path) for widget in files)
+        with open(f"{self.currentFolder}\\.Cipher\\settings.json", "w") as f:
+            json.dump(settings, f, indent=4)
+
+    def getWorkspaceSettings(self) -> Dict[str, Union[str, Any]]:
+        if not self.currentFolder:
+            return {"venv": None, "currentFile": None, "openedFiles": []}
+        path = Path(f"{self.currentFolder}\\.Cipher").absolute()
+        if not path.exists():
+            path.mkdir()
+            ctypes.windll.kernel32.SetFileAttributesW(str(path), 0x02)
+
+        path = Path(f"{path}\\settings.json").absolute()
+        if not path.exists():
+            with open(path, "w") as f:
+                json.dump(
+                    {"venv": None, "currentFile": None, "openedFiles": []}, f, indent=4
+                )
+
+        with open(path) as f:
+            return json.load(f)

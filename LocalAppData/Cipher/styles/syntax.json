@@ -1,0 +1,16 @@
+{
+    "JSON": {
+        "location": "Insert Absolute Folder Path",
+        "autocomplete": null,
+        "extensions": [
+            ".json"
+        ]
+    },
+    "Python": {
+        "location": "Insert Absolute Folder Path",
+        "autocomplete": "Insert Absolute Folder Path",
+        "extensions": [
+            ".py"
+        ]
+    }
+}

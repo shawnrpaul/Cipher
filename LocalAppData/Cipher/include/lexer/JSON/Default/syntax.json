@@ -1,0 +1,12 @@
+{
+    "font": "Consolas",
+    "paper": "#1E1E1E",
+    "default": "#D4D4D4",
+    "tabs": "#FFFFFF",
+    "string": "#CE9178",
+    "brackets": "#C586C0",
+    "bool": "#6796E6",
+    "margin": "#FFFFFF",
+    "caretBackground": "#2C2C2C",
+    "caretForeground": "#AAAAAA"
+}
