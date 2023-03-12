@@ -1,11 +1,13 @@
 from __future__ import annotations
-from PyQt6.QtCore import QRect, QThread
-from PyQt6.Qsci import QsciAPIs, QsciLexerCustom, QsciScintilla
-from PyQt6.QtGui import QDropEvent, QFont
-from PyQt6.QtWidgets import QCheckBox, QDialog, QLabel, QLineEdit, QPushButton
-from importlib import util
-from pathlib import Path
 from typing import Dict, List, Tuple, TYPE_CHECKING, Union
+
+from PyQt6.QtCore import QRect, Qt, QThread
+from PyQt6.Qsci import QsciAPIs, QsciCommand, QsciLexerCustom, QsciScintilla
+from PyQt6.QtGui import QDropEvent, QFont, QKeyEvent
+from PyQt6.QtWidgets import QCheckBox, QDialog, QLabel, QLineEdit, QPushButton
+
+from importlib import import_module
+from pathlib import Path
 import json
 
 if TYPE_CHECKING:
@@ -28,18 +30,6 @@ class Search(QDialog):
         self.cs.setGeometry(QRect(10, 70, 41, 17))
         self.cs.setText("Aa")
 
-        self.previous = QPushButton(self)
-        self.previous.setObjectName("Previous")
-        self.previous.setText("Previous")
-        self.previous.setGeometry(QRect(110, 70, 75, 23))
-        self.previous.clicked.connect(
-            lambda: editor.search(
-                self.textBox.text(),
-                self.cs.isChecked(),
-                forward=False,
-            )
-        )
-
         self.next = QPushButton(self)
         self.next.setObjectName("Next")
         self.next.setGeometry(QRect(190, 70, 71, 23))
@@ -49,6 +39,18 @@ class Search(QDialog):
                 self.textBox.text(),
                 self.cs.isChecked(),
                 forward=True,
+            )
+        )
+
+        self.previous = QPushButton(self)
+        self.previous.setObjectName("Previous")
+        self.previous.setText("Previous")
+        self.previous.setGeometry(QRect(110, 70, 75, 23))
+        self.previous.clicked.connect(
+            lambda: editor.search(
+                self.textBox.text(),
+                self.cs.isChecked(),
+                forward=False,
             )
         )
 
@@ -70,12 +72,9 @@ class Editor(QsciScintilla):
         self.zoomOut(2)
         self.releaseShortcut(self.grabShortcut("Ctrl+Tab"))
 
-        self.cursorPositionChanged.connect(self._cursorPositionChanged)
-
         self.setCaretLineVisible(True)
         self.setCaretWidth(2)
 
-        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAll)
         self.setAutoCompletionThreshold(1)
         self.setAutoCompletionCaseSensitivity(False)
         self.setAutoCompletionUseSingle(QsciScintilla.AutoCompletionUseSingle.AcusNever)
@@ -88,27 +87,41 @@ class Editor(QsciScintilla):
         self.setEolMode(QsciScintilla.EolMode.EolUnix)
         self.setEolVisibility(False)
 
-        styles = getStyling(window.localAppData)
+        styles = getEditorExtensions(window.localAppData)
+        localAppData = f"{window.localAppData}\\include"
         self._lexer, self.autoCompleter = None, None
-        for data in styles.values():
+        for lang, data in styles.items():
             if path.suffix in data.get("extensions", ()):
-                _path = Path(data.get("location", ".\\")).absolute()
+                folder = data.get("lexer")
+                _path = Path(
+                    f"{localAppData}\\lexer\\{lang}\\{folder}\\run.py"
+                ).absolute()
                 if not _path.exists():
                     break
-                self._lexer, self.api = loadLexerAndApi(self, _path)
-                if not data.get("autocomplete"):
+                self._lexer, self.api = loadLexerAndApi(self, lang, folder)
+                if not self._lexer:
                     break
-                _path = Path(data.get("autocomplete", ".\\")).absolute()
+                folder = data.get("autocomplete")
+                _path = Path(
+                    f"{localAppData}\\autocomplete\\{lang}\\{folder}\\run.py"
+                ).absolute()
                 if not _path.exists():
                     break
                 workspace = window.fileManager.getWorkspaceSettings()
-                self.autoCompleter = loadAutoCompleter(_path, self.api, path, workspace)
+                self.autoCompleter = loadAutoCompleter(
+                    _path, lang, folder, self, self.api, path, workspace.get("project")
+                )
+                if self.autoCompleter:
+                    self.setAutoCompletionSource(
+                        QsciScintilla.AutoCompletionSource.AcsAPIs
+                    )
+                    self.cursorPositionChanged.connect(self.autoCompleter.start)
                 break
 
         if not self._lexer:
-            self._lexer, self.api = loadLexerAndApi(
-                self, f"{window.localAppData}\\include\\lexer\\Default"
-            )
+            self._lexer, self.api = loadLexerAndApi(self, "Default", "Default")
+        if not self.autoCompleter:
+            self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAll)
 
         self.setLexer(self._lexer)
 
@@ -117,15 +130,44 @@ class Editor(QsciScintilla):
         self.setMarginsFont(QFont("Consolas"))
         self._fileDropped = window.fileDropped
 
+        self.commands = self.standardCommands()
+        self.commands.find(QsciCommand.Command.LineCopy).setKey(0)
+        self.commands.find(QsciCommand.Command.SelectionCopy).setKey(0)
+        self.commands.find(QsciCommand.Command.LineCut).setKey(0)
+        self.commands.find(QsciCommand.Command.SelectionCut).setKey(0)
+        self.commands.find(QsciCommand.Command.LineTranspose).setKey(0)
+        self.commands.find(QsciCommand.Command.MoveSelectedLinesDown).setKey(
+            (Qt.KeyboardModifier.AltModifier | Qt.Key.Key_Down).toCombined()
+        )
+        self.commands.find(QsciCommand.Command.MoveSelectedLinesUp).setKey(
+            (Qt.KeyboardModifier.AltModifier | Qt.Key.Key_Up).toCombined()
+        )
+
     def dropEvent(self, e: QDropEvent) -> None:
         self._fileDropped(e)
         return super().dropEvent(e)
 
-    def _cursorPositionChanged(self, line: int, index: int) -> None:
-        if not self.autoCompleter:
-            return
-        self.autoCompleter.setPos(line + 1, index, self.text())
-        self.autoCompleter.start()
+    def keyPressEvent(self, e: QKeyEvent) -> None:
+        selectedText = self.selectedText()
+        if selectedText:
+            selection = list(self.getSelection())
+            if e.key() == Qt.Key.Key_Tab and selection[0] == selection[2]:
+                tabWidth = self.tabWidth()
+                self.insertAt(" " * tabWidth, selection[0], 0)
+                selection[1] = selection[3] + tabWidth
+                selection[3] = 0
+                return self.setSelection(*selection)
+        return super().keyPressEvent(e)
+
+    def copy(self) -> None:
+        if not self.hasSelectedText():
+            return self.SendScintilla(self.SCI_LINECOPY)
+        return super().copy()
+
+    def cut(self) -> None:
+        if not self.hasSelectedText():
+            return self.SendScintilla(self.SCI_LINECUT)
+        return super().cut()
 
     def find(self) -> None:
         Search(self).exec()
@@ -168,21 +210,28 @@ class Editor(QsciScintilla):
         search(self.SCI_SETSEL, pos, pos + len(string))
 
 
-def loadLexerAndApi(editor: Editor, path: str) -> Tuple[QsciLexerCustom, QsciAPIs]:
-    spec = util.spec_from_file_location("lexer", f"{(path)}\\lexer.py")
-    mod = util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    lexer = mod.lexer(editor)
-    return lexer, QsciAPIs(lexer)
+def loadLexerAndApi(
+    editor: Editor, lang: str, folder: str
+) -> Tuple[QsciLexerCustom, QsciAPIs]:
+    path = f"lexer.{lang}.{folder}.run"
+    try:
+        mod = import_module(path)
+        lexer = mod.run(editor)
+        return lexer, QsciAPIs(lexer)
+    except Exception as e:
+        return None, None
 
 
-def loadAutoCompleter(path: str, *args, **kwargs) -> QThread:
-    spec = util.spec_from_file_location("autocomplete", f"{(path)}\\autocomplete.py")
-    lexer = util.module_from_spec(spec)
-    spec.loader.exec_module(lexer)
-    return lexer.autocomplete(*args, **kwargs)
+def loadAutoCompleter(path: Path, lang: str, folder: str, *args, **kwargs) -> QThread:
+    path = f"autocomplete.{lang}.{folder}.run"
+    try:
+        mod = import_module(path)
+        ac = mod.run(*args, **kwargs)
+        return ac
+    except Exception as e:
+        return None
 
 
-def getStyling(localAppData: str) -> Dict[str, Dict[Union[str, List[str]]]]:
+def getEditorExtensions(localAppData: str) -> Dict[str, Dict[Union[str, List[str]]]]:
     with open(f"{localAppData}\\styles\\syntax.json") as f:
         return json.load(f)

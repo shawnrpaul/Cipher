@@ -2,6 +2,8 @@ from ext.event import *
 from ext.extension import *
 from pypresence import Presence, exceptions as exec
 from PyQt6.QtWidgets import QWidget
+from pathlib import Path
+from typing import Optional
 import time
 import logging
 import os
@@ -16,22 +18,17 @@ logger.addHandler(fileHandler)
 
 
 class RPC(Extension):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self._loop = kwargs.get("loop")
         self.rpc: Presence = Presence("1044002439906476063", loop=self._loop)
         self.rpc.connect()
-        self.currentFolder = kwargs.get("currentFolder")
-        self.statusbar = kwargs.get("statusbar")
-        self.statusbar.showMessage("Connected to Discord")
         self.time: float = time.time()
 
-    @property
-    def __name__(self):
-        return "Discord RPC"
-
-    def update(self, widget: QWidget) -> None:
+    def update(self, folder: Optional[Path], widget: QWidget) -> None:
+        if not widget:
+            return
         name = widget.objectName()
-        folder = self.currentFolder.folder.name if self.currentFolder else None
+        folder = folder.name if folder else None
         try:
             self.rpc.update(
                 state=f"Workspace: {folder}",
@@ -42,11 +39,9 @@ class RPC(Extension):
                 small_text=name,
             )
         except exec.InvalidID:
-            self.statusbar.showMessage("Reconnecting to Discord")
             self.rpc.close()
             self.rpc = Presence("1044002439906476063", loop=self._loop)
             self.rpc.connect()
-            self.statusbar.showMessage("Connected to Discord")
             self.rpc.update(
                 state=f"Workspace: {folder}",
                 details=f"Editing {name}",
@@ -56,15 +51,15 @@ class RPC(Extension):
             )
 
     @event()
-    def onReady(self, widget: QWidget) -> None:
-        self.update(widget)
+    def onReady(self, folder: Optional[Path], widget: QWidget) -> None:
+        self.update(folder, widget)
 
     @event()
-    def widgetChanged(self, widget: QWidget) -> None:
-        self.update(widget)
+    def widgetChanged(self, folder: Optional[Path], widget: QWidget) -> None:
+        self.update(folder, widget)
 
     @event()
-    def onClose(self):
+    def onClose(self) -> None:
         self.rpc.clear()
 
     @onReady.error

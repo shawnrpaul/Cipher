@@ -1,50 +1,40 @@
-from __future__ import annotations
 from PyQt6.Qsci import QsciLexerCustom
 from PyQt6.QtGui import QColor, QFont
-from pathlib import Path
-from typing import Dict, TYPE_CHECKING
-import json
 import re
-
-if TYPE_CHECKING:
-    from editor import Editor
 
 
 class JSONLexer(QsciLexerCustom):
-    def __init__(self, editor: Editor) -> None:
+    def __init__(self, editor) -> None:
         super().__init__(editor)
 
-        styles = getStyling()
-
-        self.setDefaultFont(QFont(styles.get("font")))
-        self.setDefaultColor(QColor(styles.get("tabs")))
-        self.setDefaultPaper(QColor(styles.get("paper")))
+        self.setDefaultFont(QFont("Consolas"))
+        self.setDefaultColor(QColor("#FFFFFF"))
+        self.setDefaultPaper(QColor("#1E1E1E"))
 
         self.DEFAULT = 0
+        self.NUM = 1
         self.STRING = 2
         self.BOOL = 3
         self.BRACKETS = 4
 
-        self.setColor(QColor(styles.get("default")), self.DEFAULT)
-        self.setColor(QColor(styles.get("string")), self.STRING)
-        self.setColor(QColor(styles.get("brackets")), self.BRACKETS)
-        self.setColor(QColor(styles.get("bool")), self.BOOL)
-
-        self.setPaper(QColor(styles.get("paper")), self.DEFAULT)
-        self.setPaper(QColor(styles.get("paper")), self.STRING)
-        self.setPaper(QColor(styles.get("paper")), self.BRACKETS)
-        self.setPaper(QColor(styles.get("paper")), self.BOOL)
+        self.setColor(QColor("#D4D4D4"), self.DEFAULT)
+        self.setColor(QColor("#B5CEA8"), self.NUM)
+        self.setColor(QColor("#CE9178"), self.STRING)
+        self.setColor(QColor("#C586C0"), self.BRACKETS)
+        self.setColor(QColor("#6796E6"), self.BOOL)
 
         editor = self.parent()
-        editor.setMarginsBackgroundColor(QColor(styles.get("paper")))
-        editor.setMarginsForegroundColor(QColor(styles.get("margin")))
-        editor.setCaretLineBackgroundColor(QColor(styles.get("caretBackground")))
-        editor.setCaretForegroundColor(QColor(styles.get("caretForeground")))
+        editor.setMarginsBackgroundColor(QColor("#1E1E1E"))
+        editor.setMarginsForegroundColor(QColor("#FFFFFF"))
+        editor.setCaretLineBackgroundColor(QColor("#2C2C2C"))
+        editor.setCaretForegroundColor(QColor("#AAAAAA"))
 
     def language(self) -> str:
         return "JSONLexer"
 
     def description(self, style: int) -> str:
+        if style == self.NUM:
+            return "NUM"
         if style == self.STRING:
             return "STRING"
         if style == self.BOOL:
@@ -53,13 +43,11 @@ class JSONLexer(QsciLexerCustom):
             return "BRACKETS"
         return "DEFAULT"
 
-    def styleText(self, start: int, end: int) -> None:
+    def styleText(self, _: int, __: int) -> None:
         editor = self.editor()
-        start = 0
-        end = len(editor.text())
-        self.startStyling(start)
+        self.startStyling(0)
 
-        text = editor.text()[start:end]
+        text = editor.text()
 
         p = re.compile(r"[*]\/|\/[*]|\s+|\w+|\W")
         tokenList = [
@@ -72,6 +60,8 @@ class JSONLexer(QsciLexerCustom):
                 self.setStyling(tokenLength, self.STRING)
                 if token in '"':
                     string = False
+            elif token.isnumeric():
+                self.setStyling(tokenLength, self.NUM)
             elif token in ("true", "false", "null"):
                 self.setStyling(tokenLength, self.BOOL)
             elif token in '"':
@@ -81,12 +71,3 @@ class JSONLexer(QsciLexerCustom):
                 self.setStyling(tokenLength, self.BRACKETS)
             else:
                 self.setStyling(tokenLength, self.DEFAULT)
-
-
-def getStyling() -> Dict[str, str]:
-    with open(f"{str(Path(__file__).absolute().parent)}\\syntax.json") as f:
-        return json.load(f)
-
-
-def lexer(*args, **kwargs) -> JSONLexer:
-    return JSONLexer(*args, **kwargs)

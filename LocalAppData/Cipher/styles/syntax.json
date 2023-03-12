@@ -1,16 +1,40 @@
 {
+    "C++": {
+        "lexer": "BetterCPP",
+        "autocomplete": null,
+        "extensions": [
+            ".c",
+            ".cpp",
+            ".cxx",
+            ".CPP",
+            ".CXX",
+            ".h",
+            ".hpp",
+            ".hxx",
+            ".Hxx",
+            ".HXX"
+        ]
+    },
+    "JavaScript": {
+        "lexer": "BetterJS",
+        "autocomplete": null,
+        "extensions": [
+            ".js"
+        ]
+    },
     "JSON": {
-        "location": "Insert Absolute Folder Path",
+        "lexer": "Default",
         "autocomplete": null,
         "extensions": [
             ".json"
         ]
     },
     "Python": {
-        "location": "Insert Absolute Folder Path",
-        "autocomplete": "Insert Absolute Folder Path",
+        "lexer": "Nano",
+        "autocomplete": "Default",
         "extensions": [
-            ".py"
+            ".py",
+            ".pyi"
         ]
     }
 }

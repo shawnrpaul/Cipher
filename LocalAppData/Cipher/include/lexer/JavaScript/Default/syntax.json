@@ -1,0 +1,14 @@
+{
+    "font": "Consolas",
+    "paper": "#1E1E1E",
+    "default": "#D4D4D4",
+    "keyword": "#569CD6",
+    "class": "#4EC9B0",
+    "num": "#B5CEA8",
+    "string": "#CE9178",
+    "comment": "#6A9955",
+    "preprocessor": "#C586C0",
+    "margin": "#FFFFFF",
+    "caretBackground": "#2C2C2C",
+    "caretForeground": "#AAAAAA"
+}

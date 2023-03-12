@@ -2,8 +2,7 @@ __pycache__
 .Cipher
 .venv
 .vscode
-PyInstaller
+*PyInstallerSubmodules.py
 *logs.log
 *main.spec
-*terminal.py
 *QtDesigner.lnk

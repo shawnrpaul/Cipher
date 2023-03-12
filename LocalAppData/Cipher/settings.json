@@ -1,4 +1,5 @@
 {
-    "showHidden": true,
+    "showHidden": false,
+    "createHiddenCipherFolder": true,
     "lastFolder": null
 }

@@ -1,10 +1,12 @@
 from __future__ import annotations
-from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QMenu
 from PyQt6.QtGui import QIcon
+
+from pathlib import Path
+import json
 
 if TYPE_CHECKING:
     from .window import MainWindow
@@ -32,8 +34,7 @@ class ExtensionList(QListWidget):
     def __init__(self, window: MainWindow) -> None:
         super().__init__()
         self.setObjectName("ExtensionList")
-        self.setMaximumWidth(235)
-        self.resize(200, self.height())
+        self.setMaximumWidth(self.screen().size().width() // 5.3)
         self.itemClicked.connect(lambda item: window.setEditorTab(item.path))
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -45,11 +46,19 @@ class ExtensionList(QListWidget):
     def createContextMenu(self, window: MainWindow):
         self.menu = QMenu(window)
         self.menu.setObjectName("ExtensionContextMenu")
-        uninstall = self.menu.addAction("Uninstall")
-        uninstall.triggered.connect(self.uninstall)
+        enabledisable = self.menu.addAction("Enable/Disable")
+        enabledisable.triggered.connect(self.enabledisable)
 
-    def uninstall(self) -> None:
+    def selectedItems(self) -> List[ExtensionItem]:
+        return super().selectedItems()
+
+    def enabledisable(self) -> None:
         index = self.selectedItems()
         if not index:
             return
         index = index[0]
+        with open(index.path) as f:
+            data = json.load(f)
+        with open(index.path, "w") as f:
+            data["enabled"] = not data["enabled"]
+            json.dump(data, f, indent=4)

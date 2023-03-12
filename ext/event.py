@@ -2,7 +2,7 @@ from .exceptions import EventTypeError
 from types import FunctionType
 from typing import Any, Callable, Dict, Optional, Tuple
 
-__all__ = ("Event", "event")
+__all__ = ("event",)
 
 
 class Event:

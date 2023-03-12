@@ -1,5 +1,6 @@
-from PyQt6.QtCore import pyqtSignal, pyqtSlot, QObject, QRunnable, QThread
 from typing import Any, Callable
+from PyQt6.QtCore import pyqtSignal, pyqtSlot, QObject, QRunnable, QThread
+
 
 __all__ = ("Thread", "Runnable")
 
@@ -14,14 +15,17 @@ class Worker(QObject):
         self.kwargs = kwargs
 
     def run(self) -> None:
-        self.func(*self.args, **self.kwargs)
+        try:
+            self.func(*self.args, **self.kwargs)
+        except Exception:
+            pass
         self.finished.emit()
 
 
 class Thread(QThread):
-    def __init__(self, worker: Callable[..., Any], *args, **kwargs) -> None:
+    def __init__(self, func: Callable[..., Any], *args, **kwargs) -> None:
         QThread.__init__(self)
-        self.worker = Worker(worker, *args, **kwargs)
+        self.worker = Worker(func, *args, **kwargs)
         self.worker.moveToThread(self)
         self.started.connect(self.worker.run)
 
@@ -35,4 +39,7 @@ class Runnable(QRunnable):
 
     @pyqtSlot()
     def run(self) -> None:
-        self.func(*self.args, **self.kwargs)
+        try:
+            self.func(*self.args, **self.kwargs)
+        except Exception as e:
+            pass

@@ -1,14 +1,14 @@
-QMainWindow {
+MainWindow {
     background-color: #1E1E1E;
     color: #1E1E1E;
 }
 
-QMenuBar {
+Menubar {
     background-color: #3C3C3C; 
     color: #FFFFFF;
 }
 
-QMenuBar::item::selected {
+Menubar::item::selected {
     background-color: #454646; 
     color: #FFFFFF;
 }
@@ -21,6 +21,139 @@ QMenu {
 QMenu::item::selected {
     background-color: #454646; 
     color: #FFFFFF;
+}
+
+TabWidget > QTabBar::tab::selected {
+    border-style: none;
+    background-color: #252526;
+    color: #FFFFFF;
+}
+
+Body {
+    background-color: #FFFFFF;
+}
+
+TabWidget {
+    background-color: #252526;
+    border: none;
+}
+
+TabWidget > QTabBar {
+    background-color: #252526;
+    color: #909685;
+    border: none;
+}
+
+TabWidget > QTabBar::tab {
+    background-color: #434343;
+    border: none;
+    color: #AFAFAF;
+    min-width: 10px;
+    min-height: 10px;
+    padding: 5px 10px;
+}
+
+Sidebar {
+    background-color: #3C3C3C;
+    border: none;
+}
+
+Explorer {
+    background-color: #252526;
+    border-radius: 5px;
+    border: none;
+    padding: 5px;
+    color: #2C2C2C;
+}
+
+FileManager {
+    background-color: #252526;
+    color: #FFFFFF;
+    border: none;
+    margin: 5px 5px 5px 5px; 
+    font-family: Calibri;
+    font-size: 14px;
+}
+
+FileManager::item::hover {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+}
+
+FileManager::item::selected {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+}
+
+ExtensionList {
+    background-color: #252526;
+    border: none;
+}
+
+ExtensionList::item {
+    background-color: #252526;
+    color: #FFFFFF;
+}
+
+ExtensionList::item::selected {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+}
+
+Git {
+    background-color: #252526;
+    border: none;
+}
+
+Git::item {
+    background-color: #252526;
+    margin: 1px 1px 1px 1px;
+    border: none;
+}
+
+Git::item::selected {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+}
+
+Git > QToolTip {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+}
+
+Editor { 
+    border: none;
+    background-color: #1E1E1E;
+    color: #1E1E1E;
+}
+
+Editor > QListView {
+    background-color: #252526;
+    border: none;
+}
+
+Editor > QListView::item {
+    background-color: #252526;
+    color: #FFFFFF;
+}
+
+Editor > QListView::item::selected {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+}
+
+QSplitter {
+    background-color: #1E1E1E;
+}
+
+QSplitter::handle {
+    background-color: #252526;
 }
 
 QScrollBar:vertical {
@@ -115,109 +248,4 @@ QScrollBar::add-line::horizontal {
 
 QScrollBar::add-page:horizontal,  QScrollBar::sub-page:horizontal {
     background: none;
-}
-
- QSplitter {
-    background-color: #1E1E1E;
-}
-
-QSplitter::handle {
-    background-color: #252526;
-}
-
-QTabWidget {
-    background-color: #252526;
-    border: none;
-}
-
-QTabBar {
-    background-color: #252526;
-    color: #909685;
-    border: none;
-}
-
-QTabBar::tab {
-    background-color: #434343;
-    border: none;
-    color: #AFAFAF;
-    min-width: 10px;
-    min-height: 10px;
-    padding: 5px 10px;
-}
-
-QTabBar::tab::selected {
-    border-style: none;
-    background-color: #252526;
-    color: #FFFFFF;
-}
-
-QFrame#Body {
-    background-color: #FFFFFF;
-}
-
-QFrame#Sidebar {
-    background-color: #3C3C3C;
-    border: none;
-}
-
-QFrame#Explorer {
-    background-color: #252526;
-    border-radius: 5px;
-    border: none;
-    padding: 5px;
-    color: #2C2C2C;
-}
-
-QTreeView {
-    background-color: #252526;
-    color: #FFFFFF;
-    border: none;
-    margin: 5px 5px 5px 5px; 
-    font-family: Calibri;
-    font-size: 14px;
-}
-
-QTreeView::item::hover {
-    background-color: #3C3C3C;
-    color: #FFFFFF;
-    border: none;
-}
-
-QTreeView::item::selected {
-    background-color: #3C3C3C;
-    color: #FFFFFF;
-    border: none;
-}
-
-QListView {
-    background-color: #252526;
-    border: none;
-}
-
-QListView::item {
-    background-color: #252526;
-    color: #FFFFFF;
-}
-
-QListView::item::selected {
-    background-color: #3C3C3C;
-    color: #FFFFFF;
-    border: none;
-}
-
-QPlainTextEdit {
-    background-color: #1E1E1E;
-    color: #FFFFFF;
-    font-size: 13px;
-}
-
-QsciScintilla { 
-    border: none;
-    background-color: #1E1E1E;
-    color: #1E1E1E;
-}
-
-QStatusBar {
-    background-color: #007ACC;
-    color: #FFFFFF;
 }
