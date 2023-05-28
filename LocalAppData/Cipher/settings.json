@@ -1,6 +1,6 @@
 {
     "showHidden": false,
-    "hideCipherFolder": true,
+    "hideCipherFolder": false,
     "username": null,
     "password": null,
     "hiddenPaths": [
