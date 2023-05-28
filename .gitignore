@@ -2,6 +2,8 @@ __pycache__
 .Cipher
 .venv
 .vscode
+build
+dist
 *PyInstallerSubmodules.py
 *logs.log
 *main.spec

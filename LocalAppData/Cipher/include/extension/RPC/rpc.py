@@ -1,7 +1,6 @@
-from ext.event import *
-from ext.extension import *
+from cipher.ext.event import *
+from cipher.ext.extension import *
 from pypresence import Presence, exceptions as exec
-from PyQt6.QtWidgets import QWidget
 from pathlib import Path
 from typing import Optional
 import time
@@ -16,24 +15,36 @@ fileHandler = logging.FileHandler(f"{os.path.dirname(__file__)}\\logs.log")
 fileHandler.setFormatter(format)
 logger.addHandler(fileHandler)
 
+__all__ = ("RPC",)
+
 
 class RPC(Extension):
-    def __init__(self, **kwargs) -> None:
-        self._loop = kwargs.get("loop")
-        self.rpc: Presence = Presence("1044002439906476063", loop=self._loop)
-        self.rpc.connect()
-        self.time: float = time.time()
+    times = {}
+    imgs = {".py": "python", ".pyi": "python", "c++": "cplusplus"}
 
-    def update(self, folder: Optional[Path], widget: QWidget) -> None:
+    def __init__(self, **kwargs) -> None:
+        self.window = kwargs.get("window")
+        self._loop = self.window._loop
+        self.rpc = Presence("1044002439906476063", loop=self._loop)
+        self.rpc.connect()
+
+    def update(self, folder: Optional[Path], widget) -> None:
         if not widget:
-            return
+            return self.rpc.clear()
         name = widget.objectName()
         folder = folder.name if folder else None
+        suffix = widget.path.suffix
+        smallImage = self.imgs.get(suffix)
+        workingTime = self.times.get(widget.path)
+        if not workingTime:
+            workingTime = time.time()
+            self.times[widget.path] = workingTime
         try:
             self.rpc.update(
                 state=f"Workspace: {folder}",
                 details=f"Editing {name}",
-                start=self.time,
+                start=workingTime,
+                small_image=smallImage,
                 large_image="editor",
                 large_text="Cipher",
                 small_text=name,
@@ -45,21 +56,27 @@ class RPC(Extension):
             self.rpc.update(
                 state=f"Workspace: {folder}",
                 details=f"Editing {name}",
-                start=self.time,
+                start=workingTime,
                 large_image="editor",
                 large_text="Cipher",
             )
 
     @event()
-    def onReady(self, folder: Optional[Path], widget: QWidget) -> None:
+    def onReady(self, folder: Optional[Path], widget) -> None:
         self.update(folder, widget)
 
     @event()
-    def widgetChanged(self, folder: Optional[Path], widget: QWidget) -> None:
+    def onWorkspaceChanged(self, _: Optional[Path]) -> None:
+        self.times = {}
+
+    @event()
+    def widgetChanged(self, folder: Optional[Path], widget) -> None:
         self.update(folder, widget)
 
     @event()
     def onClose(self) -> None:
+        if not self.rpc:
+            return
         self.rpc.clear()
 
     @onReady.error

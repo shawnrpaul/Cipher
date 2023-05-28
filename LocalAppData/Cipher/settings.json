@@ -1,5 +1,25 @@
 {
     "showHidden": false,
-    "createHiddenCipherFolder": true,
-    "lastFolder": null
+    "hideCipherFolder": true,
+    "username": null,
+    "password": null,
+    "hiddenPaths": [
+        ".Cipher",
+        ".venv",
+        ".git",
+        ".vscode",
+        "__pycache__"
+    ],
+    "lastFolder": "D:\\Python\\Cipher",
+    "search-pattern": [],
+    "search-exclude": [
+        ".Cipher",
+        ".git",
+        ".venv",
+        ".vscode",
+        "build",
+        "dist",
+        "LocalAppData",
+        "__pycache__"
+    ]
 }

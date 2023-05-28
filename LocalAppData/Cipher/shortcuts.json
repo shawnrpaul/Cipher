@@ -1,0 +1,19 @@
+{
+    "Save File": "Ctrl+S",
+    "Save File As": "Ctrl+Shift+S",
+    "New File": "Ctrl+N",
+    "New Folder": "Ctrl+Shift+N",
+    "Open File": "Ctrl+O",
+    "Open File Path": "Ctrl+Shift+P",
+    "Reopen Closed Tab": "Ctrl+Shift+T",
+    "Open Folder": "Ctrl+Shift+O",
+    "Close Folder": "Ctrl+K",
+    "Copy": "Ctrl+C",
+    "Cut": "Ctrl+X",
+    "Paste": "Ctrl+V",
+    "Find": "Ctrl+F",
+    "Run": "Ctrl+Shift+R",
+    "Terminal": "Ctrl+T",
+    "Explorer": "Ctrl+B",
+    "Close Editor": "Ctrl+W"
+}

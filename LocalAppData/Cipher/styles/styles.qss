@@ -103,24 +103,63 @@ ExtensionList::item::selected {
     border: none;
 }
 
-Git {
+GlobalSearch {
     background-color: #252526;
     border: none;
 }
 
-Git::item {
+GlobalSearch > QLineEdit {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+    margin: 0px 4px 5px 8px;
+}
+
+GlobalSearch > QCheckBox {
+    margin-left: 8px;
+    color: #FFFFFF;
+}
+
+GlobalSearch > GlobalSearchView {
     background-color: #252526;
-    margin: 1px 1px 1px 1px;
+    color: #FFFFFF;
+    margin-left: 8px;
+    margin-right: 0px;
     border: none;
 }
 
-Git::item::selected {
+GlobalSearch > GlobalSearchView::item::hover {
     background-color: #3C3C3C;
     color: #FFFFFF;
     border: none;
 }
 
-Git > QToolTip {
+GlobalSearch > GlobalSearchView::item::selected {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+}
+
+Git {
+    background-color: #252526;
+    border: none;
+}
+
+Git > GitView {
+    background-color: #252526;
+    color: #FFFFFF;
+    margin-left: 8px;
+    margin-right: 0px;
+    border: none;
+}
+
+Git > GitView::item::hover {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: none;
+}
+
+Git > GitView::item::selected {
     background-color: #3C3C3C;
     color: #FFFFFF;
     border: none;
