@@ -13,3 +13,5 @@ A text editor written using PyQt6, QScintilla, and Python 3.9.
 - Search
 - Git
 - Folder/File Hiding
+
+ **Note**: Only for Windows
