@@ -194,20 +194,23 @@ class GitModel(QStandardItemModel):
         )
         self.__status()
 
+    def checkCharLength(self, dialog: QInputDialog) -> None:
+        text = dialog.textValue()
+        dialog.setTextValue(text[:51]) if len(text) > 50 else ...
+
     def commit(self):
         if (
             not self._window.currentFolder
             or not Path(f"{self._window.currentFolder}\\.git").exists()
         ):
             return
-
-        message, ok = QInputDialog.getText(
-            self._window,
-            "Commit",
-            "Provide a commit message",
-            QLineEdit.EchoMode.Normal,
-            "",
-        )
+        dialog = QInputDialog(self._window)
+        dialog.setWindowTitle("Commit")
+        dialog.setLabelText("Provide a commit message")
+        dialog.setTextEchoMode(QLineEdit.EchoMode.Normal)
+        dialog.textValueChanged.connect(lambda: self.checkCharLength(dialog))
+        ok = dialog.exec()
+        message = dialog.textValue()
         if not message or not ok:
             return
         Thread(self, self.__commit, message).start()

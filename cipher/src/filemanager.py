@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (QFileDialog, QInputDialog, QLineEdit, QMenu,
                              QSizePolicy, QTreeView)
 
 from .editor import Editor
+from .thread import Thread
 
 if TYPE_CHECKING:
     from .window import MainWindow
@@ -280,14 +281,8 @@ class FileManager(QTreeView):
                     str(newPath) + str(editor.path).split(str(path))[1]
                 ).absolute()
                 editor._watcher.addPath(str(editor.path))
-
-    def delete(self) -> None:
-        """Deletes a folder or file"""
-        index = self.getIndex()
-        path = Path(self.filePath(index)).absolute()
-        if not path.exists():
-            return
-
+                
+    def __delete(self, path: Path) -> None:
         if path.is_file():
             for widget in self._window.tabView:
                 if widget.path == path:
@@ -307,6 +302,18 @@ class FileManager(QTreeView):
             rmtree(path.absolute())
         except PermissionError:
             ...
+
+    def delete(self) -> None:
+        """Deletes a folder or file"""
+        selectedIndexes = self.selectedIndexes()
+        if not selectedIndexes:
+            return
+        index = selectedIndexes[0]
+        path = Path(self.filePath(index)).absolute()
+        if not path.exists():
+            return
+        self.collapse(index)
+        Thread(self, self.__delete, path).start()
 
     def changeFolder(self, folderPath: Optional[str]) -> None:
         """Changes the workspace and triggers :attr:`onWorkspaceChanged`
