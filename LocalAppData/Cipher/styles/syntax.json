@@ -1,30 +1,30 @@
 {
     ".c": {
-        "lexer": "BetterCPP",
+        "lexer": "Default",
         "language": "C++"
     },
     ".cpp": {
-        "lexer": "BetterCPP",
+        "lexer": "Default",
         "language": "C++"
     },
     ".cxx": {
-        "lexer": "BetterCPP",
+        "lexer": "Default",
         "language": "C++"
     },
     ".h": {
-        "lexer": "BetterCPP",
+        "lexer": "Default",
         "language": "C++"
     },
     ".hpp": {
-        "lexer": "BetterCPP",
+        "lexer": "Default",
         "language": "C++"
     },
     ".hxx": {
-        "lexer": "BetterCPP",
+        "lexer": "Default",
         "language": "C++"
     },
     ".js": {
-        "lexer": "BetterJS",
+        "lexer": "Default",
         "language": "JavaScript"
     },
     ".json": {
@@ -32,7 +32,7 @@
         "language": "JSON"
     },
     ".py": {
-        "lexer": "BetterPython",
+        "lexer": "Default",
         "language": "Python"
     }
 }

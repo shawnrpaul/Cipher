@@ -3,23 +3,8 @@
     "hideCipherFolder": false,
     "username": null,
     "password": null,
-    "hiddenPaths": [
-        ".Cipher",
-        ".venv",
-        ".git",
-        ".vscode",
-        "__pycache__"
-    ],
+    "hiddenPaths": [],
     "lastFolder": null,
     "search-pattern": [],
-    "search-exclude": [
-        ".Cipher",
-        ".git",
-        ".venv",
-        ".vscode",
-        "build",
-        "dist",
-        "LocalAppData",
-        "__pycache__"
-    ]
+    "search-exclude": []
 }
