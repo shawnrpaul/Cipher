@@ -1,6 +1,7 @@
 from PyQt6.Qsci import QsciLexerCPP
 from PyQt6.QtGui import QColor, QFont
 
+
 class CPPLexer(QsciLexerCPP):
     def __init__(self, editor) -> None:
         super().__init__(editor)

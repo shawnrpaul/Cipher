@@ -175,7 +175,6 @@ class TabWidget(QTabWidget):
     def setupTabs(self) -> None:
         """Reopen the tabs and open the folder the editor is opened"""
         if len(sys.argv) > 1:
-            self._window.fileManager.changeFolder(None)
             self.setEditorTab(Path(sys.argv[1]))
             return
 

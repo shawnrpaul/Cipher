@@ -172,8 +172,10 @@ class Editor(QsciScintilla):
                 return self.setSelection(*selection)
         return super().keyPressEvent(e)
 
-    def updateText(self):
+    def updateText(self) -> None:
         """Updates the text. Triggers when :attr:`watcher` detects a change."""
+        if not self.path.exists():
+            return
         cursor = self.getCursorPosition()
         self.setText(self.path.read_text("utf-8"))
         self.setCursorPosition(*cursor)
@@ -324,5 +326,5 @@ class Editor(QsciScintilla):
         self, localAppData: str
     ) -> Dict[str, Dict[Union[str, List[str]]]]:
         """Returns the editor styles"""
-        with open(f"{localAppData}\\styles\\syntax.json") as f:
+        with open(f"{localAppData}\\styles\\lexer.json") as f:
             return json.load(f)

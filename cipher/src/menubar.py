@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List
 
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMenuBar
+from PyQt6.QtWidgets import QMenuBar, QFileDialog
 
 from .thread import Thread
 
@@ -86,9 +86,24 @@ class Menubar(QMenuBar):
         openFolder.setShortcut("Ctrl+Shift+O")
         openFolder.triggered.connect(self._window.fileManager.openFolder)
 
+        openFolderTreeView = fileMenu.addAction("Open Folder in Tree View")
+        openFolderTreeView.setShortcut("Ctrl+Alt+O")
+        openFolderTreeView.triggered.connect(self.openFolderTreeView)
+
         closeFolder = fileMenu.addAction("Close Folder")
         closeFolder.setShortcut("Ctrl+K")
         closeFolder.triggered.connect(self._window.fileManager.closeFolder)
+
+    def openFolderTreeView(self) -> None:
+        if not self._window.currentFolder:
+            return
+        folder = QFileDialog.getExistingDirectory(
+            self, "Pick a Folder", "C:\\", options=QFileDialog().options()
+        )
+        if not folder:
+            return
+        path = Path(folder)
+        self._window._vsplit.addFileManager(path)
 
     def createEditMenu(self) -> None:
         """Creates the edit menu box"""
@@ -175,32 +190,38 @@ class Menubar(QMenuBar):
         self._menus.append(git)
 
         init = git.addAction("Init")
-        init.triggered.connect(self._window.git.gitView.init)
+        init.triggered.connect(self._window.git.init)
 
         clone = git.addAction("Clone")
-        clone.triggered.connect(self._window.git.gitView.clone)
+        clone.triggered.connect(self._window.git.clone)
 
-        status = git.addAction("Status")
-        status.triggered.connect(self._window.git.gitView.status)
+        branch = git.addAction("Branch")
+        branch.triggered.connect(self._window.git.branch)
+
+        checkout = git.addAction("Checkout")
+        checkout.triggered.connect(self._window.git.checkout)
 
         git.addSeparator()
 
+        status = git.addAction("Status")
+        status.triggered.connect(self._window.git.status)
+
         add = git.addAction("Add")
-        add.triggered.connect(self._window.git.gitView.add)
+        add.triggered.connect(self._window.git.add)
 
         remove = git.addAction("Remove")
-        remove.triggered.connect(self._window.git.gitView.remove)
+        remove.triggered.connect(self._window.git.remove)
 
         git.addSeparator()
 
         commit = git.addAction("Commit")
-        commit.triggered.connect(self._window.git.gitView.commit)
+        commit.triggered.connect(self._window.git.commit)
 
         push = git.addAction("Push")
-        push.triggered.connect(self._window.git.gitView.push)
+        push.triggered.connect(self._window.git.push)
 
         pull = git.addAction("Pull")
-        pull.triggered.connect(self._window.git.gitView.pull)
+        pull.triggered.connect(self._window.git.pull)
 
     def createViewMenu(self) -> None:
         """Creates the view menu box"""
@@ -228,11 +249,11 @@ class Menubar(QMenuBar):
 
         Parameters
         ----------
-        path : :class:`pathlib.Path`
+        path: :class:`pathlib.Path`
             The path to open the terminal in. Uses the workspace path or the folder of the current path
-        cmds : :class:`str`
+        cmds: str
             The command to run
-        editor : Editor
+        editor: `Editor`
             The current tab that will be run in the terminal
         """
         relativePath = editor.path.relative_to(path)

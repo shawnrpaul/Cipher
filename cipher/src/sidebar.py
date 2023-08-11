@@ -1,41 +1,20 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QMouseEvent, QPixmap
-from PyQt6.QtWidgets import QFrame, QLabel, QSizePolicy, QVBoxLayout
+from PyQt6.QtGui import QMouseEvent, QPixmap
+from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
+from .splitter import VSplitter
 from .extensionlist import ExtensionList
 from .git import Git
 from .search import GlobalSearch
 
 if TYPE_CHECKING:
-    from .filemanager import FileManager
     from .window import MainWindow
 
 __all__ = ("Sidebar",)
-
-
-class Explorer(QFrame):
-    """The Frame that holds :class:`FileManage`, :class:`ExtensionList`, :class:`Git`, :class:`GlobalSearch`"""
-
-    def __init__(self, fileManager: FileManager) -> None:
-        super().__init__()
-        self.setObjectName("Explorer")
-        self.setLineWidth(1)
-        self.setMaximumWidth(self.screen().size().width() // 2)
-        self.setMinimumWidth(0)
-        self.setBaseSize(100, 0)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        layout.addWidget(fileManager)
-        self.setLayout(layout)
 
 
 class Sidebar(QFrame):
@@ -59,7 +38,6 @@ class Sidebar(QFrame):
         self.setLayout(self._layout)
 
     def createFolder(self) -> None:
-        self.explorer = Explorer(self._window.fileManager)
         folder = QLabel()
         folder.setPixmap(
             QPixmap(f"{self._window.localAppData}\\icons\\folder.svg").scaled(29, 29)
@@ -71,10 +49,10 @@ class Sidebar(QFrame):
         self._layout.addWidget(folder)
 
     def folderMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window._hsplit.widget(0), Explorer):
-            return self.explorer.setVisible(not self.explorer.isVisible())
-        self._window._hsplit.replaceWidget(0, self.explorer)
-        self.explorer.setVisible(True)
+        if isinstance(self._window._hsplit.widget(0), VSplitter):
+            return self._window._vsplit.setVisible(not self._window._vsplit.isVisible())
+        self._window._hsplit.replaceWidget(0, self._window._vsplit)
+        self._window._vsplit.setVisible(True)
 
     def createExtensionList(self) -> None:
         extensions = QLabel()

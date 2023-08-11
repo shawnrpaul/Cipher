@@ -8,7 +8,7 @@ __all__ = ("Thread", "Runnable")
 
 
 class Worker(QObject):
-    finished = pyqtSignal()
+    finished = pyqtSignal(object)
 
     def __init__(self, func: Callable[..., Any], *args, **kwargs) -> None:
         super().__init__()
@@ -18,19 +18,21 @@ class Worker(QObject):
 
     def run(self) -> None:
         try:
-            self.func(*self.args, **self.kwargs)
+            ret = self.func(*self.args, **self.kwargs)
         except Exception as e:
-            ...
-        self.finished.emit()
+            ret = None
+        self.finished.emit(ret)
 
 
 class Thread(QThread):
+    finished = pyqtSignal(object)
+    
     def __init__(self, parent, func: Callable[..., Any], *args, **kwargs) -> None:
         super().__init__(parent)
         self.worker = Worker(func, *args, **kwargs)
         self.worker.moveToThread(self)
         self.started.connect(self.worker.run)
-        self.worker.finished.connect(self.finished.emit)
+        self.worker.finished.connect(lambda ret: self.finished.emit(ret))
         self.worker.finished.connect(self.quit)
 
 

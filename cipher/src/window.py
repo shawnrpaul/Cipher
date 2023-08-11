@@ -16,8 +16,6 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar, QSplitter
 from winotify import Notification
 
-from ..ext.exceptions import EventTypeError
-from ..ext.extension import Extension
 from .body import *
 from .extensionlist import *
 from .filemanager import *
@@ -27,6 +25,9 @@ from .search import *
 from .sidebar import *
 from .tab import *
 from .thread import *
+from .splitter import *
+from cipher.ext import Extension
+from cipher.ext.exceptions import EventTypeError
 
 if TYPE_CHECKING:
     from ..ext.event import Event
@@ -34,12 +35,12 @@ if TYPE_CHECKING:
 
 __all__ = ("run",)
 
-# localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
-localAppData = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-    "LocalAppData",
-    "Cipher",
-)
+localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
+# localAppData = os.path.join(
+#    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+#    "LocalAppData",
+#    "Cipher",
+# )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 format = logging.Formatter("%(levelname)s:%(asctime)s: %(message)s")
@@ -88,7 +89,8 @@ class MainWindow(QMainWindow):
             "search-exclude": [],
         }
 
-        self.body = Body(self)
+        self._hsplit = QSplitter(Qt.Orientation.Horizontal)
+        self._hsplit.setObjectName("HSplit")
         self.tabView = TabWidget(self)
         self.fileManager = FileManager(self)
         self.extensionList = ExtensionList(self)
@@ -100,17 +102,19 @@ class MainWindow(QMainWindow):
             app_id="Cipher", title="Cipher", icon=f"{localAppData}\\icons\\window.png"
         )
 
-        self.setMenuBar(self.menubar)
-        self.body._layout.addWidget(self.sidebar)
-        self._hsplit = QSplitter(Qt.Orientation.Horizontal)
-        self._hsplit.addWidget(self.sidebar.explorer)
+        self._vsplit = VSplitter(self)
+        self._hsplit.addWidget(self._vsplit)
         self._hsplit.addWidget(self.tabView)
-        self.body._layout.addWidget(self._hsplit)
-        self.body.setLayout()
-        self.setCentralWidget(self.body)
+
+        body = Body(self)
+        body._layout.addWidget(self.sidebar)
+        body._layout.addWidget(self._hsplit)
+        body.setLayout()
+        self.setMenuBar(self.menubar)
+        self.setCentralWidget(body)
 
         originalWidth = self.screen().size().width()
-        width = int(originalWidth / 5.07)
+        width = int(originalWidth / 5.25)
 
         self._hsplit.setSizes([width, originalWidth - width])
 
@@ -121,6 +125,10 @@ class MainWindow(QMainWindow):
             lambda: self.setStyleSheet(open(styles).read())
         )
         self.setStyleSheet(open(styles).read())
+        self._shortcut = QFileSystemWatcher(
+            [f"{self.localAppData}\\shortcuts.json"], self
+        )
+        self._shortcut.fileChanged.connect(self.updateShortcuts)
 
         sys.path.insert(0, f"{localAppData}\\include")
         sys.path.insert(0, f"{localAppData}\\site-packages")
@@ -189,8 +197,8 @@ class MainWindow(QMainWindow):
             return
         with open(settings) as f:
             data: dict[str, Any] = json.load(f)
-        name = data.get("name")
-        if not name:
+
+        if not (name := data.get("name")):
             return
 
         icon = f"{path}\\icon.ico"
@@ -253,6 +261,16 @@ class MainWindow(QMainWindow):
         for func in self._events.get("onClose", []):
             self._threadPool.start(Runnable(func))
 
+    def updateShortcuts(self) -> None:
+        """Updates the shortcuts when `shortcuts.json` updates"""
+        with open(f"{self.localAppData}\\shortcuts.json") as f:
+            shortcuts = json.load(f)
+        for menu in self.menubar._menus:
+            for action in menu.actions():
+                if not (name := action.text()):
+                    continue
+                action.setShortcut(shortcuts.get(name, action._shortcut()))
+
 
 def excepthook(
     func: Callable[[Type[BaseException], Optional[BaseException], TracebackType], Any],
@@ -265,12 +283,15 @@ def excepthook(
     ) -> Any:
         tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
         cwd = Path(os.path.dirname(os.path.dirname(__file__))).absolute()
-        for frame in tb.stack[::-1]:
-            file = Path(frame.filename).absolute()
-            if file.is_relative_to(cwd):
-                line = frame.lineno
-                break
-        logger.error(f"{file.name}({line}) - {exc_type.__name__}: {exc_value}")
+        try:
+            for frame in tb.stack[::-1]:
+                file = Path(frame.filename).absolute()
+                if file.is_relative_to(cwd):
+                    line = frame.lineno
+                    break
+            logger.error(f"{file.name}({line}) - {exc_type.__name__}: {exc_value}")
+        except Exception:
+            logger.error(f"{exc_type.__name__}: {exc_value}")
         app.quit()
         return func(exc_type, exc_value, exc_tb)
 

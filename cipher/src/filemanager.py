@@ -13,8 +13,14 @@ import win32con
 from psutil import process_iter
 from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
 from PyQt6.QtGui import QFileSystemModel
-from PyQt6.QtWidgets import (QFileDialog, QInputDialog, QLineEdit, QMenu,
-                             QSizePolicy, QTreeView)
+from PyQt6.QtWidgets import (
+    QFileDialog,
+    QInputDialog,
+    QLineEdit,
+    QMenu,
+    QSizePolicy,
+    QTreeView,
+)
 
 from .editor import Editor
 from .thread import Thread
@@ -28,8 +34,7 @@ __all__ = ("FileManager",)
 class FileSystemModel(QFileSystemModel):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.__currentFolder = None
-        self.modelIndex: Optional[QModelIndex] = None
+        self.setRootPath(None)
 
     @property
     def currentFolder(self) -> Optional[Path]:
@@ -66,26 +71,12 @@ class FileManager(QTreeView):
     fileCreated = pyqtSignal(Path)
     onSave = pyqtSignal()
 
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: MainWindow, main: bool = True) -> None:
         super().__init__()
         self.setObjectName("FileManager")
         self._window = window
-        self.createContextMenu()
+        self.createContextMenu(main)
         self.__systemModel = FileSystemModel()
-        self.__hiddenIndexes: list[QModelIndex] = []
-
-        self._shortcut = QFileSystemWatcher(
-            [f"{window.localAppData}\\shortcuts.json"], self
-        )
-        self._shortcut.fileChanged.connect(self.updateShortcuts)
-        self._globalSettings = QFileSystemWatcher(
-            [f"{window.localAppData}\\settings.json"], self
-        )
-        self._globalSettings.fileChanged.connect(lambda: self.updateSettings())
-        self._workspaceSettings = QFileSystemWatcher(self)
-        self._workspaceSettings.fileChanged.connect(lambda: self.updateSettings())
-
-        self.updateSettings()
 
         self.setModel(self.__systemModel)
         self.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
@@ -106,6 +97,16 @@ class FileManager(QTreeView):
         self.setColumnHidden(3, True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setDragDropMode(QTreeView.DragDropMode.DragDrop)
+
+        self._globalSettings = QFileSystemWatcher(
+            [f"{window.localAppData}\\settings.json"], self
+        )
+        self._globalSettings.fileChanged.connect(lambda: self.updateSettings())
+        self._workspaceSettings = QFileSystemWatcher(self)
+        self._workspaceSettings.fileChanged.connect(lambda: self.updateSettings())
+
+        if main:
+            self.updateSettings()
 
     @property
     def currentFolder(self) -> Optional[Path]:
@@ -134,6 +135,66 @@ class FileManager(QTreeView):
             if self.__systemModel.currentFolder
             else Path(f"{self._window.localAppData}\\settings.json").absolute()
         )
+
+    def view(self, index: QModelIndex) -> None:
+        """What to do when a file or folder was clicked on the tree.
+
+        Parameters
+        ----------
+        index : QModelIndex
+            The index of the file or folder in the tree,
+
+        """
+        path = Path(self.filePath(index))
+        if path.is_dir():
+            if not self.isExpanded(index):
+                return self.expand(index)
+            return self.collapse(index)
+
+        return self._window.tabView.setEditorTab(path)
+
+    def createContextMenu(self, main: bool) -> None:
+        """Creates a context menu when an index was right clicked."""
+        self.menu = QMenu(self._window)
+        self.menu.setObjectName("FileContextMenu")
+        createFolder = self.menu.addAction("New Folder")
+        createFolder.triggered.connect(self.createFolder)
+        createFile = self.menu.addAction("New File")
+        createFile.triggered.connect(self.createFile)
+        self.menu.addSeparator()
+        rename = self.menu.addAction("Rename")
+        rename.triggered.connect(self.rename)
+        delete = self.menu.addAction("Delete")
+        delete.triggered.connect(self.delete)
+        self.menu.addSeparator()
+        copyPath = self.menu.addAction("Copy Path")
+        copyPath.triggered.connect(self.copyPath)
+        showInFolder = self.menu.addAction("Show in Folder")
+        showInFolder.triggered.connect(self.showInFolder)
+        hide = self.menu.addAction("Hide")
+        hide.triggered.connect(self.hideIndex)
+        self.menu.addSeparator()
+        addFolder = self.menu.addAction("Add Folder to Tree View")
+        addFolder.triggered.connect(lambda: self._window.menubar.openFolderTreeView())
+        if not main:
+
+            def changeFolder():
+                folder = QFileDialog.getExistingDirectory(
+                    self, "Pick a Folder", "C:\\", options=QFileDialog().options()
+                )
+                if not folder:
+                    return
+                path = Path(folder)
+                if self._window._vsplit.hasPath(path):
+                    return
+                self.setFolder(path)
+
+            changeDir = self.menu.addAction("Change Folder")
+            changeDir.triggered.connect(changeFolder)
+            remove = self.menu.addAction("Remove from Tree View")
+            remove.triggered.connect(
+                lambda: self._window._vsplit.removeFileManager(self.currentFolder)
+            )
 
     def filePath(self, index: QModelIndex) -> str:
         """Used to get a file path. Uses :meth:`~FileSystemModel.filePath`
@@ -185,6 +246,7 @@ class FileManager(QTreeView):
         index = self._window.tabView.addTab(editor, path.name)
         self._window.tabView.setCurrentIndex(index)
         self.fileCreated.emit(path)
+        self._window.git.status()
 
     def createFolder(self) -> None:
         """Creates a new folder"""
@@ -200,6 +262,7 @@ class FileManager(QTreeView):
         )
         if name and ok and name != index.data():
             self.__systemModel.mkdir(index, name)
+        self._window.git.status()
 
     def openFile(self, filePath: Optional[str] = None) -> None:
         """Opens a file
@@ -238,12 +301,11 @@ class FileManager(QTreeView):
 
     def openFolder(self) -> None:
         """Changes the workspace"""
-        options = QFileDialog().options()
         folder = QFileDialog.getExistingDirectory(
             self,
             "Pick a Folder",
             str(self.currentFolder) if self.currentFolder else "C:\\",
-            options=options,
+            options=QFileDialog().options(),
         )
         if not folder:
             return
@@ -264,6 +326,7 @@ class FileManager(QTreeView):
             return
         path = Path(self.filePath(index)).absolute()
         newPath = path.rename(f"{path.parent}\\{name}").absolute()
+        self._window.git.status()
         if newPath.is_file():
             for editor in self._window.tabView:
                 if editor.path == path:
@@ -281,7 +344,7 @@ class FileManager(QTreeView):
                     str(newPath) + str(editor.path).split(str(path))[1]
                 ).absolute()
                 editor._watcher.addPath(str(editor.path))
-                
+
     def __delete(self, path: Path) -> None:
         if path.is_file():
             for widget in self._window.tabView:
@@ -313,7 +376,12 @@ class FileManager(QTreeView):
         if not path.exists():
             return
         self.collapse(index)
-        Thread(self, self.__delete, path).start()
+        thread = Thread(self, self.__delete, path)
+        thread.finished.connect(self._window.git.status)
+        thread.start()
+
+    def setFolder(self, path: Optional[Path]) -> None:
+        self.setRootIndex(self.__systemModel.setRootPath(path))
 
     def changeFolder(self, folderPath: Optional[str]) -> None:
         """Changes the workspace and triggers :attr:`onWorkspaceChanged`
@@ -325,6 +393,7 @@ class FileManager(QTreeView):
         """
         if folderPath == str(self.currentFolder):
             return
+        self._window._vsplit.clear()
         if self.currentFolder:
             currentFile = (
                 self._window.currentFile.path if self._window.currentFile else None
@@ -335,21 +404,11 @@ class FileManager(QTreeView):
         folder = Path(folderPath).absolute() if folderPath else None
         if folder and not folder.exists():
             folder = None
-        self.setRootIndex(self.__systemModel.setRootPath(folder))
+        self.setFolder(folder)
         if folder:
             self._workspaceSettings.addPath(str(Path(self.settingsPath)))
         self.onWorkspaceChanged.emit()
         self.updateSettings(True)
-
-    def updateShortcuts(self) -> None:
-        """Updates the shortcuts when `shortcuts.json` updates"""
-        with open(f"{self._window.localAppData}\\shortcuts.json") as f:
-            shortcuts = json.load(f)
-        for menu in self._window.menubar._menus:
-            for action in menu.actions():
-                if not (name := action.text()):
-                    continue
-                action.setShortcut(shortcuts.get(name, action._shortcut()))
 
     def updateSettings(self, changeFolder: bool = False) -> None:
         """Updates the user settings
@@ -418,44 +477,10 @@ class FileManager(QTreeView):
         if showHidden:
             filters = filters | QDir.Filter.Hidden
         self.setFilter(filters)
-
-    def view(self, index: QModelIndex) -> None:
-        """What to do when a file or folder was clicked on the tree.
-
-        Parameters
-        ----------
-        index : QModelIndex
-            The index of the file or folder in the tree,
-
-        """
-        path = Path(self.filePath(index))
-        if path.is_dir():
-            if not self.isExpanded(index):
-                return self.expand(index)
-            return self.collapse(index)
-
-        return self._window.tabView.setEditorTab(path)
-
-    def createContextMenu(self) -> None:
-        """Creates a context menu when an index was right clicked."""
-        self.menu = QMenu(self._window)
-        self.menu.setObjectName("FileContextMenu")
-        createFolder = self.menu.addAction("New Folder")
-        createFolder.triggered.connect(self.createFolder)
-        createFile = self.menu.addAction("New File")
-        createFile.triggered.connect(self.createFile)
-        self.menu.addSeparator()
-        rename = self.menu.addAction("Rename")
-        rename.triggered.connect(self.rename)
-        delete = self.menu.addAction("Delete")
-        delete.triggered.connect(self.delete)
-        self.menu.addSeparator()
-        copyPath = self.menu.addAction("Copy Path")
-        copyPath.triggered.connect(self.copyPath)
-        showInFolder = self.menu.addAction("Show in Folder")
-        showInFolder.triggered.connect(self.showInFolder)
-        hide = self.menu.addAction("Hide")
-        hide.triggered.connect(self.hideIndex)
+        if self.currentFolder:
+            for path in workSpacesettings.get("additionalPaths", []):
+                if (path := Path(path)).exists():
+                    self._window._vsplit.addFileManager(path)
 
     def copyPath(self) -> None:
         """Copies the path of an index"""
@@ -480,7 +505,6 @@ class FileManager(QTreeView):
             return
         file = files[0]
         self.setRowHidden(file.row(), file.parent(), True)
-        self.__hiddenIndexes.append(file)
 
     def getIndex(self) -> QModelIndex:
         """Gets the current selected index. If no index is selected, returns the index of the workspace.
@@ -548,7 +572,7 @@ class FileManager(QTreeView):
             return json.load(f)
 
     def saveWorkspaceFiles(self, currentFile: Path, files: Iterable[Editor]) -> None:
-        """Saves the open the files when the workspace is changed
+        """Saves the open files when the workspace is changed
 
         Parameters
         ----------
@@ -560,6 +584,9 @@ class FileManager(QTreeView):
         settings = self.getWorkspaceSettings()
         settings["currentFile"] = str(currentFile) if currentFile else None
         settings["openedFiles"] = tuple(str(widget.path) for widget in files)
+        settings["additionalPaths"] = [
+            str(path) for path in self._window._vsplit.getPaths()
+        ]
         with open(f"{self.currentFolder}\\.Cipher\\settings.json", "w") as f:
             json.dump(settings, f, indent=4)
 
