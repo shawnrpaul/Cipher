@@ -2,7 +2,7 @@ from typing import Any, Callable
 
 from PyQt6.QtCore import QObject, QRunnable, QThread, pyqtSignal, pyqtSlot
 
-from ..ext.event import Event
+from cipher.ext.event import Event
 
 __all__ = ("Thread", "Runnable")
 

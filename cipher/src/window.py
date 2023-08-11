@@ -35,12 +35,12 @@ if TYPE_CHECKING:
 
 __all__ = ("run",)
 
-localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
-# localAppData = os.path.join(
-#    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-#    "LocalAppData",
-#    "Cipher",
-# )
+# localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
+localAppData = os.path.join(
+   os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+   "LocalAppData",
+   "Cipher",
+)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 format = logging.Formatter("%(levelname)s:%(asctime)s: %(message)s")
