@@ -11,8 +11,8 @@ from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
-from PyQt6.QtCore import QFileSystemWatcher, Qt, QThreadPool
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QFileSystemWatcher, Qt, QThreadPool, pyqtSignal
+from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar, QSplitter
 from winotify import Notification
 
@@ -35,12 +35,12 @@ if TYPE_CHECKING:
 
 __all__ = ("run",)
 
-# localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
-localAppData = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-    "LocalAppData",
-    "Cipher",
-)
+localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
+# localAppData = os.path.join(
+#     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+#     "LocalAppData",
+#     "Cipher",
+# )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 format = logging.Formatter("%(levelname)s:%(asctime)s: %(message)s")
@@ -73,6 +73,8 @@ class MainWindow(QMainWindow):
     notification: :class:`Notification`
         Sends a windows notification. Meant to be used by :class:`Extension`
     """
+
+    onClose = pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -260,6 +262,9 @@ class MainWindow(QMainWindow):
         """An event triggered when :class:`MainWindow` is closed"""
         for func in self._events.get("onClose", []):
             self._threadPool.start(Runnable(func))
+
+    def closeEvent(self, _: QCloseEvent) -> None:
+        self.onClose.emit()
 
     def updateShortcuts(self) -> None:
         """Updates the shortcuts when `shortcuts.json` updates"""

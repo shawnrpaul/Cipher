@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from PyQt6.QtCore import QModelIndex, Qt
+from PyQt6.QtCore import QModelIndex, QProcess, Qt
 from PyQt6.QtGui import QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QFrame,
@@ -48,36 +48,23 @@ class GitModel(QStandardItemModel):
         self._window.fileManager.fileCreated.connect(lambda _: self.status())
         self._window.fileManager.onSave.connect(self.status)
 
+    def displayError(self, title: str, msg: str) -> None:
+        dialog = QMessageBox(self._window)
+        dialog.setWindowTitle(title)
+        dialog.setText(msg)
+        dialog.exec()
+
     def init(self) -> None:
         if (
             not self._window.currentFolder
             or Path(f"{self._window.currentFolder}\\.git").exists()
         ):
             return
-        Thread(self, self.__gitinit).start()
-
-    def __gitinit(self) -> None:
-        subprocess.run(
-            ["git", "init"], cwd=self._window.currentFolder, creationflags=0x08000000
-        )
-        self.__status()
-
-    def __clone(self, url: str, username: str, password: str) -> None:
-        ret = subprocess.run(
-            ["git" "clone" "--recursive", str(url)],
-            cwd=self._window.currentFolder,
-            input=f"{username}\n{password}\n".encode(),
-            creationflags=0x08000000,
-            shell=True,
-        )
-        self.__status()
-        return ret
-
-    def displayError(self, title: str, msg: str) -> None:
-        dialog = QMessageBox(self._window)
-        dialog.setWindowTitle(title)
-        dialog.setText(msg)
-        dialog.exec()
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(self.status)
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["init"])
 
     def clone(self) -> None:
         username, password = self._window.settings.get(
@@ -95,13 +82,18 @@ class GitModel(QStandardItemModel):
         )
         if not url or not ok:
             return
-        thread = Thread(self, self.__clone, url, username, password)
-        thread.finished.connect(
-            lambda ret: self.displayError("Clone", ret.stderr.decode("utf-8"))
-            if ret is not None and ret.returncode
-            else ...
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Clone", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.status()
         )
-        thread.start()
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["clone", "--recursive", url])
+        process.write(f"{username}\n{password}\n".encode())
 
     def branch(self) -> None:
         if (
@@ -114,26 +106,17 @@ class GitModel(QStandardItemModel):
         )
         if not branch or not ok:
             return
-        subprocess.run(
-            ["git", "checkout", "-b", str(branch)],
-            cwd=self._window.currentFolder,
-            creationflags=0x08000000,
-            shell=True,
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Clone", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.status()
         )
-
-    def __checkout(self, branch: str) -> None:
-        ret = subprocess.run(
-            ["git", "checkout", str(branch)],
-            cwd=self._window.currentFolder,
-            creationflags=0x08000000,
-            stderr=subprocess.PIPE,
-            shell=True,
-        )
-        if not ret:
-            return ret
-        for editor in self._window.tabView:
-            editor.updateText()
-        return ret
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["checkout", "-b", str(branch)])
 
     def checkout(self) -> None:
         if (
@@ -156,24 +139,25 @@ class GitModel(QStandardItemModel):
         )
         if not branch or not ok:
             return
-        thread = Thread(self, self.__checkout, branch)
-        thread.finished.connect(
-            lambda ret: self.displayError("Checkout", ret.stderr.decode("utf-8"))
-            if ret is not None and ret.returncode
-            else ...
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Checkout", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else [
+                self.status(),
+                tuple((editor.updateText() for editor in self._window.tabView)),
+            ]
         )
-        thread.start()
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["checkout", branch])
 
-    def __status(self) -> None:
-        run = subprocess.run(
-            ["git", "status", "-s"],
-            cwd=self._window.currentFolder,
-            stdout=subprocess.PIPE,
-            creationflags=0x08000000,
-        )
+    def __status(self, ouput: str) -> None:
         self.clear()
         changes, staged = [], []
-        for out in sorted(run.stdout.decode("utf-8").split("\n"))[1:]:
+        for out in sorted(ouput.split("\n"))[1:]:
             if (index := out.find("->")) > -1:
                 staged.append(GitItem(out[3:index]))
                 out = out[index + 3 :]
@@ -195,19 +179,18 @@ class GitModel(QStandardItemModel):
 
     def status(self) -> None:
         if not Path(f"{self._window.currentFolder}\\.git").exists():
-            self.clear()
-            return
-        Thread(self, self.__status).start()
-
-    def __add(self, path: str) -> None:
-        ret = subprocess.run(
-            ["git", "add", str(path)],
-            cwd=self._window.currentFolder,
-            creationflags=0x08000000,
-            shell=True,
+            return self.clear()
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Restore", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.__status(process.readAllStandardOutput().data().decode())
         )
-        self.__status()
-        return ret
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["status", "-s"])
 
     def add(self, path: Optional[QModelIndex] = None) -> None:
         if (
@@ -228,23 +211,17 @@ class GitModel(QStandardItemModel):
         else:
             item = self.itemFromIndex(path)
             path = item.path
-        thread = Thread(self, self.__add, path)
-        thread.finished.connect(
-            lambda ret: self.displayError("Add", ret.stderr.decode("utf-8"))
-            if ret is not None and ret.returncode
-            else ...
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Restore", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.status()
         )
-        thread.start()
-
-    def __remove(self, path: str) -> None:
-        ret = subprocess.run(
-            ["git", "restore", "--staged", str(path)],
-            cwd=self._window.currentFolder,
-            creationflags=0x08000000,
-            shell=True,
-        )
-        self.__status()
-        return ret
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["add", str(path)])
 
     def remove(self, path: Optional[QModelIndex] = None) -> None:
         if (
@@ -265,23 +242,17 @@ class GitModel(QStandardItemModel):
         else:
             item = self.itemFromIndex(path)
             path = item.path
-        thread = Thread(self, self.__remove, path)
-        thread.finished.connect(
-            lambda ret: self.displayError("Remove", ret.stderr.decode("utf-8"))
-            if ret is not None and ret.returncode
-            else ...
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Restore", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.status()
         )
-        thread.start()
-
-    def __commit(self, parameters: str) -> None:
-        ret = subprocess.run(
-            ["git", "commit", str(parameters)],
-            cwd=self._window.currentFolder,
-            creationflags=0x08000000,
-            shell=True,
-        )
-        self.__status()
-        return ret
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["restore", "--staged", str(path)])
 
     def commit(self):
         if (
@@ -298,23 +269,17 @@ class GitModel(QStandardItemModel):
         )
         if not parameters or not ok:
             return
-        thread = Thread(self, self.__commit, parameters)
-        thread.finished.connect(
-            lambda ret: self.displayError("Commit", ret.stderr.decode("utf-8"))
-            if ret is not None and ret.returncode
-            else ...
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Commit", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.status()
         )
-        thread.start()
-
-    def __reset(self, parameters: str) -> None:
-        ret = subprocess.run(
-            ["git", "reset", str(parameters)],
-            cwd=self._window.currentFolder,
-            creationflags=0x08000000,
-            shell=True,
-        )
-        self.__status()
-        return ret
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["commit", parameters])
 
     def reset(self) -> None:
         if (
@@ -331,25 +296,17 @@ class GitModel(QStandardItemModel):
         )
         if not parameters or not ok:
             return
-        thread = Thread(self, self.__reset, parameters)
-        thread.finished.connect(
-            lambda ret: self.displayError("Reset", ret.stderr.decode("utf-8"))
-            if ret is not None and ret.returncode
-            else ...
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Reset", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.status()
         )
-        thread.start()
-
-    def __push(self, username: str, password: str, parameters) -> None:
-        ret = subprocess.run(
-            ["git", "push", str(parameters)],
-            cwd=self._window.currentFolder,
-            input=f"{username}\n{password}\n".encode(),
-            creationflags=0x08000000,
-            shell=True,
-            stderr=subprocess.PIPE,
-        )
-        self.__status()
-        return ret
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["reset", parameters])
 
     def push(self) -> None:
         username, password = self._window.settings.get(
@@ -371,25 +328,18 @@ class GitModel(QStandardItemModel):
         )
         if not parameters or not ok:
             return
-        thread = Thread(self, self.__push, username, password, parameters)
-        thread.finished.connect(
-            lambda ret: self.displayError("Push", ret.stderr.decode("utf-8"))
-            if ret is not None and ret.returncode
-            else ...
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Push", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.status()
         )
-        thread.start()
-
-    def __pull(self, username: str, password: str) -> None:
-        ret = subprocess.run(
-            ["git", "pull"],
-            cwd=self._window.currentFolder,
-            input=f"{username}\n{password}\n".encode(),
-            creationflags=0x08000000,
-            shell=True,
-            stderr=subprocess.PIPE,
-        )
-        self.__status()
-        return ret
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["push", parameters])
+        process.write(f"{username}\n{password}\n".encode())
 
     def pull(self) -> None:
         username, password = self._window.settings.get(
@@ -402,13 +352,17 @@ class GitModel(QStandardItemModel):
             or not Path(f"{self._window.currentFolder}\\.git").exists()
         ):
             return
-        thread = Thread(self, self.__pull, username, password)
-        thread.finished.connect(
-            lambda ret: self.displayError("Pull", ret.stderr.decode("utf-8"))
-            if ret is not None and ret.returncode
-            else ...
+        process = QProcess(self)
+        process.setWorkingDirectory(str(self._window.currentFolder))
+        process.finished.connect(
+            lambda: self.displayError(
+                "Pull", process.readAllStandardError().data().decode()
+            )
+            if process.exitCode()
+            else self.status()
         )
-        thread.start()
+        self._window.onClose.connect(process.kill)
+        process.start("git", ["pull"])
 
 
 class GitView(QTreeView):

@@ -7,7 +7,7 @@ from copy import copy
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
-
+ 
 import win32api
 import win32clipboard
 import win32con
