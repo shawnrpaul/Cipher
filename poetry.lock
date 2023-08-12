@@ -45,15 +45,15 @@ PyQt6-sip = ">=13.4,<14"
 
 [[package]]
 name = "pyqt6-qscintilla"
-version = "2.13.4"
+version = "2.14.1"
 description = "Python bindings for the QScintilla programmers editor widget"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "PyQt6_QScintilla-2.13.4-cp37-abi3-macosx_10_14_universal2.whl", hash = "sha256:17785556ae817275f12f2563078afc42499d87ea52fa5e7825890240903d1ba3"},
-    {file = "PyQt6_QScintilla-2.13.4-cp37-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:32608d65378ef20fba11e209fd60f94e030ce49719e298b9aa0f7b6f15df7b82"},
-    {file = "PyQt6_QScintilla-2.13.4-cp37-abi3-win_amd64.whl", hash = "sha256:b1c13639e623d2ee855078a1243152a59960e23cf7e21d09c944e9e1c16498ee"},
-    {file = "PyQt6_QScintilla-2.13.4.tar.gz", hash = "sha256:e6b2bd722944d885fb0bc653208c55dfd47264751081d597f8327f85c30817c8"},
+    {file = "PyQt6_QScintilla-2.14.1-cp37-abi3-macosx_10_14_universal2.whl", hash = "sha256:a9b5939bd7160bbd095bc06312f2a1289a344b7c4f89633ea7657207212c7d56"},
+    {file = "PyQt6_QScintilla-2.14.1-cp37-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:2b16b3ca0c8f6cf4772a85a0a5b030d2a7ad8128e6f5a3fae6d8a641b04f7e41"},
+    {file = "PyQt6_QScintilla-2.14.1-cp37-abi3-win_amd64.whl", hash = "sha256:b22e93cd70b35cb83dc4177d14c670a02d92d9ea51ee6759bb97d81679c39af2"},
+    {file = "PyQt6_QScintilla-2.14.1.tar.gz", hash = "sha256:8849a4a9847bbf3698d0c1cf47e6d08552a49a66928543a73f10d6dcba617d10"},
 ]
 
 [package.dependencies]
@@ -135,4 +135,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.9.2"
-content-hash = "c0e0dff94c71b0eed59590e4e29c960bb1e8c6d0b189a2d429779e4b943bdacb"
+content-hash = "c65cab09dfff339f01fa24f60ab029f1b024b9bc45ac79121dcac165787047ff"

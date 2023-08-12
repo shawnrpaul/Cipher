@@ -37,9 +37,9 @@ __all__ = ("run",)
 
 # localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
 localAppData = os.path.join(
-   os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-   "LocalAppData",
-   "Cipher",
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    "LocalAppData",
+    "Cipher",
 )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -269,7 +269,7 @@ class MainWindow(QMainWindow):
             for action in menu.actions():
                 if not (name := action.text()):
                     continue
-                action.setShortcut(shortcuts.get(name, action._shortcut()))
+                action.setShortcut(shortcuts.get(name, ""))
 
 
 def excepthook(

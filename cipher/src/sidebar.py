@@ -19,7 +19,7 @@ __all__ = ("Sidebar",)
 
 class Sidebar(QFrame):
     def __init__(self, window: MainWindow) -> None:
-        super().__init__()
+        super().__init__(window)
         self.setObjectName("Sidebar")
         self._window = window
         self.setFrameShape(QFrame.Shape.StyledPanel)

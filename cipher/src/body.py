@@ -14,7 +14,7 @@ class Body(QFrame):
     """Body of the editor. Holds all the widgets"""
 
     def __init__(self, window: MainWindow) -> None:
-        super().__init__()
+        super().__init__(window)
         self.setObjectName("Body")
         self._window = window
         self.setFrameShape(QFrame.Shape.NoFrame)

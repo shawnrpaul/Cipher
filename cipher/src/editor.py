@@ -64,7 +64,7 @@ class Editor(QsciScintilla):
         self.setEolMode(QsciScintilla.EolMode.EolUnix)
         self.setEolVisibility(False)
 
-        styles = self.getEditorStyles(window.localAppData)
+        styles = self.getEditorStyles()
         localAppData = f"{window.localAppData}\\include"
         self._lexer = None
         if info := styles.get(path.suffix):
@@ -122,10 +122,7 @@ class Editor(QsciScintilla):
             The drop event
         """
         urls = e.mimeData().urls()
-        if not urls:
-            return
-        path = urls[0]
-        if path.isLocalFile():
+        if urls and (path := urls[0]).isLocalFile():
             self._window.tabView.setEditorTab(Path(path.toLocalFile()))
             return
 
@@ -322,9 +319,7 @@ class Editor(QsciScintilla):
             self._thread = Thread(self, self._autoCompleter.run)
         self._thread.start()
 
-    def getEditorStyles(
-        self, localAppData: str
-    ) -> Dict[str, Dict[Union[str, List[str]]]]:
+    def getEditorStyles(self) -> Dict[str, Dict[Union[str, List[str]]]]:
         """Returns the editor styles"""
-        with open(f"{localAppData}\\styles\\lexer.json") as f:
+        with open(f"{self._window.localAppData}\\styles\\lexer.json") as f:
             return json.load(f)

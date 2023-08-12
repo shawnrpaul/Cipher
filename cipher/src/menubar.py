@@ -32,18 +32,20 @@ class Menubar(QMenuBar):
         self.setObjectName("Menubar")
         self._window = window
         self._menus: List[QAction] = []
-        self.createFileMenu()
-        self.createEditMenu()
+        with open(f"{window.localAppData}\\shortcuts.json") as f:
+            shortcuts = json.load(f)
+        self.createFileMenu(shortcuts)
+        self.createEditMenu(shortcuts)
+        self.createViewMenu(shortcuts)
         self.createGitMenu()
-        self.createViewMenu()
 
-    def createFileMenu(self) -> None:
+    def createFileMenu(self, shortcuts: dict[str, str]) -> None:
         """Create the file menu box"""
         fileMenu = self.addMenu("File")
         self._menus.append(fileMenu)
 
         saveFile = fileMenu.addAction("Save File")
-        saveFile.setShortcut("Ctrl+S")
+        saveFile.setShortcut(shortcuts.get("Save File", ""))
         saveFile.triggered.connect(
             lambda: self._window.currentFile.saveFile()
             if self._window.currentFile
@@ -51,7 +53,7 @@ class Menubar(QMenuBar):
         )
 
         saveAs = fileMenu.addAction("Save File As")
-        saveAs.setShortcut("Ctrl+Shift+S")
+        saveAs.setShortcut(shortcuts.get("Save File As", ""))
         saveAs.triggered.connect(
             lambda: self._window.currentFile.saveAs()
             if self._window.currentFile
@@ -61,37 +63,37 @@ class Menubar(QMenuBar):
         fileMenu.addSeparator()
 
         newFile = fileMenu.addAction("New File")
-        newFile.setShortcut("Ctrl+N")
+        newFile.setShortcut(shortcuts.get("New File", ""))
         newFile.triggered.connect(self._window.fileManager.createFile)
 
         newFolder = fileMenu.addAction("New Folder")
-        newFolder.setShortcut("Ctrl+Shift+N")
+        newFolder.setShortcut(shortcuts.get("New Folder", ""))
         newFolder.triggered.connect(self._window.fileManager.createFolder)
 
         fileMenu.addSeparator()
 
         openFile = fileMenu.addAction("Open File")
-        openFile.setShortcut("Ctrl+O")
+        openFile.setShortcut(shortcuts.get("Open File", ""))
         openFile.triggered.connect(self._window.fileManager.openFile)
 
         openFile = fileMenu.addAction("Open File Path")
-        openFile.setShortcut("Ctrl+Shift+P")
+        openFile.setShortcut(shortcuts.get("Open File Path", ""))
         openFile.triggered.connect(self._window.fileManager.openFilePath)
 
         reopen = fileMenu.addAction("Reopen Closed Tab")
-        reopen.setShortcut("Ctrl+Shift+T")
+        reopen.setShortcut(shortcuts.get("Reopen Closed Tab", ""))
         reopen.triggered.connect(self._window.tabView.reopenTab)
 
         openFolder = fileMenu.addAction("Open Folder")
-        openFolder.setShortcut("Ctrl+Shift+O")
+        openFolder.setShortcut(shortcuts.get("Open Folder", ""))
         openFolder.triggered.connect(self._window.fileManager.openFolder)
 
         openFolderTreeView = fileMenu.addAction("Open Folder in Tree View")
-        openFolderTreeView.setShortcut("Ctrl+Alt+O")
+        openFolderTreeView.setShortcut(shortcuts.get("Open Folder in Tree View", ""))
         openFolderTreeView.triggered.connect(self.openFolderTreeView)
 
         closeFolder = fileMenu.addAction("Close Folder")
-        closeFolder.setShortcut("Ctrl+K")
+        closeFolder.setShortcut(shortcuts.get("Close Folder", ""))
         closeFolder.triggered.connect(self._window.fileManager.closeFolder)
 
     def openFolderTreeView(self) -> None:
@@ -102,28 +104,27 @@ class Menubar(QMenuBar):
         )
         if not folder:
             return
-        path = Path(folder)
-        self._window._vsplit.addFileManager(path)
+        self._window._vsplit.addFileManager(Path(folder))
 
-    def createEditMenu(self) -> None:
+    def createEditMenu(self, shortcuts: dict[str, str]) -> None:
         """Creates the edit menu box"""
         editMenu = self.addMenu("Edit")
         self._menus.append(editMenu)
 
         copy = editMenu.addAction("Copy")
-        copy.setShortcut("Ctrl+C")
+        copy.setShortcut(shortcuts.get("Copy", ""))
         copy.triggered.connect(
             lambda: self._window.currentFile.copy() if self._window.currentFile else ...
         )
 
         cut = editMenu.addAction("Cut")
-        cut.setShortcut("Ctrl+X")
+        cut.setShortcut(shortcuts.get("Cut", ""))
         cut.triggered.connect(
             lambda: self._window.currentFile.cut() if self._window.currentFile else ...
         )
 
         paste = editMenu.addAction("Paste")
-        paste.setShortcut("Ctrl+V")
+        paste.setShortcut(shortcuts.get("Paste", ""))
         paste.triggered.connect(
             lambda: self._window.currentFile.paste()
             if self._window.currentFile
@@ -131,13 +132,14 @@ class Menubar(QMenuBar):
         )
 
         find = editMenu.addAction("Find")
-        find.setShortcut("Ctrl+F")
+        find.setShortcut(shortcuts.get("Find", ""))
         find.triggered.connect(
             lambda: self._window.currentFile.find() if self._window.currentFile else ...
         )
         editMenu.addSeparator()
 
         styles = editMenu.addAction("Styles")
+        styles.setShortcut(shortcuts.get("Styles", ""))
         styles.triggered.connect(
             lambda: self._window.tabView.setEditorTab(
                 Path(f"{self._window.localAppData}\\styles\\styles.qss")
@@ -145,6 +147,7 @@ class Menubar(QMenuBar):
         )
 
         shortcut = editMenu.addAction("Shortcuts")
+        shortcut.setShortcut(shortcuts.get("Shortcuts", ""))
         shortcut.triggered.connect(
             lambda: self._window.tabView.setEditorTab(
                 Path(f"{self._window.localAppData}\\shortcuts.json")
@@ -152,13 +155,16 @@ class Menubar(QMenuBar):
         )
 
         globalSettings = editMenu.addAction("Global Settings")
+        globalSettings.setShortcut(shortcuts.get("Global Settings", ""))
         globalSettings.triggered.connect(self.editGlobalSettings)
 
         workspaceSettings = editMenu.addAction("Workspace Settings")
+        workspaceSettings.setShortcut(shortcuts.get("Workspace Settings", ""))
         workspaceSettings.triggered.connect(self.editWorkspaceSettings)
 
-        editTerminalSettings = editMenu.addAction("Terminal Settings")
-        editTerminalSettings.triggered.connect(self.editTerminalSettings)
+        editRunFile = editMenu.addAction("Run Settings")
+        editRunFile.setShortcut(shortcuts.get("Run Settings", ""))
+        editRunFile.triggered.connect(self.editRunFile)
 
     def editGlobalSettings(self) -> None:
         """Opens the global settings as a tab to edit"""
@@ -172,17 +178,62 @@ class Menubar(QMenuBar):
         if not self._window.currentFolder:
             return self.editGlobalSettings()
         self._window.tabView.setEditorTab(
-            Path(f"{self._window.currentFolder}\\.Cipher\\settings.json")
+            Path(f"{self._window.currentFolder}\\.cipher\\settings.json")
         )
 
-    def editTerminalSettings(self) -> None:
-        """Opens the terminal settings to edit"""
-        path = (
-            Path(f"{self._window.currentFolder}\\.Cipher\\terminal.json")
-            if self._window.currentFolder
-            else Path(f"{self._window.localAppData}\\terminal.json")
-        )
+    def editRunFile(self) -> None:
+        """Opens the run.bat to edit"""
+        if not self._window.currentFolder:
+            return
+        path = Path(f"{self._window.currentFolder}\\.cipher\\run.bat")
         self._window.tabView.setEditorTab(path)
+
+    def createViewMenu(self, shortcuts: dict[str, str]) -> None:
+        """Creates the view menu box"""
+        view = self.addMenu("View")
+        self._menus.append(view)
+
+        run = view.addAction("Run")
+        run.setShortcut(shortcuts.get("Run", ""))
+        run.triggered.connect(self.run)
+
+        terminal = view.addAction("Terminal")
+        terminal.setShortcut(shortcuts.get("Terminal", ""))
+        terminal.triggered.connect(self.terminal)
+
+        explorer = view.addAction("Explorer")
+        explorer.setShortcut(shortcuts.get("Explorer", ""))
+        explorer.triggered.connect(self.explorer)
+
+        close = view.addAction("Close Editor")
+        close.setShortcut(shortcuts.get("Close Editor", ""))
+        close.triggered.connect(self._window.tabView.closeCurrentTab)
+
+    def run(self) -> None:
+        """Starts the thread to run the command"""
+        if not self._window.currentFile or not self._window.currentFolder:
+            return
+        path = Path(f"{self._window.currentFolder}\\.cipher\\run.bat")
+        path.write_text("@echo off\n") if not path.exists() else ...
+        Thread(
+            self,
+            subprocess.run,
+            ["start", f"{self._window.currentFolder}\\.cipher\\run.bat"],
+            shell=True,
+        ).start()
+
+    def terminal(self) -> None:
+        """Starts the terminal"""
+        powershell = f"{os.getenv('AppData')}\\Microsoft\\Windows\\Start Menu\\Programs\\Windows PowerShell\\Windows PowerShell.lnk"
+        currentFolder = self._window.currentFolder
+        if not currentFolder:
+            currentFolder = os.getenv("UserProfile")
+        subprocess.run(f'start /d "{currentFolder}" "{powershell}"', shell=True)
+
+    def explorer(self) -> None:
+        """Opens or closes the :class:`sidebar.Explorer`"""
+        widget = self._window._hsplit.widget(0)
+        widget.setVisible(not widget.isVisible())
 
     def createGitMenu(self) -> None:
         """Creates the git menu box"""
@@ -222,76 +273,3 @@ class Menubar(QMenuBar):
 
         pull = git.addAction("Pull")
         pull.triggered.connect(self._window.git.pull)
-
-    def createViewMenu(self) -> None:
-        """Creates the view menu box"""
-        view = self.addMenu("View")
-        self._menus.append(view)
-
-        run = view.addAction("Run")
-        run.setShortcut("Ctrl+Shift+R")
-        run.triggered.connect(self.run)
-
-        terminal = view.addAction("Terminal")
-        terminal.setShortcut("Ctrl+T")
-        terminal.triggered.connect(self.terminal)
-
-        explorer = view.addAction("Explorer")
-        explorer.setShortcut("Ctrl+B")
-        explorer.triggered.connect(self.explorer)
-
-        close = view.addAction("Close Editor")
-        close.setShortcut("Ctrl+W")
-        close.triggered.connect(self._window.tabView.closeCurrentTab)
-
-    def __run(self, path: Path, cmds: str, editor: Editor) -> None:
-        """Runs the terminal commands
-
-        Parameters
-        ----------
-        path: :class:`pathlib.Path`
-            The path to open the terminal in. Uses the workspace path or the folder of the current path
-        cmds: str
-            The command to run
-        editor: `Editor`
-            The current tab that will be run in the terminal
-        """
-        relativePath = editor.path.relative_to(path)
-        subprocess.run(
-            f'start /d "{path}" cmd /k "{cmds} {relativePath} & echo. & pause & exit"',
-            shell=True,
-        )
-
-    def run(self) -> None:
-        """Starts the thread to run the command"""
-        if not self._window.currentFile:
-            return
-        currentFolder = (
-            self._window.currentFolder
-            if self._window.currentFolder
-            else self._window.currentFile.path.parent
-        )
-        terminalSettings = (
-            f"{self._window.currentFolder}\\.Cipher\\terminal.json"
-            if self._window.currentFolder
-            else f"{self._window.localAppData}\\terminal.json"
-        )
-        with open(terminalSettings) as f:
-            data = json.load(f)
-        cmds = data.get(self._window.currentFile.path.suffix)
-        if not cmds:
-            return
-        Thread(self, self.__run, currentFolder, cmds, self._window.currentFile).start()
-
-    def terminal(self) -> None:
-        """Starts the terminal"""
-        powershell = f"{os.getenv('AppData')}\\Microsoft\\Windows\\Start Menu\\Programs\\Windows PowerShell\\Windows PowerShell.lnk"
-        currentFolder = self._window.currentFolder
-        if not currentFolder:
-            currentFolder = os.getenv("UserProfile")
-        subprocess.run(f'start /d "{currentFolder}" "{powershell}"', shell=True)
-
-    def explorer(self) -> None:
-        """Opens or closes the :class:`sidebar.Explorer`"""
-        widget = self._window._hsplit.widget(0)
-        widget.setVisible(not widget.isVisible())

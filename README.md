@@ -8,10 +8,11 @@ A text editor written using PyQt6, QScintilla, and Python 3.9.
 
 ## Features
 
-- Custom Extensions
-- Custom styling
+- Multiple Folders
+- Folder/File Hiding
 - Search
 - Git
-- Folder/File Hiding
+- Custom Extensions
+- Custom styling
 
  **Note**: Only for Windows

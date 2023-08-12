@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from copy import copy
 from pathlib import Path
 from shutil import rmtree
@@ -130,7 +131,7 @@ class FileManager(QTreeView):
         """
         return (
             Path(
-                f"{self.__systemModel.currentFolder}\\.Cipher\\settings.json"
+                f"{self.__systemModel.currentFolder}\\.cipher\\settings.json"
             ).absolute()
             if self.__systemModel.currentFolder
             else Path(f"{self._window.localAppData}\\settings.json").absolute()
@@ -550,14 +551,13 @@ class FileManager(QTreeView):
         """
         if not self.currentFolder:
             return {"project": None, "currentFile": None, "openedFiles": []}
-        path = Path(f"{self.currentFolder}\\.Cipher").absolute()
+        path = Path(f"{self.currentFolder}\\.cipher").absolute()
         if not path.exists():
             path.mkdir()
-            settings = self.getGlobalSettings()
-            if settings.get("hideCipherFolder"):
+            if sys.platform == "win32":
                 win32api.SetFileAttributes(str(path), win32con.FILE_ATTRIBUTE_HIDDEN)
-            with open(f"{path}\\terminal.json", "w") as f:
-                json.dump({}, f, indent=4)
+            with open(f"{path}\\run.bat", "w") as f:
+                f.write("@echo off\n")
 
         path = Path(f"{path}\\settings.json").absolute()
         if not path.exists():
@@ -587,7 +587,7 @@ class FileManager(QTreeView):
         settings["additionalPaths"] = [
             str(path) for path in self._window._vsplit.getPaths()
         ]
-        with open(f"{self.currentFolder}\\.Cipher\\settings.json", "w") as f:
+        with open(f"{self.currentFolder}\\.cipher\\settings.json", "w") as f:
             json.dump(settings, f, indent=4)
 
     def saveSettings(self) -> None:

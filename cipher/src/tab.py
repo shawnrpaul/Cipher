@@ -291,13 +291,12 @@ class TabWidget(QTabWidget):
             Returns the editor tab
         """
         path = path.absolute()
-        if not path.exists():
-            return
-        if not path.is_file():
-            return
-        if self.isBinary(path):
-            return
-        if self.getEditorTab(path):
+        if (
+            not path.exists()
+            or not path.is_file()
+            or self.isBinary(path)
+            or self.getEditorTab(path)
+        ):
             return
 
         editor = Editor(window=self._window, path=path)
