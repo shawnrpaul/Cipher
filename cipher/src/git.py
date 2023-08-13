@@ -260,14 +260,14 @@ class GitModel(QStandardItemModel):
             or not Path(f"{self._window.currentFolder}\\.git").exists()
         ):
             return
-        parameters, ok = QInputDialog.getText(
+        message, ok = QInputDialog.getText(
             self._window,
             "Commit",
-            "Enter your parameters (git commit <parameters>)",
+            "Enter your message",
             QLineEdit.EchoMode.Normal,
             "",
         )
-        if not parameters or not ok:
+        if not message or not ok:
             return
         process = QProcess(self)
         process.setWorkingDirectory(str(self._window.currentFolder))
@@ -279,7 +279,7 @@ class GitModel(QStandardItemModel):
             else self.status()
         )
         self._window.onClose.connect(process.kill)
-        process.start("git", ["commit", parameters])
+        process.start("git", ["commit", "-m", message])
 
     def reset(self) -> None:
         if (
@@ -290,7 +290,7 @@ class GitModel(QStandardItemModel):
         parameters, ok = QInputDialog.getText(
             self._window,
             "Reset",
-            "Enter your parameters (git reset <parameters>)",
+            "Enter the name of the file",
             QLineEdit.EchoMode.Normal,
             "",
         )
@@ -319,15 +319,6 @@ class GitModel(QStandardItemModel):
             or not Path(f"{self._window.currentFolder}\\.git").exists()
         ):
             return
-        parameters, ok = QInputDialog.getText(
-            self._window,
-            "Push",
-            "Enter your parameters (git push <parameters>)",
-            QLineEdit.EchoMode.Normal,
-            "",
-        )
-        if not parameters or not ok:
-            return
         process = QProcess(self)
         process.setWorkingDirectory(str(self._window.currentFolder))
         process.finished.connect(
@@ -338,7 +329,7 @@ class GitModel(QStandardItemModel):
             else self.status()
         )
         self._window.onClose.connect(process.kill)
-        process.start("git", ["push", parameters])
+        process.start("git", ["push"])
         process.write(f"{username}\n{password}\n".encode())
 
     def pull(self) -> None:
