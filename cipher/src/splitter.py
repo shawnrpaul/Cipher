@@ -67,7 +67,6 @@ class VSplitter(QSplitter):
         for i in range(1, self.count()):
             explorer: Explorer = self.widget(i)
             if explorer.fileManager.currentFolder == path:
-                explorer.fileManager.deleteLater()
                 return explorer.deleteLater()
 
     def clear(self) -> None:
