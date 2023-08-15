@@ -32,7 +32,7 @@ class Menubar(QMenuBar):
         self.setObjectName("Menubar")
         self._window = window
         self._menus: List[QAction] = []
-        with open(f"{window.localAppData}\\shortcuts.json") as f:
+        with open(f"{window.localAppData}/shortcuts.json") as f:
             shortcuts = json.load(f)
         self.createFileMenu(shortcuts)
         self.createEditMenu(shortcuts)
@@ -100,7 +100,7 @@ class Menubar(QMenuBar):
         if not self._window.currentFolder:
             return
         folder = QFileDialog.getExistingDirectory(
-            self, "Pick a Folder", "C:\\", options=QFileDialog().options()
+            self, "Pick a Folder", "C:/", options=QFileDialog().options()
         )
         if not folder:
             return
@@ -142,7 +142,7 @@ class Menubar(QMenuBar):
         styles.setShortcut(shortcuts.get("Styles", ""))
         styles.triggered.connect(
             lambda: self._window.tabView.setEditorTab(
-                Path(f"{self._window.localAppData}\\styles\\styles.qss")
+                Path(f"{self._window.localAppData}/styles/styles.qss")
             )
         )
 
@@ -150,7 +150,7 @@ class Menubar(QMenuBar):
         shortcut.setShortcut(shortcuts.get("Shortcuts", ""))
         shortcut.triggered.connect(
             lambda: self._window.tabView.setEditorTab(
-                Path(f"{self._window.localAppData}\\shortcuts.json")
+                Path(f"{self._window.localAppData}/shortcuts.json")
             )
         )
 
@@ -169,7 +169,7 @@ class Menubar(QMenuBar):
     def editGlobalSettings(self) -> None:
         """Opens the global settings as a tab to edit"""
         self._window.tabView.setEditorTab(
-            Path(f"{self._window.localAppData}\\settings.json")
+            Path(f"{self._window.localAppData}/settings.json")
         )
 
     def editWorkspaceSettings(self) -> None:
@@ -178,14 +178,14 @@ class Menubar(QMenuBar):
         if not self._window.currentFolder:
             return self.editGlobalSettings()
         self._window.tabView.setEditorTab(
-            Path(f"{self._window.currentFolder}\\.cipher\\settings.json")
+            Path(f"{self._window.currentFolder}/.cipher/settings.json")
         )
 
     def editRunFile(self) -> None:
         """Opens the run.bat to edit"""
         if not self._window.currentFolder:
             return
-        path = Path(f"{self._window.currentFolder}\\.cipher\\run.bat")
+        path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
         self._window.tabView.setEditorTab(path)
 
     def createViewMenu(self, shortcuts: dict[str, str]) -> None:
@@ -213,18 +213,18 @@ class Menubar(QMenuBar):
         """Starts the thread to run the command"""
         if not self._window.currentFile or not self._window.currentFolder:
             return
-        path = Path(f"{self._window.currentFolder}\\.cipher\\run.bat")
+        path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
         path.write_text("@echo off\n") if not path.exists() else ...
         Thread(
             self,
             subprocess.run,
-            ["start", f"{self._window.currentFolder}\\.cipher\\run.bat"],
+            ["start", f"{self._window.currentFolder}/.cipher/run.bat"],
             shell=True,
         ).start()
 
     def terminal(self) -> None:
         """Starts the terminal"""
-        powershell = f"{os.getenv('AppData')}\\Microsoft\\Windows\\Start Menu\\Programs\\Windows PowerShell\\Windows PowerShell.lnk"
+        powershell = f"{os.getenv('AppData')}/Microsoft/Windows/Start Menu/Programs/Windows PowerShell/Windows PowerShell.lnk"
         currentFolder = self._window.currentFolder
         if not currentFolder:
             currentFolder = os.getenv("UserProfile")

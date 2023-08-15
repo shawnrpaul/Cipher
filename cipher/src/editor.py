@@ -65,12 +65,12 @@ class Editor(QsciScintilla):
         self.setEolVisibility(False)
 
         styles = self.getEditorStyles()
-        localAppData = f"{window.localAppData}\\include"
+        localAppData = f"{window.localAppData}/include"
         self._lexer = None
         if info := styles.get(path.suffix):
             language, lexer = info.get("language"), info.get("lexer")
             lexerPath = Path(
-                f"{localAppData}\\lexer\\{language}\\{lexer}\\run.py"
+                f"{localAppData}/lexer/{language}/{lexer}/run.py"
             ).absolute()
             if lexerPath.exists():
                 self._lexer = self.loadLexer(language, lexer)
@@ -189,7 +189,7 @@ class Editor(QsciScintilla):
         file, _ = QFileDialog.getSaveFileName(
             self,
             "Save as",
-            str(self._window.currentFolder) if self._window.currentFolder else "C:\\",
+            str(self._window.currentFolder) if self._window.currentFolder else "C:/",
             "All Files (*);;Python files (*.py);;JSON files (*.json)",
         )
         if not file:
@@ -321,5 +321,5 @@ class Editor(QsciScintilla):
 
     def getEditorStyles(self) -> Dict[str, Dict[Union[str, List[str]]]]:
         """Returns the editor styles"""
-        with open(f"{self._window.localAppData}\\styles\\lexer.json") as f:
+        with open(f"{self._window.localAppData}/styles/lexer.json") as f:
             return json.load(f)

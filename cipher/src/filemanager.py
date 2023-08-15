@@ -100,7 +100,7 @@ class FileManager(QTreeView):
         self.setDragDropMode(QTreeView.DragDropMode.DragDrop)
 
         self._globalSettings = QFileSystemWatcher(
-            [f"{window.localAppData}\\settings.json"], self
+            [f"{window.localAppData}/settings.json"], self
         )
         self._globalSettings.fileChanged.connect(lambda: self.updateSettings())
         self._workspaceSettings = QFileSystemWatcher(self)
@@ -131,10 +131,10 @@ class FileManager(QTreeView):
         """
         return (
             Path(
-                f"{self.__systemModel.currentFolder}\\.cipher\\settings.json"
+                f"{self.__systemModel.currentFolder}/.cipher/settings.json"
             ).absolute()
             if self.__systemModel.currentFolder
-            else Path(f"{self._window.localAppData}\\settings.json").absolute()
+            else Path(f"{self._window.localAppData}/settings.json").absolute()
         )
 
     def view(self, index: QModelIndex) -> None:
@@ -181,7 +181,7 @@ class FileManager(QTreeView):
 
             def changeFolder():
                 folder = QFileDialog.getExistingDirectory(
-                    self, "Pick a Folder", "C:\\", options=QFileDialog().options()
+                    self, "Pick a Folder", "C:/", options=QFileDialog().options()
                 )
                 if not folder:
                     return
@@ -236,7 +236,7 @@ class FileManager(QTreeView):
         )
         if not name or not ok:
             return
-        path = Path(f"{self.filePath(index)}\\{name}").absolute()
+        path = Path(f"{self.filePath(index)}/{name}").absolute()
         counter = 0
         name = str(path).split(".")
         while path.exists():
@@ -278,7 +278,7 @@ class FileManager(QTreeView):
             filePath, _ = QFileDialog.getOpenFileName(
                 self,
                 "Pick a file",
-                str(self.currentFolder) if self.currentFolder else "C:\\",
+                str(self.currentFolder) if self.currentFolder else "C:/",
                 "All Files (*);;C++ (*cpp *h *hpp);;JavaScript (*js);;JSON (*json);;Python (*py)",
                 options=options,
             )
@@ -305,7 +305,7 @@ class FileManager(QTreeView):
         folder = QFileDialog.getExistingDirectory(
             self,
             "Pick a Folder",
-            str(self.currentFolder) if self.currentFolder else "C:\\",
+            str(self.currentFolder) if self.currentFolder else "C:/",
             options=QFileDialog().options(),
         )
         if not folder:
@@ -326,7 +326,7 @@ class FileManager(QTreeView):
         if not name or not ok or name == index.data():
             return
         path = Path(self.filePath(index)).absolute()
-        newPath = path.rename(f"{path.parent}\\{name}").absolute()
+        newPath = path.rename(f"{path.parent}/{name}").absolute()
         self._window.git.status()
         if newPath.is_file():
             for editor in self._window.tabView:
@@ -394,12 +394,12 @@ class FileManager(QTreeView):
         """
         if folderPath == str(self.currentFolder):
             return
-        self._window._vsplit.clear()
         if self.currentFolder:
             currentFile = (
                 self._window.currentFile.path if self._window.currentFile else None
             )
             self.saveWorkspaceFiles(currentFile, copy(self._window.tabView.tabList))
+            self._window._vsplit.clear()
             self._workspaceSettings.removePath(str(self.currentFolder))
         self._window.tabView.closeTabs()
         folder = Path(folderPath).absolute() if folderPath else None
@@ -453,7 +453,7 @@ class FileManager(QTreeView):
         )
         hiddenPaths = self._window.settings["hiddenPaths"]
         self._window.settings["hiddenPaths"] = [
-            "\\".join([self.__systemModel.rootPath(), *str(path).split("\\")])
+            "/".join([self.__systemModel.rootPath(), *str(path).split("\\")])
             for path in list(
                 {
                     *workSpacesettings.get("hiddenPaths", []),
@@ -539,7 +539,7 @@ class FileManager(QTreeView):
         -------
         Dict[str, Any]
         """
-        with open(f"{self._window.localAppData}\\settings.json") as f:
+        with open(f"{self._window.localAppData}/settings.json") as f:
             return json.load(f)
 
     def getWorkspaceSettings(self) -> Dict[str, Union[str, Any]]:
@@ -551,15 +551,15 @@ class FileManager(QTreeView):
         """
         if not self.currentFolder:
             return {"project": None, "currentFile": None, "openedFiles": []}
-        path = Path(f"{self.currentFolder}\\.cipher").absolute()
+        path = Path(f"{self.currentFolder}/.cipher").absolute()
         if not path.exists():
             path.mkdir()
             if sys.platform == "win32":
                 win32api.SetFileAttributes(str(path), win32con.FILE_ATTRIBUTE_HIDDEN)
-            with open(f"{path}\\run.bat", "w") as f:
+            with open(f"{path}/run.bat", "w") as f:
                 f.write("@echo off\n")
 
-        path = Path(f"{path}\\settings.json").absolute()
+        path = Path(f"{path}/settings.json").absolute()
         if not path.exists():
             with open(path, "w") as f:
                 json.dump(
@@ -587,7 +587,7 @@ class FileManager(QTreeView):
         settings["additionalPaths"] = [
             str(path) for path in self._window._vsplit.getPaths()
         ]
-        with open(f"{self.currentFolder}\\.cipher\\settings.json", "w") as f:
+        with open(f"{self.currentFolder}/.cipher/settings.json", "w") as f:
             json.dump(settings, f, indent=4)
 
     def saveSettings(self) -> None:
@@ -597,7 +597,7 @@ class FileManager(QTreeView):
             return
         settings = self.getGlobalSettings()
         settings["lastFolder"] = str(self.currentFolder) if self.currentFolder else None
-        with open(f"{self._window.localAppData}\\settings.json", "w") as f:
+        with open(f"{self._window.localAppData}/settings.json", "w") as f:
             json.dump(settings, f, indent=4)
         if self.currentFolder:
             self.saveWorkspaceFiles(

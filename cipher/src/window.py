@@ -44,7 +44,7 @@ localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 format = logging.Formatter("%(levelname)s:%(asctime)s: %(message)s")
-fileHandler = logging.FileHandler(f"{localAppData}\\logs.log")
+fileHandler = logging.FileHandler(f"{localAppData}/logs.log")
 fileHandler.setFormatter(format)
 logger.addHandler(fileHandler)
 
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Cipher")
         self._threadPool = QThreadPool.globalInstance()
         self.localAppData = localAppData
-        self.setWindowIcon(QIcon(f"{localAppData}\\icons\\window.png"))
+        self.setWindowIcon(QIcon("icons/window.png"))
         self.settings = {
             "showHidden": False,
             "username": None,
@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
         self.sidebar = Sidebar(self)
         self.menubar = Menubar(self)
         self.notification = Notification(
-            app_id="Cipher", title="Cipher", icon=f"{localAppData}\\icons\\window.png"
+            app_id="Cipher", title="Cipher", icon=f"icons/window.png"
         )
 
         self._vsplit = VSplitter(self)
@@ -120,7 +120,7 @@ class MainWindow(QMainWindow):
 
         self._hsplit.setSizes([width, originalWidth - width])
 
-        styles = f"{localAppData}\\styles\\styles.qss"
+        styles = f"{localAppData}/styles/styles.qss"
         self._styles = QFileSystemWatcher(self)
         self._styles.addPath(styles)
         self._styles.fileChanged.connect(
@@ -128,12 +128,12 @@ class MainWindow(QMainWindow):
         )
         self.setStyleSheet(open(styles).read())
         self._shortcut = QFileSystemWatcher(
-            [f"{self.localAppData}\\shortcuts.json"], self
+            [f"{self.localAppData}/shortcuts.json"], self
         )
         self._shortcut.fileChanged.connect(self.updateShortcuts)
 
-        sys.path.insert(0, f"{localAppData}\\include")
-        sys.path.insert(0, f"{localAppData}\\site-packages")
+        sys.path.insert(0, f"{localAppData}/include")
+        sys.path.insert(0, f"{localAppData}/site-packages")
 
         self.tabView.setupTabs()
         self.tabView.currentChanged.connect(self.widgetChanged)
@@ -177,10 +177,12 @@ class MainWindow(QMainWindow):
         """Gets the list of extension folder and starts a thread to activate each extension.
         Meant to be used by :class:`MainWindow`
         """
-        extensions = f"{localAppData}\\include\\extension"
+        extensions = f"{localAppData}/include/extension"
         for folder in os.listdir(extensions):
-            path = Path(f"{extensions}\\{folder}").absolute()
-            settings = Path(f"{path}\\settings.json").absolute()
+            path = Path(f"{extensions}/{folder}").absolute()
+            if path.is_file():
+                continue
+            settings = Path(f"{path}/settings.json").absolute()
             self._threadPool.start(Runnable(self.addExtension, path, settings))
 
     def addExtension(self, path: Path, settings: Path) -> None:
@@ -203,9 +205,9 @@ class MainWindow(QMainWindow):
         if not (name := data.get("name")):
             return
 
-        icon = f"{path}\\icon.ico"
+        icon = f"{path}/icon.ico"
         if not Path(icon).exists():
-            icon = f"{self.localAppData}\\icons\\blank.ico"
+            icon = "icons/blank.ico"
 
         if data.get("enabled"):
             try:
@@ -268,7 +270,7 @@ class MainWindow(QMainWindow):
 
     def updateShortcuts(self) -> None:
         """Updates the shortcuts when `shortcuts.json` updates"""
-        with open(f"{self.localAppData}\\shortcuts.json") as f:
+        with open(f"{self.localAppData}/shortcuts.json") as f:
             shortcuts = json.load(f)
         for menu in self.menubar._menus:
             for action in menu.actions():

@@ -39,9 +39,7 @@ class Sidebar(QFrame):
 
     def createFolder(self) -> None:
         folder = QLabel()
-        folder.setPixmap(
-            QPixmap(f"{self._window.localAppData}\\icons\\folder.svg").scaled(29, 29)
-        )
+        folder.setPixmap(QPixmap("icons/folder.svg").scaled(29, 29))
         folder.setContentsMargins(3, 0, 0, 4)
         folder.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)
         folder.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
@@ -56,11 +54,7 @@ class Sidebar(QFrame):
 
     def createExtensionList(self) -> None:
         extensions = QLabel()
-        extensions.setPixmap(
-            QPixmap(f"{self._window.localAppData}\\icons\\extensions.svg").scaled(
-                29, 29
-            )
-        )
+        extensions.setPixmap(QPixmap("icons/extensions.svg").scaled(29, 29))
         extensions.setContentsMargins(2, 0, 0, 0)
         extensions.enterEvent = lambda _: self.setCursor(
             Qt.CursorShape.PointingHandCursor
@@ -79,9 +73,7 @@ class Sidebar(QFrame):
 
     def createSearch(self) -> None:
         search = QLabel()
-        search.setPixmap(
-            QPixmap(f"{self._window.localAppData}\\icons\\search.svg").scaled(26, 26)
-        )
+        search.setPixmap(QPixmap("icons/search.svg").scaled(26, 26))
         search.setContentsMargins(4, 5, 0, 0)
         search.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)
         search.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
@@ -98,9 +90,7 @@ class Sidebar(QFrame):
 
     def createGitList(self) -> None:
         git = QLabel()
-        git.setPixmap(
-            QPixmap(f"{self._window.localAppData}\\icons\\git.svg").scaled(32, 32)
-        )
+        git.setPixmap(QPixmap("icons/git.svg").scaled(32, 32))
         git.setContentsMargins(1, 4, 0, 0)
         git.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)
         git.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
@@ -115,9 +105,7 @@ class Sidebar(QFrame):
 
     def createSettings(self) -> None:
         settings = QLabel()
-        settings.setPixmap(
-            QPixmap(f"{self._window.localAppData}\\icons\\settings.svg").scaled(31, 31)
-        )
+        settings.setPixmap(QPixmap("icons/settings.svg").scaled(31, 31))
         settings.setContentsMargins(2, 5, 0, 0)
         settings.enterEvent = lambda _: self.setCursor(
             Qt.CursorShape.PointingHandCursor

@@ -57,7 +57,7 @@ class GitModel(QStandardItemModel):
     def init(self) -> None:
         if (
             not self._window.currentFolder
-            or Path(f"{self._window.currentFolder}\\.git").exists()
+            or Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         process = QProcess(self)
@@ -74,7 +74,7 @@ class GitModel(QStandardItemModel):
             not username
             or not password
             or not self._window.currentFolder
-            or Path(f"{self._window.currentFolder}\\.git").exists()
+            or Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         url, ok = QInputDialog.getText(
@@ -98,7 +98,7 @@ class GitModel(QStandardItemModel):
     def branch(self) -> None:
         if (
             not self._window.currentFolder
-            or not Path(f"{self._window.currentFolder}\\.git").exists()
+            or not Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         branch, ok = QInputDialog.getText(
@@ -121,7 +121,7 @@ class GitModel(QStandardItemModel):
     def checkout(self) -> None:
         if (
             not self._window.currentFolder
-            or not Path(f"{self._window.currentFolder}\\.git").exists()
+            or not Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         run = subprocess.run(
@@ -178,7 +178,7 @@ class GitModel(QStandardItemModel):
             self.appendRow(_changes)
 
     def status(self) -> None:
-        if not Path(f"{self._window.currentFolder}\\.git").exists():
+        if not Path(f"{self._window.currentFolder}/.git").exists():
             return self.clear()
         process = QProcess(self)
         process.setWorkingDirectory(str(self._window.currentFolder))
@@ -195,7 +195,7 @@ class GitModel(QStandardItemModel):
     def add(self, path: Optional[QModelIndex] = None) -> None:
         if (
             not self._window.currentFolder
-            or not Path(f"{self._window.currentFolder}\\.git").exists()
+            or not Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         if not path:
@@ -226,7 +226,7 @@ class GitModel(QStandardItemModel):
     def remove(self, path: Optional[QModelIndex] = None) -> None:
         if (
             not self._window.currentFolder
-            or not Path(f"{self._window.currentFolder}\\.git").exists()
+            or not Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         if not path:
@@ -257,7 +257,7 @@ class GitModel(QStandardItemModel):
     def commit(self):
         if (
             not self._window.currentFolder
-            or not Path(f"{self._window.currentFolder}\\.git").exists()
+            or not Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         message, ok = QInputDialog.getText(
@@ -284,7 +284,7 @@ class GitModel(QStandardItemModel):
     def reset(self) -> None:
         if (
             not self._window.currentFolder
-            or not Path(f"{self._window.currentFolder}\\.git").exists()
+            or not Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         parameters, ok = QInputDialog.getText(
@@ -316,7 +316,7 @@ class GitModel(QStandardItemModel):
             not username
             or not password
             or not self._window.currentFolder
-            or not Path(f"{self._window.currentFolder}\\.git").exists()
+            or not Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         process = QProcess(self)
@@ -340,7 +340,7 @@ class GitModel(QStandardItemModel):
             not username
             or not password
             or not self._window.currentFolder
-            or not Path(f"{self._window.currentFolder}\\.git").exists()
+            or not Path(f"{self._window.currentFolder}/.git").exists()
         ):
             return
         process = QProcess(self)

@@ -6,7 +6,7 @@ authors = ["Srpboyz <srpboyz69@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.9.2"
+python = "^3.9"
 pyqt6 = "6.4.1"
 pyqt6-qscintilla = "^2.14.1"
 winotify = "1.1.0"
