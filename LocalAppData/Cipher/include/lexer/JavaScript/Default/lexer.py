@@ -70,5 +70,5 @@ class JSLexer(QsciLexerJavaScript):
         
 
 def getStyling() -> Dict[str, str]:
-    with open(f"{Path(__file__).absolute().parent}\\syntax.json") as f:
+    with open(f"{Path(__file__).absolute().parent}/syntax.json") as f:
         return json.load(f)

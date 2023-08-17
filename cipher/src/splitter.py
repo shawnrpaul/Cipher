@@ -10,7 +10,7 @@ from .filemanager import FileManager
 if TYPE_CHECKING:
     from .window import MainWindow
 
-__all__ = ("VSplitter",)
+__all__ = ("VSplitter", "HSplitter")
 
 
 class Explorer(QFrame):
@@ -34,6 +34,14 @@ class Explorer(QFrame):
         self.setLayout(layout)
 
 
+class HSplitter(QSplitter):
+    def __init__(self, window: MainWindow) -> None:
+        super().__init__(window)
+        self._window = window
+        self.setOrientation(Qt.Orientation.Horizontal)
+        self.setObjectName("HSplitter")
+        self.setMouseTracking(True)
+
 class VSplitter(QSplitter):
     def __init__(self, window: MainWindow) -> None:
         super().__init__(window)
@@ -41,6 +49,7 @@ class VSplitter(QSplitter):
         self.setObjectName("VSplit")
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(Explorer(window.fileManager))
+        self.setMouseTracking(True)
 
     def getPaths(self) -> list[Path]:
         return [

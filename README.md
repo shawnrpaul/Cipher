@@ -2,7 +2,7 @@
 
 [![Releases](https://custom-icon-badges.demolab.com/github/v/release/Srpboyz/Cipher?display_name=tag&color=228BE6)](https://github.com/Srpboyz/Cipher/releases)
 
-A text editor written using PyQt6, QScintilla, and Python 3.9.
+A text editor written using PyQt6 and QScintilla.
 
 ![image](https://i.imgur.com/YhpugER.png)
 
@@ -15,4 +15,4 @@ A text editor written using PyQt6, QScintilla, and Python 3.9.
 - Custom Extensions
 - Custom styling
 
- **Note**: Only for Windows
+ **Note**: No Mac Support

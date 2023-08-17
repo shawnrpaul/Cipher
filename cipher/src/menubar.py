@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, List
 
@@ -12,7 +13,6 @@ from PyQt6.QtWidgets import QMenuBar, QFileDialog
 from .thread import Thread
 
 if TYPE_CHECKING:
-    from .editor import Editor
     from .window import MainWindow
 
 __all__ = ("Menubar",)
@@ -193,13 +193,14 @@ class Menubar(QMenuBar):
         view = self.addMenu("View")
         self._menus.append(view)
 
-        run = view.addAction("Run")
-        run.setShortcut(shortcuts.get("Run", ""))
-        run.triggered.connect(self.run)
+        if sys.platform == "win32":
+            run = view.addAction("Run")
+            run.setShortcut(shortcuts.get("Run", ""))
+            run.triggered.connect(self.run)
 
-        terminal = view.addAction("Terminal")
-        terminal.setShortcut(shortcuts.get("Terminal", ""))
-        terminal.triggered.connect(self.terminal)
+            terminal = view.addAction("Terminal")
+            terminal.setShortcut(shortcuts.get("Terminal", ""))
+            terminal.triggered.connect(self.terminal)
 
         explorer = view.addAction("Explorer")
         explorer.setShortcut(shortcuts.get("Explorer", ""))

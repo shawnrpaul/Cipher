@@ -11,10 +11,9 @@ from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
-from PyQt6.QtCore import QFileSystemWatcher, Qt, QThreadPool, pyqtSignal
+from PyQt6.QtCore import QFileSystemWatcher, QThreadPool, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
-from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar, QSplitter
-from winotify import Notification
+from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar
 
 from .body import *
 from .extensionlist import *
@@ -33,9 +32,15 @@ if TYPE_CHECKING:
     from ..ext.event import Event
     from .editor import Editor
 
+if sys.platform == "win32":
+    from winotify import Notification
+
 __all__ = ("run",)
 
-localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
+if sys.platform == "win32":
+    localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
+elif sys.platform == "linux":
+    localAppData = os.path.join(os.getenv("HOME"), "Cipher")
 # localAppData = os.path.join(
 #     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
 #     "LocalAppData",
@@ -91,8 +96,7 @@ class MainWindow(QMainWindow):
             "search-exclude": [],
         }
 
-        self._hsplit = QSplitter(Qt.Orientation.Horizontal)
-        self._hsplit.setObjectName("HSplit")
+        self._hsplit = HSplitter(self)
         self.tabView = TabWidget(self)
         self.fileManager = FileManager(self)
         self.extensionList = ExtensionList(self)
@@ -100,9 +104,10 @@ class MainWindow(QMainWindow):
         self.search = GlobalSearch(self)
         self.sidebar = Sidebar(self)
         self.menubar = Menubar(self)
-        self.notification = Notification(
-            app_id="Cipher", title="Cipher", icon=f"icons/window.png"
-        )
+        if sys.platform == "win32":
+            self.notification = Notification(
+                app_id="Cipher", title="Cipher", icon=f"icons/window.png"
+            )
 
         self._vsplit = VSplitter(self)
         self._hsplit.addWidget(self._vsplit)

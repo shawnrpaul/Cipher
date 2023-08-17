@@ -7,10 +7,7 @@ from copy import copy
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
- 
-import win32api
-import win32clipboard
-import win32con
+
 from psutil import process_iter
 from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
 from PyQt6.QtGui import QFileSystemModel
@@ -22,9 +19,14 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QTreeView,
 )
-
+ 
 from .editor import Editor
 from .thread import Thread
+
+if sys.platform == "win32":
+    import win32api
+    import win32clipboard
+    import win32con
 
 if TYPE_CHECKING:
     from .window import MainWindow
@@ -130,9 +132,7 @@ class FileManager(QTreeView):
             The path of global or workspace settings
         """
         return (
-            Path(
-                f"{self.__systemModel.currentFolder}/.cipher/settings.json"
-            ).absolute()
+            Path(f"{self.__systemModel.currentFolder}/.cipher/settings.json").absolute()
             if self.__systemModel.currentFolder
             else Path(f"{self._window.localAppData}/settings.json").absolute()
         )
@@ -168,8 +168,11 @@ class FileManager(QTreeView):
         delete = self.menu.addAction("Delete")
         delete.triggered.connect(self.delete)
         self.menu.addSeparator()
-        copyPath = self.menu.addAction("Copy Path")
-        copyPath.triggered.connect(self.copyPath)
+
+        if sys.platform == "win32":
+            copyPath = self.menu.addAction("Copy Path")
+            copyPath.triggered.connect(self.copyPath)
+
         showInFolder = self.menu.addAction("Show in Folder")
         showInFolder.triggered.connect(self.showInFolder)
         hide = self.menu.addAction("Hide")
@@ -556,8 +559,8 @@ class FileManager(QTreeView):
             path.mkdir()
             if sys.platform == "win32":
                 win32api.SetFileAttributes(str(path), win32con.FILE_ATTRIBUTE_HIDDEN)
-            with open(f"{path}/run.bat", "w") as f:
-                f.write("@echo off\n")
+                with open(f"{path}/run.bat", "w") as f:
+                    f.write("@echo off\n")
 
         path = Path(f"{path}/settings.json").absolute()
         if not path.exists():
