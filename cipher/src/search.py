@@ -120,7 +120,7 @@ class GlobalSearchModel(QStandardItemModel):
             if path.is_file():
                 if pattern and path.suffix not in pattern:
                     continue
-                editor = self._window.tabView.getEditorTab(path)
+                editor = self._window.tabView.getTab(path)
                 try:
                     found = tuple(
                         (
@@ -167,7 +167,7 @@ class GlobalSearchModel(QStandardItemModel):
             if path.is_file():
                 if pattern and path.suffix not in pattern:
                     continue
-                editor = self._window.tabView.getEditorTab(path)
+                editor = self._window.tabView.getTab(path)
                 try:
                     found = tuple(
                         (
@@ -212,8 +212,8 @@ class GlobalSearchView(QTreeView):
     def view(self, index: QModelIndex):
         item = self.__searchModel.itemFromIndex(index)
         if isinstance(item, GlobalSearchMatch):
-            if not (editor := self._window.tabView.getEditorTab(item.path)):
-                editor = self._window.tabView.setEditorTab(item.path)
+            if not (editor := self._window.tabView.getTab(item.path)):
+                editor = self._window.tabView.createTab(item.path)
             for i, match in enumerate(
                 re.compile(rf"{item.text()}", item.cs).finditer(editor.text())
             ):

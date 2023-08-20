@@ -141,7 +141,7 @@ class Menubar(QMenuBar):
         styles = editMenu.addAction("Styles")
         styles.setShortcut(shortcuts.get("Styles", ""))
         styles.triggered.connect(
-            lambda: self._window.tabView.setEditorTab(
+            lambda: self._window.tabView.createTab(
                 Path(f"{self._window.localAppData}/styles/styles.qss")
             )
         )
@@ -149,7 +149,7 @@ class Menubar(QMenuBar):
         shortcut = editMenu.addAction("Shortcuts")
         shortcut.setShortcut(shortcuts.get("Shortcuts", ""))
         shortcut.triggered.connect(
-            lambda: self._window.tabView.setEditorTab(
+            lambda: self._window.tabView.createTab(
                 Path(f"{self._window.localAppData}/shortcuts.json")
             )
         )
@@ -168,7 +168,7 @@ class Menubar(QMenuBar):
 
     def editGlobalSettings(self) -> None:
         """Opens the global settings as a tab to edit"""
-        self._window.tabView.setEditorTab(
+        self._window.tabView.createTab(
             Path(f"{self._window.localAppData}/settings.json")
         )
 
@@ -177,7 +177,7 @@ class Menubar(QMenuBar):
         If a workspace isn't opened, the global settings will open instead"""
         if not self._window.currentFolder:
             return self.editGlobalSettings()
-        self._window.tabView.setEditorTab(
+        self._window.tabView.createTab(
             Path(f"{self._window.currentFolder}/.cipher/settings.json")
         )
 
@@ -186,7 +186,7 @@ class Menubar(QMenuBar):
         if not self._window.currentFolder:
             return
         path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
-        self._window.tabView.setEditorTab(path)
+        self._window.tabView.createTab(path)
 
     def createViewMenu(self, shortcuts: dict[str, str]) -> None:
         """Creates the view menu box"""

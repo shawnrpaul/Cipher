@@ -6,10 +6,9 @@ class CPPLexer(QsciLexerCPP):
     def __init__(self, editor) -> None:
         super().__init__(editor)
 
-        self.setFont(QFont("Consolas"))
         self.setPaper(QColor("#1E1E1E"))
         self.setDefaultPaper(QColor("#1E1E1E"))
-        self.setColor(QColor("##D4D4D4"))
+        self.setColor(QColor("#D4D4D4"))
         self.setDefaultColor(QColor("#D4D4D4"))
 
         self.setColor(QColor("#C586C0"), self.PreProcessor)
@@ -57,6 +56,9 @@ class CPPLexer(QsciLexerCPP):
         self.setColor(QColor("#6A9955"), self.InactivePreProcessorComment)
         self.setColor(QColor("#6A9955"), self.PreProcessorCommentLineDoc)
         self.setColor(QColor("#6A9955"), self.InactivePreProcessorCommentLineDoc)
+
+        self.setDefaultFont(QFont("Consolas"))
+        self.setFont(QFont("Consolas"))
 
         editor.setMarginsBackgroundColor(QColor("#1E1E1E"))
         editor.setMarginsForegroundColor(QColor("#FFFFFF"))

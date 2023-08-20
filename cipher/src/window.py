@@ -22,18 +22,18 @@ from .git import *
 from .menubar import *
 from .search import *
 from .sidebar import *
-from .tab import *
+from .tabview import *
 from .thread import *
 from .splitter import *
 from cipher.ext import Extension
 from cipher.ext.exceptions import EventTypeError
 
+if sys.platform == "win32":
+    from winotify import Notification
+
 if TYPE_CHECKING:
     from ..ext.event import Event
     from .editor import Editor
-
-if sys.platform == "win32":
-    from winotify import Notification
 
 __all__ = ("run",)
 
@@ -96,7 +96,6 @@ class MainWindow(QMainWindow):
             "search-exclude": [],
         }
 
-        self._hsplit = HSplitter(self)
         self.tabView = TabWidget(self)
         self.fileManager = FileManager(self)
         self.extensionList = ExtensionList(self)
@@ -109,6 +108,7 @@ class MainWindow(QMainWindow):
                 app_id="Cipher", title="Cipher", icon=f"icons/window.png"
             )
 
+        self._hsplit = HSplitter(self)
         self._vsplit = VSplitter(self)
         self._hsplit.addWidget(self._vsplit)
         self._hsplit.addWidget(self.tabView)
@@ -223,8 +223,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.error(f"Failed to add Extension - {e.__class__.__name__}: {e}")
                 name = f"{name} (Disabled)"
-                self.extensionList.addItem(ExtensionItem(name, icon, settings))
-                return
+                return self.extensionList.addItem(ExtensionItem(name, icon, settings))
             if not isinstance(obj, Extension):
                 return
             self._events["widgetChanged"].extend(

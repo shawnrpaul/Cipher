@@ -118,4 +118,4 @@ class Sidebar(QFrame):
         path = self._window.fileManager.settingsPath
         if not path.exists():
             return
-        self._window.tabView.setEditorTab(path)
+        self._window.tabView.createTab(path)

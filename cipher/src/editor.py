@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from PyQt6.Qsci import QsciAPIs, QsciCommand, QsciLexerCustom, QsciScintilla
-from PyQt6.QtCore import QFileSystemWatcher, Qt
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDropEvent, QFont, QKeyEvent
 from PyQt6.QtWidgets import QFileDialog
 
+from .tab import Tab
 from .search import Search
 from .thread import Thread
 
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 __all__ = ("Editor",)
 
 
-class Editor(QsciScintilla):
+class Editor(QsciScintilla, Tab):
     """The text editor
 
     Parameters
@@ -36,12 +37,8 @@ class Editor(QsciScintilla):
     """
 
     def __init__(self, window: MainWindow, path: Path) -> None:
-        super().__init__()
+        super().__init__(window=window, path=path)
         self.setObjectName(path.name)
-        self._window = window
-        self.path = path
-        self._watcher = QFileSystemWatcher(self)
-        self._watcher.addPath(str(path))
         self._watcher.fileChanged.connect(self.updateText)
         self.setUtf8(True)
         self.zoomOut(2)
@@ -50,7 +47,7 @@ class Editor(QsciScintilla):
         self.setCaretWidth(2)
 
         self._autoCompleter, self._thread = None, None
-        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAll)
+        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsNone)
         self.setAutoCompletionThreshold(1)
         self.setAutoCompletionCaseSensitivity(False)
         self.setAutoCompletionUseSingle(QsciScintilla.AutoCompletionUseSingle.AcusNever)
@@ -123,7 +120,7 @@ class Editor(QsciScintilla):
         """
         urls = e.mimeData().urls()
         if urls and (path := urls[0]).isLocalFile():
-            self._window.tabView.setEditorTab(Path(path.toLocalFile()))
+            self._window.tabView.createTab(Path(path.toLocalFile()))
             return
 
         return super().dropEvent(e)

@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QTreeView,
 )
- 
+
 from .editor import Editor
 from .thread import Thread
 
@@ -152,7 +152,7 @@ class FileManager(QTreeView):
                 return self.expand(index)
             return self.collapse(index)
 
-        return self._window.tabView.setEditorTab(path)
+        return self._window.tabView.createTab(path)
 
     def createContextMenu(self, main: bool) -> None:
         """Creates a context menu when an index was right clicked."""
@@ -292,7 +292,7 @@ class FileManager(QTreeView):
         path = Path(filePath).absolute()
         if not path.is_file():
             return
-        self._window.tabView.setEditorTab(path)
+        self._window.tabView.createTab(path)
 
     def openFilePath(self) -> None:
         """Opens a file with a given file path"""

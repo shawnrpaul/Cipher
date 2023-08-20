@@ -4,7 +4,6 @@ __pycache__
 .vscode
 build
 dist
-*PyInstallerSubmodules.py
-*logs.log
+*.log
 *main.spec
 *QtDesigner.lnk
