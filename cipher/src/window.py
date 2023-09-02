@@ -5,15 +5,13 @@ import json
 import logging
 import os
 import sys
-import traceback
 from importlib import import_module
 from pathlib import Path
-from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type
+from typing import TYPE_CHECKING, Any, Optional
 
 from PyQt6.QtCore import QFileSystemWatcher, QThreadPool, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
-from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar
+from PyQt6.QtWidgets import QMainWindow, QMenuBar
 
 from .body import *
 from .extensionlist import *
@@ -35,7 +33,7 @@ if TYPE_CHECKING:
     from ..ext.event import Event
     from .editor import Editor
 
-__all__ = ("run",)
+__all__ = ("MainWindow",)
 
 if sys.platform == "win32":
     localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
@@ -154,7 +152,7 @@ class MainWindow(QMainWindow):
         self.fileManager.onSave.connect(self.onSave)
 
         self._loop = asyncio.get_event_loop()
-        Thread(self, self.addExtensions).start()
+        self.addExtensions()
         self.showMaximized()
 
     @property
@@ -188,7 +186,9 @@ class MainWindow(QMainWindow):
             if path.is_file():
                 continue
             settings = Path(f"{path}/settings.json").absolute()
-            self._threadPool.start(Runnable(self.addExtension, path, settings))
+            thread = Thread(self, self.addExtension, path, settings)
+            thread.finished.connect(lambda ext: ext.initUi() if ext else ...)
+            thread.start()
 
     def addExtension(self, path: Path, settings: Path) -> None:
         """Adds the :class:`Extension`
@@ -214,35 +214,35 @@ class MainWindow(QMainWindow):
         if not Path(icon).exists():
             icon = "icons/blank.ico"
 
-        if data.get("enabled"):
-            try:
-                mod = import_module(f"extension.{path.name}.run")
-                obj = mod.run(window=self)
-            except EventTypeError:
-                return
-            except Exception as e:
-                logger.error(f"Failed to add Extension - {e.__class__.__name__}: {e}")
-                name = f"{name} (Disabled)"
-                return self.extensionList.addItem(ExtensionItem(name, icon, settings))
-            if not isinstance(obj, Extension):
-                return
-            self._events["widgetChanged"].extend(
-                obj.__events__.get("widgetChanged", [])
-            )
-            self._events["onWorkspaceChanged"].extend(
-                obj.__events__.get("onWorkspaceChanged", [])
-            )
-            self._events["onTabOpened"].extend(obj.__events__.get("onTabOpened", []))
-            self._events["onSave"].extend(obj.__events__.get("onSave", []))
-            self._events["onClose"].extend(obj.__events__.get("onClose", []))
-            onReady = obj.__events__.get("onReady", [])
-            self.extensionList.addItem(ExtensionItem(name, icon, settings))
-        else:
+        if not data.get("enabled"):
             name = f"{name} (Disabled)"
-            self.extensionList.addItem(ExtensionItem(name, icon, settings))
+            return self.extensionList.addItem(ExtensionItem(name, icon, settings))
+
+        try:
+            mod = import_module(f"extension.{path.name}.run")
+            obj = mod.run(window=self)
+        except EventTypeError:
+            return
+        except Exception as e:
+            logger.error(f"Failed to add Extension - {e.__class__.__name__}: {e}")
+            name = f"{name} (Disabled)"
+            return self.extensionList.addItem(ExtensionItem(name, icon, settings))
+        if not isinstance(obj, Extension):
+            return
+        self._events["widgetChanged"].extend(obj.__events__.get("widgetChanged", []))
+        self._events["onWorkspaceChanged"].extend(
+            obj.__events__.get("onWorkspaceChanged", [])
+        )
+        self._events["onTabOpened"].extend(obj.__events__.get("onTabOpened", []))
+        self._events["onSave"].extend(obj.__events__.get("onSave", []))
+        self._events["onClose"].extend(obj.__events__.get("onClose", []))
+        onReady = obj.__events__.get("onReady", [])
+        self.extensionList.addItem(ExtensionItem(name, icon, settings))
 
         for func in onReady:
             self._threadPool.start(Runnable(func, self.currentFolder, self.currentFile))
+
+        return obj
 
     def onWorkspaceChanged(self) -> None:
         """An event triggered when `currentFolder` is changed"""
@@ -281,38 +281,3 @@ class MainWindow(QMainWindow):
                 if not (name := action.text()):
                     continue
                 action.setShortcut(shortcuts.get(name, ""))
-
-
-def excepthook(
-    func: Callable[[Type[BaseException], Optional[BaseException], TracebackType], Any],
-    app: QApplication,
-) -> Any:
-    def log(
-        exc_type: Type[BaseException],
-        exc_value: Optional[BaseException],
-        exc_tb: TracebackType,
-    ) -> Any:
-        tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
-        cwd = Path(os.path.dirname(os.path.dirname(__file__))).absolute()
-        try:
-            for frame in tb.stack[::-1]:
-                file = Path(frame.filename).absolute()
-                if file.is_relative_to(cwd):
-                    line = frame.lineno
-                    break
-            logger.error(f"{file.name}({line}) - {exc_type.__name__}: {exc_value}")
-        except Exception:
-            logger.error(f"{exc_type.__name__}: {exc_value}")
-        app.quit()
-        return func(exc_type, exc_value, exc_tb)
-
-    return log
-
-
-def run() -> None:
-    app = QApplication([])
-    sys.excepthook = excepthook(sys.excepthook, app)
-    window = MainWindow()
-    app.aboutToQuit.connect(window.close)
-    app.aboutToQuit.connect(window.fileManager.saveSettings)
-    app.exec()

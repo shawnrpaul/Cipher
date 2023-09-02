@@ -212,7 +212,7 @@ class Menubar(QMenuBar):
 
     def run(self) -> None:
         """Starts the thread to run the command"""
-        if not self._window.currentFile or not self._window.currentFolder:
+        if not self._window.currentFolder:
             return
         path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
         path.write_text("@echo off\n") if not path.exists() else ...

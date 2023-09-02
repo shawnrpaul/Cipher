@@ -33,3 +33,6 @@ class Extension(metaclass=ExtensionMeta):
                 event._instance = self
 
         return self
+
+    def initUi(self) -> None:
+        ...

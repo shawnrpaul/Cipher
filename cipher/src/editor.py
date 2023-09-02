@@ -53,6 +53,7 @@ class Editor(QsciScintilla, Tab):
         self.setAutoCompletionUseSingle(QsciScintilla.AutoCompletionUseSingle.AcusNever)
         self.cursorPositionChanged.connect(self.runAutoCompleter)
 
+        self.setAnnotationDisplay(QsciScintilla.AnnotationDisplay.AnnotationBoxed)
         self.setBraceMatching(QsciScintilla.BraceMatch.SloppyBraceMatch)
         self.setIndentationGuides(True)
         self.setTabWidth(4)
