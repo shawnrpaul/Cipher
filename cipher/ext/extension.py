@@ -1,4 +1,6 @@
-from typing import Dict, List
+from typing import Any, Dict, List
+
+from PyQt6.QtCore import QObject, pyqtSignal
 
 from .event import Event
 
@@ -21,10 +23,13 @@ class ExtensionMeta(type):
         return self
 
 
-class Extension(metaclass=ExtensionMeta):
-    """The extension class that will be edited. All extensions inherit from this object."""
+class ExtensionCore(type(QObject), ExtensionMeta):
+    ...
 
-    __events__: Dict[str, List[Event]]
+
+class Extension(QObject, metaclass=ExtensionCore):
+    __events__: Dict[str, List[Event]] = {}
+    ready = pyqtSignal()
 
     def __new__(cls, *args, **kwargs):
         self = super(Extension, cls).__new__(cls)
@@ -34,5 +39,10 @@ class Extension(metaclass=ExtensionMeta):
 
         return self
 
-    def initUi(self) -> None:
-        ...
+    def __init__(self, parent: QObject | None = None) -> None:
+        super().__init__(parent=parent)
+        self.isReady = False
+
+    def prepare(self):
+        self.isReady = True
+        self.ready.emit()

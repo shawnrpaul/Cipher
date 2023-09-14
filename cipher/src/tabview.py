@@ -18,10 +18,10 @@ from .image import createImage
 if TYPE_CHECKING:
     from .window import MainWindow
 
-__all__ = ("TabWidget",)
+__all__ = ("TabView",)
 
 
-class TabWidget(QTabWidget):
+class TabView(QTabWidget):
     """The widget that holds all tabs
 
     Parameters

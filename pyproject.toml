@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cipher"
-version = "1.1.0"
+version = "1.1.1"
 description = "A text editor made using PyQt6"
 authors = ["Srpboyz <srpboyz69@gmail.com>"]
 readme = "README.md"
@@ -11,7 +11,6 @@ pyqt6 = "6.4.1"
 pyqt6-qscintilla = "^2.14.1"
 psutil = "5.9.4"
 pywin32 = { version = "305", platform = "windows" }
-winotify = { version = "1.1.0", platform = "windows" }
 
 [build-system]
 requires = ["poetry-core"]

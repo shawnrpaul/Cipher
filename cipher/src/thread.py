@@ -19,14 +19,14 @@ class Worker(QObject):
     def run(self) -> None:
         try:
             ret = self.func(*self.args, **self.kwargs)
-        except Exception as e:
+        except Exception:
             ret = None
         self.finished.emit(ret)
 
 
 class Thread(QThread):
     finished = pyqtSignal(object)
-    
+
     def __init__(self, parent, func: Callable[..., Any], *args, **kwargs) -> None:
         super().__init__(parent)
         self.worker = Worker(func, *args, **kwargs)

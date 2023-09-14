@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QMenu
+from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QMessageBox
 
 if TYPE_CHECKING:
     from .window import MainWindow
@@ -18,10 +18,13 @@ __all__ = ("ExtensionItem", "ExtensionList")
 class ExtensionItem(QListWidgetItem):
     __slots__ = ("name", "path")
 
-    def __init__(self, name: str, icon: str, path: Path) -> None:
-        super().__init__(QIcon(icon), name)
+    def __init__(self, name: str, icon: str, path: Path, enabled: bool = False) -> None:
+        super().__init__()
         self.name = name
         self.path = path
+
+        self.setIcon(QIcon(icon))
+        self.setText(f"{name} (Loading)" if enabled else f"{name} (Disabled)")
 
     def __str__(self) -> str:
         return self.name
@@ -55,6 +58,10 @@ class ExtensionList(QListWidget):
             lambda pos: self.menu.exec(self.viewport().mapToGlobal(pos))
         )
 
+    @property
+    def window(self) -> MainWindow:
+        return self._window
+
     def createContextMenu(self):
         self.menu = QMenu(self._window)
         self.menu.setObjectName("ExtensionContextMenu")
@@ -74,3 +81,15 @@ class ExtensionList(QListWidget):
         with open(index.path, "w") as f:
             data["enabled"] = not data["enabled"]
             json.dump(data, f, indent=4)
+
+        if data["enabled"]:
+            index.setText(f"{index.name} (Reload Required)")
+            box = QMessageBox(self)
+            box.setWindowTitle("Extension")
+            box.setText(
+                "You need to reload the window to reload the extension. Continue?"
+            )
+        else:
+            self.window.removeExtension(index.name)
+            index.setText(f"{index.name} (Disabled)")
+            box.exec()

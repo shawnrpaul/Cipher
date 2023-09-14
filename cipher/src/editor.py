@@ -5,8 +5,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Union
 
-from PyQt6.Qsci import QsciAPIs, QsciCommand, QsciLexerCustom, QsciScintilla
 from PyQt6.QtCore import Qt
+from PyQt6.Qsci import QsciAPIs, QsciCommand, QsciLexerCustom, QsciScintilla
 from PyQt6.QtGui import QDropEvent, QFont, QKeyEvent
 from PyQt6.QtWidgets import QFileDialog
 

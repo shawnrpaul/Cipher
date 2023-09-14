@@ -12,7 +12,7 @@ A text editor written using PyQt6 and QScintilla.
 - Folder/File Hiding
 - Search
 - Git (Work in Progress)
-- Send Notifications (Windows only)
+- Send Notifications
 - Custom Extensions
 - Custom styling
 

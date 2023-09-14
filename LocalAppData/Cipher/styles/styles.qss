@@ -156,23 +156,23 @@ Git > GitView::item::selected {
     border: none;
 }
 
-TabWidget > QTabBar::tab::selected {
+TabView > QTabBar::tab::selected {
     border-style: none;
     background-color: #252526;
     color: #FFFFFF;
 }
-TabWidget {
+TabView {
     background-color: #252526;
     border: none;
 }
 
-TabWidget > QTabBar {
+TabView > QTabBar {
     background-color: #252526;
     color: #909685;
     border: none;
 }
 
-TabWidget > QTabBar::tab {
+TabView > QTabBar::tab {
     background-color: #434343;
     border: none;
     color: #AFAFAF;

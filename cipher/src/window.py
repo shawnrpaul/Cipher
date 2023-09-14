@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from PyQt6.QtCore import QFileSystemWatcher, QThreadPool, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
-from PyQt6.QtWidgets import QMainWindow, QMenuBar
+from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 
 from .body import *
 from .extensionlist import *
@@ -21,13 +21,10 @@ from .menubar import *
 from .search import *
 from .sidebar import *
 from .tabview import *
-from .thread import *
 from .splitter import *
+from .thread import Runnable
 from cipher.ext import Extension
 from cipher.ext.exceptions import EventTypeError
-
-if sys.platform == "win32":
-    from winotify import Notification
 
 if TYPE_CHECKING:
     from ..ext.event import Event
@@ -77,6 +74,7 @@ class MainWindow(QMainWindow):
         Sends a windows notification. Meant to be used by :class:`Extension`
     """
 
+    __extensions__: dict[str, Extension]
     onClose = pyqtSignal()
 
     def __init__(self) -> None:
@@ -94,17 +92,13 @@ class MainWindow(QMainWindow):
             "search-exclude": [],
         }
 
-        self.tabView = TabWidget(self)
+        self.tabView = TabView(self)
         self.fileManager = FileManager(self)
         self.extensionList = ExtensionList(self)
         self.git = Git(self)
         self.search = GlobalSearch(self)
         self.sidebar = Sidebar(self)
         self.menubar = Menubar(self)
-        if sys.platform == "win32":
-            self.notification = Notification(
-                app_id="Cipher", title="Cipher", icon=f"icons/window.png"
-            )
 
         self._hsplit = HSplitter(self)
         self._vsplit = VSplitter(self)
@@ -117,6 +111,9 @@ class MainWindow(QMainWindow):
         body.setLayout()
         self.setMenuBar(self.menubar)
         self.setCentralWidget(body)
+
+        self.systemTray = QSystemTrayIcon(self)
+        self.systemTray.setIcon(QIcon("icons/window.png"))
 
         originalWidth = self.screen().size().width()
         width = int(originalWidth / 5.25)
@@ -165,30 +162,18 @@ class MainWindow(QMainWindow):
         """Returns the current `Editor` tab. Returns `None` if there isn't a current tab."""
         return self.tabView.currentFile
 
-    @property
-    def menuBar(self) -> QMenuBar:
-        """Overrides :class:`QMainWindow` menuBar function to return the :class:`QMenuBar` being used.
-
-        Returns
-        -------
-        QMenuBar
-            The :class:`QMenuBar` used by the editor
-        """
-        return self.menubar
-
     def addExtensions(self) -> None:
         """Gets the list of extension folder and starts a thread to activate each extension.
         Meant to be used by :class:`MainWindow`
         """
+        self.__extensions__ = {}
         extensions = f"{localAppData}/include/extension"
         for folder in os.listdir(extensions):
             path = Path(f"{extensions}/{folder}").absolute()
             if path.is_file():
                 continue
             settings = Path(f"{path}/settings.json").absolute()
-            thread = Thread(self, self.addExtension, path, settings)
-            thread.finished.connect(lambda ext: ext.initUi() if ext else ...)
-            thread.start()
+            self.addExtension(path, settings)
 
     def addExtension(self, path: Path, settings: Path) -> None:
         """Adds the :class:`Extension`
@@ -204,8 +189,11 @@ class MainWindow(QMainWindow):
         """
         if not path.exists() or not settings.exists():
             return
-        with open(settings) as f:
-            data: dict[str, Any] = json.load(f)
+        try:
+            with open(settings) as f:
+                data: dict[str, Any] = json.load(f)
+        except json.JSONDecodeError:
+            return
 
         if not (name := data.get("name")):
             return
@@ -215,34 +203,54 @@ class MainWindow(QMainWindow):
             icon = "icons/blank.ico"
 
         if not data.get("enabled"):
-            name = f"{name} (Disabled)"
             return self.extensionList.addItem(ExtensionItem(name, icon, settings))
 
         try:
             mod = import_module(f"extension.{path.name}.run")
-            obj = mod.run(window=self)
+            ext = mod.run(window=self)
         except EventTypeError:
             return
         except Exception as e:
             logger.error(f"Failed to add Extension - {e.__class__.__name__}: {e}")
             name = f"{name} (Disabled)"
             return self.extensionList.addItem(ExtensionItem(name, icon, settings))
-        if not isinstance(obj, Extension):
+        if not isinstance(ext, Extension):
             return
-        self._events["widgetChanged"].extend(obj.__events__.get("widgetChanged", []))
-        self._events["onWorkspaceChanged"].extend(
-            obj.__events__.get("onWorkspaceChanged", [])
-        )
-        self._events["onTabOpened"].extend(obj.__events__.get("onTabOpened", []))
-        self._events["onSave"].extend(obj.__events__.get("onSave", []))
-        self._events["onClose"].extend(obj.__events__.get("onClose", []))
-        onReady = obj.__events__.get("onReady", [])
-        self.extensionList.addItem(ExtensionItem(name, icon, settings))
 
-        for func in onReady:
-            self._threadPool.start(Runnable(func, self.currentFolder, self.currentFile))
+        item = ExtensionItem(name, icon, settings, True)
+        self.extensionList.addItem(item)
 
-        return obj
+        def onExtReady():
+            item.setText(name)
+            onReady = ext.__events__.get("onReady", [])
+            self._events["widgetChanged"].extend(
+                ext.__events__.get("widgetChanged", [])
+            )
+            self._events["onWorkspaceChanged"].extend(
+                ext.__events__.get("onWorkspaceChanged", [])
+            )
+            self._events["onTabOpened"].extend(ext.__events__.get("onTabOpened", []))
+            self._events["onSave"].extend(ext.__events__.get("onSave", []))
+            self._events["onClose"].extend(ext.__events__.get("onClose", []))
+            for func in onReady:
+                self._threadPool.start(
+                    Runnable(func, self.currentFolder, self.currentFile)
+                )
+
+        onExtReady() if ext.isReady else ext.ready.connect(onExtReady)
+        self.__extensions__[name] = ext
+
+    def removeExtension(self, name: str) -> None:
+        if not (ext := self.__extensions__.pop(name, None)):
+            return
+        for name, events in ext.__events__.items():
+            if not (window_events := self._events.get(name)):
+                continue
+            for event in events:
+                window_events.remove(event)
+
+    def showMessage(self, msg: str) -> None:
+        self.systemTray.showMessage("Cipher", msg=msg, msecs=30_000)
 
     def onWorkspaceChanged(self) -> None:
         """An event triggered when `currentFolder` is changed"""

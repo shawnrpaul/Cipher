@@ -10,3 +10,4 @@ from .git import *
 from .tabview import *
 from .editor import *
 from .image import *
+from .thread import *
