@@ -82,7 +82,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Cipher")
         self._threadPool = QThreadPool.globalInstance()
         self.localAppData = localAppData
-        self.setWindowIcon(QIcon("icons/window.png"))
+        self.setWindowIcon(QIcon(f"{localAppData}/icons/window.png"))
         self.settings = {
             "showHidden": False,
             "username": None,
@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(body)
 
         self.systemTray = QSystemTrayIcon(self)
-        self.systemTray.setIcon(QIcon("icons/window.png"))
+        self.systemTray.setIcon(QIcon(f"{localAppData}/icons/window.png"))
 
         originalWidth = self.screen().size().width()
         width = int(originalWidth / 5.25)
@@ -173,6 +173,8 @@ class MainWindow(QMainWindow):
             if path.is_file():
                 continue
             settings = Path(f"{path}/settings.json").absolute()
+            if not settings.exists():
+                continue
             self.addExtension(path, settings)
 
     def addExtension(self, path: Path, settings: Path) -> None:
@@ -187,8 +189,6 @@ class MainWindow(QMainWindow):
             The path of the extension settings.
             If the extension is disabled in settings, the :class:`Extension` won't be added.
         """
-        if not path.exists() or not settings.exists():
-            return
         try:
             with open(settings) as f:
                 data: dict[str, Any] = json.load(f)
@@ -200,7 +200,7 @@ class MainWindow(QMainWindow):
 
         icon = f"{path}/icon.ico"
         if not Path(icon).exists():
-            icon = "icons/blank.ico"
+            icon = f"{localAppData}/icons/blank.ico"
 
         if not data.get("enabled"):
             return self.extensionList.addItem(ExtensionItem(name, icon, settings))
