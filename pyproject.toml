@@ -10,9 +10,12 @@ python = "^3.9"
 pyqt6 = "6.4.1"
 pyqt6-qscintilla = "^2.14.1"
 psutil = "5.9.4"
-pywin32 = { version = "305", platform = "windows" }
+pywin32 = { version = "305", markers = 'sys_platform == "win32"' }
 filetype = "^1.2.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+cipher = "cipher.__main__:run"
