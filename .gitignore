@@ -4,6 +4,7 @@ __pycache__
 .vscode
 build
 dist
+msi
 *.log
 *main.spec
 *QtDesigner.lnk

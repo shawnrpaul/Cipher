@@ -216,12 +216,17 @@ class Menubar(QMenuBar):
             return
         path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
         path.write_text("@echo off\n") if not path.exists() else ...
-        Thread(
-            self,
-            subprocess.run,
-            ["start", f"{self._window.currentFolder}/.cipher/run.bat"],
+        powershell = f"{os.getenv('AppData')}/Microsoft/Windows/Start Menu/Programs/Windows PowerShell/Windows PowerShell.lnk"
+        subprocess.run(
+            [
+                "start",
+                "/d",
+                str(self._window.currentFolder),
+                powershell,
+                f"{self._window.currentFolder}/.cipher/run.bat",
+            ],
             shell=True,
-        ).start()
+        )
 
     def terminal(self) -> None:
         """Starts the terminal"""
