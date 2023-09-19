@@ -162,9 +162,10 @@ class Menubar(QMenuBar):
         workspaceSettings.setShortcut(shortcuts.get("Workspace Settings", ""))
         workspaceSettings.triggered.connect(self.editWorkspaceSettings)
 
-        editRunFile = editMenu.addAction("Run Settings")
-        editRunFile.setShortcut(shortcuts.get("Run Settings", ""))
-        editRunFile.triggered.connect(self.editRunFile)
+        # if sys.platform == "win32":
+        # editRunFile = editMenu.addAction("Run Settings")
+        # editRunFile.setShortcut(shortcuts.get("Run Settings", ""))
+        # editRunFile.triggered.connect(self.editRunFile)
 
     def editGlobalSettings(self) -> None:
         """Opens the global settings as a tab to edit"""
@@ -193,14 +194,14 @@ class Menubar(QMenuBar):
         view = self.addMenu("View")
         self._menus.append(view)
 
-        if sys.platform == "win32":
-            run = view.addAction("Run")
-            run.setShortcut(shortcuts.get("Run", ""))
-            run.triggered.connect(self.run)
+        # if sys.platform == "win32":
+        # run = view.addAction("Run")
+        # run.setShortcut(shortcuts.get("Run", ""))
+        # run.triggered.connect(self.run)
 
-            terminal = view.addAction("Terminal")
-            terminal.setShortcut(shortcuts.get("Terminal", ""))
-            terminal.triggered.connect(self.terminal)
+        # terminal = view.addAction("Terminal")
+        # terminal.setShortcut(shortcuts.get("Terminal", ""))
+        # terminal.triggered.connect(self.terminal)
 
         explorer = view.addAction("Explorer")
         explorer.setShortcut(shortcuts.get("Explorer", ""))
