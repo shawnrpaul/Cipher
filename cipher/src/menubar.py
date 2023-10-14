@@ -104,7 +104,7 @@ class Menubar(QMenuBar):
         )
         if not folder:
             return
-        self._window._vsplit.addFileManager(Path(folder))
+        self._window.fileSplitter.addFileManager(Path(folder))
 
     def createEditMenu(self, shortcuts: dict[str, str]) -> None:
         """Creates the edit menu box"""
@@ -162,10 +162,10 @@ class Menubar(QMenuBar):
         workspaceSettings.setShortcut(shortcuts.get("Workspace Settings", ""))
         workspaceSettings.triggered.connect(self.editWorkspaceSettings)
 
-        # if sys.platform == "win32":
-        # editRunFile = editMenu.addAction("Run Settings")
-        # editRunFile.setShortcut(shortcuts.get("Run Settings", ""))
-        # editRunFile.triggered.connect(self.editRunFile)
+        if sys.platform == "win32":
+            editRunFile = editMenu.addAction("Run Settings")
+            editRunFile.setShortcut(shortcuts.get("Run Settings", ""))
+            editRunFile.triggered.connect(self.editRunFile)
 
     def editGlobalSettings(self) -> None:
         """Opens the global settings as a tab to edit"""
@@ -194,14 +194,18 @@ class Menubar(QMenuBar):
         view = self.addMenu("View")
         self._menus.append(view)
 
-        # if sys.platform == "win32":
-        # run = view.addAction("Run")
-        # run.setShortcut(shortcuts.get("Run", ""))
-        # run.triggered.connect(self.run)
+        if sys.platform == "win32":
+            run = view.addAction("Run")
+            run.setShortcut(shortcuts.get("Run", ""))
+            run.triggered.connect(lambda: self._window.terminal.run())
 
-        # terminal = view.addAction("Terminal")
-        # terminal.setShortcut(shortcuts.get("Terminal", ""))
-        # terminal.triggered.connect(self.terminal)
+            terminal = view.addAction("Terminal")
+            terminal.setShortcut(shortcuts.get("Terminal", ""))
+            terminal.triggered.connect(
+                lambda: self._window.terminal.show()
+                if self._window.terminal.isHidden()
+                else self._window.terminal.hide()
+            )
 
         explorer = view.addAction("Explorer")
         explorer.setShortcut(shortcuts.get("Explorer", ""))
@@ -229,17 +233,9 @@ class Menubar(QMenuBar):
             shell=True,
         )
 
-    def terminal(self) -> None:
-        """Starts the terminal"""
-        powershell = f"{os.getenv('AppData')}/Microsoft/Windows/Start Menu/Programs/Windows PowerShell/Windows PowerShell.lnk"
-        currentFolder = self._window.currentFolder
-        if not currentFolder:
-            currentFolder = os.getenv("UserProfile")
-        subprocess.run(f'start /d "{currentFolder}" "{powershell}"', shell=True)
-
     def explorer(self) -> None:
         """Opens or closes the :class:`sidebar.Explorer`"""
-        widget = self._window._hsplit.widget(0)
+        widget = self._window.hsplit.widget(0)
         widget.setVisible(not widget.isVisible())
 
     def createGitMenu(self) -> None:

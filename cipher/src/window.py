@@ -22,6 +22,7 @@ from .search import *
 from .sidebar import *
 from .tabview import *
 from .splitter import *
+from .terminal import Terminal
 from .thread import Runnable
 from cipher.ext import Extension
 from cipher.ext.exceptions import EventTypeError
@@ -34,13 +35,13 @@ __all__ = ("MainWindow",)
 
 if sys.platform == "win32":
     localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
+    # localAppData = os.path.join(
+    #     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    #     "LocalAppData",
+    #     "Cipher",
+    # )
 elif sys.platform == "linux":
     localAppData = os.path.join(os.getenv("HOME"), "Cipher")
-# localAppData = os.path.join(
-#     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-#     "LocalAppData",
-#     "Cipher",
-# )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 format = logging.Formatter("%(levelname)s:%(asctime)s: %(message)s")
@@ -99,15 +100,19 @@ class MainWindow(QMainWindow):
         self.search = GlobalSearch(self)
         self.sidebar = Sidebar(self)
         self.menubar = Menubar(self)
+        self.terminal = Terminal(self)
 
-        self._hsplit = HSplitter(self)
-        self._vsplit = VSplitter(self)
-        self._hsplit.addWidget(self._vsplit)
-        self._hsplit.addWidget(self.tabView)
+        self.hsplit = HSplitter(self)
+        self.fileSplitter = FileManagerSplitter(self)
+        self.vsplit = VSplitter(self)
+        self.vsplit.addWidget(self.tabView)
+        self.vsplit.addWidget(self.terminal)
+        self.hsplit.addWidget(self.fileSplitter)
+        self.hsplit.addWidget(self.vsplit)
 
         body = Body(self)
         body._layout.addWidget(self.sidebar)
-        body._layout.addWidget(self._hsplit)
+        body._layout.addWidget(self.hsplit)
         body.setLayout()
         self.setMenuBar(self.menubar)
         self.setCentralWidget(body)
@@ -118,7 +123,7 @@ class MainWindow(QMainWindow):
         originalWidth = self.screen().size().width()
         width = int(originalWidth / 5.25)
 
-        self._hsplit.setSizes([width, originalWidth - width])
+        self.hsplit.setSizes([width, originalWidth - width])
 
         styles = f"{localAppData}/styles/styles.qss"
         self._styles = QFileSystemWatcher(self)

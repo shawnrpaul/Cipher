@@ -53,10 +53,12 @@ class Sidebar(QFrame):
         self._layout.addWidget(folder)
 
     def folderMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window._hsplit.widget(0), VSplitter):
-            return self._window._vsplit.setVisible(not self._window._vsplit.isVisible())
-        self._window._hsplit.replaceWidget(0, self._window._vsplit)
-        self._window._vsplit.setVisible(True)
+        if isinstance(self._window.hsplit.widget(0), VSplitter):
+            return self._window.fileSplitter.setVisible(
+                not self._window.fileSplitter.isVisible()
+            )
+        self._window.hsplit.replaceWidget(0, self._window.fileSplitter)
+        self._window.fileSplitter.setVisible(True)
 
     def createExtensionList(self) -> None:
         extensions = QLabel()
@@ -72,11 +74,11 @@ class Sidebar(QFrame):
         self._layout.addWidget(extensions)
 
     def extensionListMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window._hsplit.widget(0), ExtensionList):
+        if isinstance(self._window.hsplit.widget(0), ExtensionList):
             return self._window.extensionList.setVisible(
                 not self._window.extensionList.isVisible()
             )
-        self._window._hsplit.replaceWidget(0, self._window.extensionList)
+        self._window.hsplit.replaceWidget(0, self._window.extensionList)
         self._window.extensionList.setVisible(True)
 
     def createSearch(self) -> None:
@@ -91,9 +93,9 @@ class Sidebar(QFrame):
         self._layout.addWidget(search)
 
     def searchMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window._hsplit.widget(0), GlobalSearch):
+        if isinstance(self._window.hsplit.widget(0), GlobalSearch):
             return self._window.search.setVisible(not self._window.search.isVisible())
-        self._window._hsplit.replaceWidget(0, self._window.search)
+        self._window.hsplit.replaceWidget(0, self._window.search)
         self._window.search.textBox.selectAll()
         self._window.search.textBox.setFocus()
         self._window.search.setVisible(True)
@@ -110,9 +112,9 @@ class Sidebar(QFrame):
         self._layout.addWidget(git)
 
     def gitMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window._hsplit.widget(0), Git):
+        if isinstance(self._window.hsplit.widget(0), Git):
             return self._window.git.setVisible(not self._window.git.isVisible())
-        self._window._hsplit.replaceWidget(0, self._window.git)
+        self._window.hsplit.replaceWidget(0, self._window.git)
         self._window.git.setVisible(True)
 
     def createSettings(self) -> None:

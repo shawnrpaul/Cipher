@@ -3,14 +3,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QSplitter, QSizePolicy, QFrame, QVBoxLayout
+from PyQt6.QtWidgets import QSplitter, QSizePolicy, QFrame, QSplitterHandle, QVBoxLayout
 
 from .filemanager import FileManager
 
 if TYPE_CHECKING:
     from .window import MainWindow
 
-__all__ = ("VSplitter", "HSplitter")
+__all__ = ("VSplitter", "HSplitter", "FileManagerSplitter")
 
 
 class Explorer(QFrame):
@@ -34,22 +34,37 @@ class Explorer(QFrame):
         self.setLayout(layout)
 
 
-class HSplitter(QSplitter):
+class BaseSplitter(QSplitter):
     def __init__(self, window: MainWindow) -> None:
         super().__init__(window)
         self._window = window
-        self.setOrientation(Qt.Orientation.Horizontal)
-        self.setObjectName("HSplitter")
         self.setMouseTracking(True)
 
-class VSplitter(QSplitter):
+    def createHandle(self) -> QSplitterHandle:
+        handle = super().createHandle()
+        handle.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        return handle
+
+
+class HSplitter(BaseSplitter):
     def __init__(self, window: MainWindow) -> None:
         super().__init__(window)
-        self._window = window
-        self.setObjectName("VSplit")
+        self.setObjectName("HSplitter")
+        self.setOrientation(Qt.Orientation.Horizontal)
+
+
+class VSplitter(BaseSplitter):
+    def __init__(self, window: MainWindow) -> None:
+        super().__init__(window)
+        self.setObjectName("VSplitter")
         self.setOrientation(Qt.Orientation.Vertical)
+
+
+class FileManagerSplitter(VSplitter):
+    def __init__(self, window: MainWindow) -> None:
+        super().__init__(window)
+        self.setObjectName("FileManagerSplitter")
         self.addWidget(Explorer(window.fileManager))
-        self.setMouseTracking(True)
 
     def getPaths(self) -> list[Path]:
         return [

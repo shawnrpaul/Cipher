@@ -189,7 +189,7 @@ class FileManager(QTreeView):
                 if not folder:
                     return
                 path = Path(folder)
-                if self._window._vsplit.hasPath(path):
+                if self._window.fileSplitter.hasPath(path):
                     return
                 self.setFolder(path)
 
@@ -197,7 +197,7 @@ class FileManager(QTreeView):
             changeDir.triggered.connect(changeFolder)
             remove = self.menu.addAction("Remove from Tree View")
             remove.triggered.connect(
-                lambda: self._window._vsplit.removeFileManager(self.currentFolder)
+                lambda: self._window.fileSplitter.removeFileManager(self.currentFolder)
             )
 
     def filePath(self, index: QModelIndex) -> str:
@@ -402,7 +402,7 @@ class FileManager(QTreeView):
                 self._window.currentFile.path if self._window.currentFile else None
             )
             self.saveWorkspaceFiles(currentFile, copy(self._window.tabView.tabList))
-            self._window._vsplit.clear()
+            self._window.fileSplitter.clear()
             self._workspaceSettings.removePath(str(self.currentFolder))
         self._window.tabView.closeTabs()
         folder = Path(folderPath).absolute() if folderPath else None
@@ -484,7 +484,7 @@ class FileManager(QTreeView):
         if self.currentFolder:
             for path in workSpacesettings.get("additionalPaths", []):
                 if (path := Path(path)).exists():
-                    self._window._vsplit.addFileManager(path)
+                    self._window.fileSplitter.addFileManager(path)
 
     def copyPath(self) -> None:
         """Copies the path of an index"""
@@ -588,7 +588,7 @@ class FileManager(QTreeView):
         settings["currentFile"] = str(currentFile) if currentFile else None
         settings["openedFiles"] = tuple(str(widget.path) for widget in files)
         settings["additionalPaths"] = [
-            str(path) for path in self._window._vsplit.getPaths()
+            str(path) for path in self._window.fileSplitter.getPaths()
         ]
         with open(f"{self.currentFolder}/.cipher/settings.json", "w") as f:
             json.dump(settings, f, indent=4)

@@ -89,7 +89,7 @@ class ExtensionList(QListWidget):
             box.setText(
                 "You need to reload the window to reload the extension. Continue?"
             )
+            box.exec()
         else:
             self.window.removeExtension(index.name)
             index.setText(f"{index.name} (Disabled)")
-            box.exec()

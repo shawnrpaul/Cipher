@@ -33,16 +33,37 @@ HSplitter {
 
 HSplitter::handle {
     background-color: #252526;
-    width: 0px;
+    height: 3px;
+}
+
+HSplitter::handle::hover {
+    background-color: #007ACC;
 }
 
 VSplitter {
-    background-color: #252526;
+    background-color: #1E1E1E;
 }
 
 VSplitter::handle {
     background-color: #1E1E1E;
     height: 3px;
+}
+
+VSplitter::handle::hover {
+    background-color: #007ACC;
+}
+
+FileManagerSplitter {
+    background-color: #252526;
+}
+
+FileManagerSplitter::handle {
+    background-color: #252526;
+    height: 3px;
+}
+
+FileManagerSplitter::handle::hover {
+    background-color: #007ACC;
 }
 
 Sidebar {
@@ -200,6 +221,26 @@ Editor > QListView::item {
 Editor > QListView::item::selected {
     background-color: #3C3C3C;
     color: #FFFFFF;
+    border: none;
+}
+
+Terminal {
+    background-color: #3C3C3C;
+    color: #3C3C3C;
+    border: none;
+}
+
+Terminal > QPlainTextEdit {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    margin: 5px 0 0 0;
+    border: none;
+}
+
+Terminal > QLineEdit {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    margin: 2.5px 0 10px 0;
     border: none;
 }
 
