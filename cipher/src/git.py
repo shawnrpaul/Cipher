@@ -17,8 +17,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from .thread import Thread
-
 if TYPE_CHECKING:
     from .window import MainWindow
 
@@ -43,10 +41,14 @@ class GitModel(QStandardItemModel):
         self.setObjectName("GitModel")
         self._window = window
         self._treeView = parent
-        self._window.fileManager.onWorkspaceChanged.connect(self.status)
+        self._window.fileManager.onWorkspaceChanged.connect(lambda _: self.status())
         self._window.fileManager.folderCreated.connect(lambda _: self.status())
         self._window.fileManager.fileCreated.connect(lambda _: self.status())
         self._window.fileManager.onSave.connect(self.status)
+
+    @property
+    def window(self) -> MainWindow:
+        return self._window
 
     def displayError(self, title: str, msg: str) -> None:
         dialog = QMessageBox(self._window)

@@ -55,6 +55,10 @@ class TabView(QTabWidget):
         )
 
     @property
+    def window(self) -> MainWindow:
+        return self._window
+
+    @property
     def currentFile(self) -> Optional[Tab]:
         """Returns the current :class:`Editor` if opened
 

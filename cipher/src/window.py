@@ -33,13 +33,14 @@ if TYPE_CHECKING:
 
 __all__ = ("MainWindow",)
 
+# localAppData = os.path.join(
+#     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+#     "LocalAppData",
+#     "Cipher",
+# )
 if sys.platform == "win32":
     localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
-    # localAppData = os.path.join(
-    #     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-    #     "LocalAppData",
-    #     "Cipher",
-    # )
+
 elif sys.platform == "linux":
     localAppData = os.path.join(os.getenv("HOME"), "Cipher")
 logger = logging.getLogger(__name__)
@@ -257,10 +258,10 @@ class MainWindow(QMainWindow):
     def showMessage(self, msg: str) -> None:
         self.systemTray.showMessage("Cipher", msg=msg, msecs=30_000)
 
-    def onWorkspaceChanged(self) -> None:
+    def onWorkspaceChanged(self, path: Path) -> None:
         """An event triggered when `currentFolder` is changed"""
         for func in self._events.get("onWorkspaceChanged", []):
-            self._threadPool.start(Runnable(func, self.currentFolder))
+            self._threadPool.start(Runnable(func, self.currentFolder, path))
 
     def widgetChanged(self, _: int) -> None:
         """An event triggered when `currentFile` is changed"""

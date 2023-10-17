@@ -40,6 +40,10 @@ class BaseSplitter(QSplitter):
         self._window = window
         self.setMouseTracking(True)
 
+    @property
+    def window(self) -> MainWindow:
+        return self._window
+
     def createHandle(self) -> QSplitterHandle:
         handle = super().createHandle()
         handle.setAttribute(Qt.WidgetAttribute.WA_Hover)

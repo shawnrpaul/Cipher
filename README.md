@@ -15,5 +15,6 @@ A text editor written using PyQt6 and QScintilla.
 - Send Notifications
 - Custom Extensions
 - Custom styling
+- Terminal (Windows Only/Work in Progress)
 
  **Note**: No Mac Support

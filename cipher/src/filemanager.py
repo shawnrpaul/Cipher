@@ -69,7 +69,7 @@ class FileManager(QTreeView):
         A signal emitted when a file is saved
     """
 
-    onWorkspaceChanged = pyqtSignal()
+    onWorkspaceChanged = pyqtSignal(object)
     folderCreated = pyqtSignal(Path)
     fileCreated = pyqtSignal(Path)
     onSave = pyqtSignal()
@@ -110,6 +110,10 @@ class FileManager(QTreeView):
 
         if main:
             self.updateSettings()
+
+    @property
+    def window(self) -> MainWindow:
+        return self._window
 
     @property
     def currentFolder(self) -> Optional[Path]:
@@ -411,7 +415,7 @@ class FileManager(QTreeView):
         self.setFolder(folder)
         if folder:
             self._workspaceSettings.addPath(str(Path(self.settingsPath)))
-        self.onWorkspaceChanged.emit()
+        self.onWorkspaceChanged.emit(folder)
         self.updateSettings(True)
 
     def updateSettings(self, changeFolder: bool = False) -> None:

@@ -14,3 +14,7 @@ class Tab:
         self.path = path
         self._watcher = QFileSystemWatcher()
         self._watcher.addPath(str(path))
+
+    @property
+    def window(self) -> MainWindow:
+        return self._window

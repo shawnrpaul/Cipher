@@ -39,6 +39,10 @@ class Menubar(QMenuBar):
         self.createViewMenu(shortcuts)
         self.createGitMenu()
 
+    @property
+    def window(self) -> MainWindow:
+        return self._window
+
     def createFileMenu(self, shortcuts: dict[str, str]) -> None:
         """Create the file menu box"""
         fileMenu = self.addMenu("File")

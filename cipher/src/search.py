@@ -100,6 +100,10 @@ class GlobalSearchModel(QStandardItemModel):
         self.rootNode = self.invisibleRootItem()
         self._window = window
 
+    @property
+    def window(self) -> MainWindow:
+        return self._window
+
     def isBinary(self, path: Path) -> None:
         with open(path, "rb") as f:
             return b"\0" in f.read(1024)

@@ -28,5 +28,9 @@ class Body(QFrame):
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)
 
+    @property
+    def window(self) -> MainWindow:
+        return self._window
+
     def setLayout(self) -> None:
         return super().setLayout(self._layout)
