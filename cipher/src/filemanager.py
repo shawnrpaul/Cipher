@@ -514,6 +514,16 @@ class FileManager(QTreeView):
             return
         file = files[0]
         self.setRowHidden(file.row(), file.parent(), True)
+        if self.currentFolder:
+            path = Path(self.__systemModel.filePath(file)).relative_to(self.currentFolder)
+            settings = self.getWorkspaceSettings()
+            if not (hiddenPaths := settings.get("hiddenPaths"), []):
+                settings["hiddenPaths"] = hiddenPaths
+            hiddenPaths.append(str(path))
+            with open(f"{self.currentFolder}/.cipher/settings.json", "w") as f:
+                json.dump(settings, f, indent=4)
+
+
 
     def getIndex(self) -> QModelIndex:
         """Gets the current selected index. If no index is selected, returns the index of the workspace.

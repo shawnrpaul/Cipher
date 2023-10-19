@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cipher"
-version = "1.3.0"
+version = "1.4.0"
 description = "A text editor made using PyQt6"
 authors = ["Srpboyz <srpboyz69@gmail.com>"]
 readme = "README.md"
