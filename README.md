@@ -11,10 +11,41 @@ A text editor written using PyQt6 and QScintilla.
 - Multiple Folders
 - Folder/File Hiding
 - Search
+- Terminal
 - Git (Work in Progress)
 - Send Notifications
 - Custom Extensions
 - Custom styling
-- Terminal (Windows Only/Work in Progress)
 
- **Note**: No Mac Support
+## Installation
+
+* [Linux](#linux)
+* [Windows (MSI)](#windows-(msi))
+* [Windows (Zip)](#windows-(zip))
+* [Pip](#pip)
+
+### Linux
+- Download the tar.gz
+- Extract the contents
+- Move the Cipher folder in LocalAppData to Home(Linux)
+- Run Cipher
+
+### Windows (MSI)
+- Download the msi
+- Run the msi
+- Run Cipher.exe
+
+### Windows (Zip)
+- Download the zip
+- Unzip the file
+- Move the Cipher folder in LocalAppData to the LocalAppData path
+- Run Cipher.exe
+
+### Pip
+- Clone the Repo
+- Run `python -m pip install .`
+- Move the Cipher folder in LocalAppData to LocalAppData(Windows)/Home(Linux)
+- Run `pythonw -m cipher`
+
+
+**Note**: No Mac Support

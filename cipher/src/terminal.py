@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 from pathlib import Path
 import os
+import sys
 
 from PyQt6.QtCore import QProcess, Qt
 from PyQt6.QtGui import QKeyEvent
@@ -11,8 +12,10 @@ from PyQt6.QtWidgets import QLineEdit, QPlainTextEdit, QVBoxLayout, QWidget
 if TYPE_CHECKING:
     from .window import MainWindow
 
-defaultPath = Path(os.getenv("USERPROFILE")).absolute()
-
+if sys.platform == "win32":
+    defaultPath = Path(os.getenv("USERPROFILE")).absolute()
+else:
+    defaultPath = Path(os.getenv("HOME")).absolute()
 
 class Stdin(QLineEdit):
     def __init__(self, terminal: Terminal) -> None:
@@ -44,6 +47,9 @@ class Stdin(QLineEdit):
                 else:
                     self.clear()
                 return a0.accept()
+        elif a0.modifiers() == Qt.KeyboardModifier.ControlModifier and key == int(Qt.Key.Key_C) and self.terminal.isRunning():
+            self.terminal._process.kill()
+            return a0.accept()
         return super().keyPressEvent(a0)
 
     def returnPressed(self) -> None:
@@ -67,8 +73,8 @@ class Stdin(QLineEdit):
             return self.stdout.setPlainText(
                 f"{self.stdout.toPlainText()}{contents}\n\n{self.terminal.currentDirectory}>"
             )
-        elif text.startswith("cd") and len(command := text.rstrip().split(" ")) > 1:
-            self.currentDirectory = (
+        if text.startswith("cd") and len(command := text.rstrip().split(" ")) > 1:
+            self.terminal.currentDirectory = (
                 self.terminal.currentDirectory.parent
                 if command[1] == ".."
                 else path
@@ -152,11 +158,15 @@ class Terminal(QWidget):
     def run(self) -> None:
         if not self._window.currentFolder or self.isRunning():
             return
-        program = ".cipher\\run.bat"
-        self.stdout.setPlainText(f"{self.stdout.toPlainText()}{program}\n")
-        self.stdin.prevCommands.append(program)
+        if sys.platform == "win32":
+            program, args  = ".cipher\\run.bat", []
+        elif sys.platform == "linux":
+            program, args  = "bash", [".cipher/run.sh"]
+        output = f"{program} {' '.join(args)}"
+        self.stdout.setPlainText(f"{self.stdout.toPlainText()}{output}\n")
+        self.stdin.prevCommands.append(f"{output}")
         self.stdin.index = len(self.stdin.prevCommands)
-        self._run(program, [], str(self._window.currentFolder))
+        self._run(program, args, str(self._window.currentFolder))
 
     def runProcess(self, text: str) -> None:
         if self.isRunning():

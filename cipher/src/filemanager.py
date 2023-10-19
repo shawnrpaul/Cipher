@@ -176,9 +176,9 @@ class FileManager(QTreeView):
         if sys.platform == "win32":
             copyPath = self.menu.addAction("Copy Path")
             copyPath.triggered.connect(self.copyPath)
+            showInFolder = self.menu.addAction("Show in Folder")
+            showInFolder.triggered.connect(self.showInFolder)
 
-        showInFolder = self.menu.addAction("Show in Folder")
-        showInFolder.triggered.connect(self.showInFolder)
         hide = self.menu.addAction("Hide")
         hide.triggered.connect(self.hideIndex)
         self.menu.addSeparator()
@@ -490,21 +490,22 @@ class FileManager(QTreeView):
                 if (path := Path(path)).exists():
                     self._window.fileSplitter.addFileManager(path)
 
-    def copyPath(self) -> None:
-        """Copies the path of an index"""
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(
-            self.filePath(self.getIndex()), win32clipboard.CF_UNICODETEXT
-        )
-        win32clipboard.CloseClipboard()
+    if sys.platform == "win32":
+        def copyPath(self) -> None:
+            """Copies the path of an index"""
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardText(
+                self.filePath(self.getIndex()), win32clipboard.CF_UNICODETEXT
+            )
+            win32clipboard.CloseClipboard()
 
-    def showInFolder(self) -> None:
-        """Opens the file or folder in the file explorer"""
-        subprocess.run(
-            f'explorer /select,"{Path(self.filePath(self.getIndex()))}"',
-            creationflags=0x08000000,
-        )
+        def showInFolder(self) -> None:
+            """Opens the file or folder in the file explorer"""
+            subprocess.run(
+                f'explorer /select,"{Path(self.filePath(self.getIndex()))}"',
+                creationflags=0x08000000,
+            )
 
     def hideIndex(self) -> None:
         """Hides the index. Will return when the editor is restarted. Note: For a permanant solution, edit the global or workspace settings."""

@@ -26,6 +26,5 @@ class DefaultLexer(QsciLexerCustom):
     def description(self, _: int) -> str:
         return "DEFAULT"
 
-    def styleText(self, start: int, _: int) -> None:
-        self.startStyling(start)
-        self.setStyling(len(self.editor().text()), self.DEFAULT)
+    def styleText(self, _: int, __: int) -> None:
+       ...

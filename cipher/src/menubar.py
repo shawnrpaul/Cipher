@@ -166,10 +166,9 @@ class Menubar(QMenuBar):
         workspaceSettings.setShortcut(shortcuts.get("Workspace Settings", ""))
         workspaceSettings.triggered.connect(self.editWorkspaceSettings)
 
-        if sys.platform == "win32":
-            editRunFile = editMenu.addAction("Run Settings")
-            editRunFile.setShortcut(shortcuts.get("Run Settings", ""))
-            editRunFile.triggered.connect(self.editRunFile)
+        editRunFile = editMenu.addAction("Run Settings")
+        editRunFile.setShortcut(shortcuts.get("Run Settings", ""))
+        editRunFile.triggered.connect(self.editRunFile)
 
     def editGlobalSettings(self) -> None:
         """Opens the global settings as a tab to edit"""
@@ -187,10 +186,13 @@ class Menubar(QMenuBar):
         )
 
     def editRunFile(self) -> None:
-        """Opens the run.bat to edit"""
+        """Opens the run.bat or run.sh to edit"""
         if not self._window.currentFolder:
             return
-        path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
+        if sys.platform == "win32":
+            path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
+        else:
+            path = Path(f"{self._window.currentFolder}/.cipher/run.sh")
         self._window.tabView.createTab(path)
 
     def createViewMenu(self, shortcuts: dict[str, str]) -> None:
@@ -198,18 +200,17 @@ class Menubar(QMenuBar):
         view = self.addMenu("View")
         self._menus.append(view)
 
-        if sys.platform == "win32":
-            run = view.addAction("Run")
-            run.setShortcut(shortcuts.get("Run", ""))
-            run.triggered.connect(lambda: self._window.terminal.run())
+        run = view.addAction("Run")
+        run.setShortcut(shortcuts.get("Run", ""))
+        run.triggered.connect(lambda: self._window.terminal.run())
 
-            terminal = view.addAction("Terminal")
-            terminal.setShortcut(shortcuts.get("Terminal", ""))
-            terminal.triggered.connect(
-                lambda: self._window.terminal.show()
-                if self._window.terminal.isHidden()
-                else self._window.terminal.hide()
-            )
+        terminal = view.addAction("Terminal")
+        terminal.setShortcut(shortcuts.get("Terminal", ""))
+        terminal.triggered.connect(
+            lambda: self._window.terminal.show()
+            if self._window.terminal.isHidden()
+            else self._window.terminal.hide()
+        )
 
         explorer = view.addAction("Explorer")
         explorer.setShortcut(shortcuts.get("Explorer", ""))

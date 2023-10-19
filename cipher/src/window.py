@@ -33,16 +33,13 @@ if TYPE_CHECKING:
 
 __all__ = ("MainWindow",)
 
-# localAppData = os.path.join(
-#     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-#     "LocalAppData",
-#     "Cipher",
-# )
 if sys.platform == "win32":
     localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
-
 elif sys.platform == "linux":
     localAppData = os.path.join(os.getenv("HOME"), "Cipher")
+else:
+    raise NotADirectoryError("MacOS isn't Supported")
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 format = logging.Formatter("%(levelname)s:%(asctime)s: %(message)s")
