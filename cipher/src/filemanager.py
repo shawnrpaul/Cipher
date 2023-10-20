@@ -238,6 +238,8 @@ class FileManager(QTreeView):
             index = index[0]
         else:
             index = self.getIndex()
+            if Path(self.filePath(index)).is_file():
+                index = index.parent()
         name, ok = QInputDialog.getText(
             self, "File Name", "Give a name", QLineEdit.EchoMode.Normal, ""
         )
@@ -575,7 +577,10 @@ class FileManager(QTreeView):
             if sys.platform == "win32":
                 win32api.SetFileAttributes(str(path), win32con.FILE_ATTRIBUTE_HIDDEN)
                 with open(f"{path}/run.bat", "w") as f:
-                    f.write("@echo off\n")
+                    f.write("@echo off\nEXIT")
+            else:
+                with open(f"{path}/run.sh", "w") as f:
+                    f.write("")
 
         path = Path(f"{path}/settings.json").absolute()
         if not path.exists():

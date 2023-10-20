@@ -159,14 +159,14 @@ class Terminal(QWidget):
         if not self._window.currentFolder or self.isRunning():
             return
         if sys.platform == "win32":
-            program, args  = ".cipher\\run.bat", []
+            program, args  = "powershell", [".cipher\\run.bat"]
         elif sys.platform == "linux":
             program, args  = "bash", [".cipher/run.sh"]
         output = f"{program} {' '.join(args)}"
         self.stdout.setPlainText(f"{self.stdout.toPlainText()}{output}\n")
         self.stdin.prevCommands.append(f"{output}")
         self.stdin.index = len(self.stdin.prevCommands)
-        self._run(program, args, str(self._window.currentFolder))
+        self._run(program, args, str(self.currentDirectory))
 
     def runProcess(self, text: str) -> None:
         if self.isRunning():
