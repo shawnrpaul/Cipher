@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from importlib import import_module
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
 from PyQt6.QtCore import Qt
 from PyQt6.Qsci import QsciAPIs, QsciCommand, QsciLexerCustom, QsciScintilla
@@ -12,7 +12,6 @@ from PyQt6.QtWidgets import QFileDialog
 
 from .tab import Tab
 from .search import Search
-from .thread import Thread
 
 if TYPE_CHECKING:
     from .window import MainWindow
@@ -46,15 +45,14 @@ class Editor(QsciScintilla, Tab):
         self.setCaretLineVisible(True)
         self.setCaretWidth(2)
 
-        self._autoCompleter, self._thread = None, None
         self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsNone)
         self.setAutoCompletionThreshold(1)
         self.setAutoCompletionCaseSensitivity(False)
         self.setAutoCompletionUseSingle(QsciScintilla.AutoCompletionUseSingle.AcusNever)
-        self.cursorPositionChanged.connect(self.runAutoCompleter)
 
         self.setAnnotationDisplay(QsciScintilla.AnnotationDisplay.AnnotationBoxed)
         self.setBraceMatching(QsciScintilla.BraceMatch.SloppyBraceMatch)
+        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAPIs)
         self.setIndentationGuides(True)
         self.setTabWidth(4)
         self.setIndentationsUseTabs(False)
@@ -297,25 +295,6 @@ class Editor(QsciScintilla, Tab):
             return lexer
         except Exception as e:
             return None
-
-    def setAutoCompleter(self, autoCompleter: Any) -> None:
-        """Sets the current autocompleter
-
-        Parameters
-        ----------
-        autoCompleter : `~typing.Any`
-            The autocompleter to edit the :attr:`api`. The autocompleter must have a run function
-        """
-        self._autoCompleter, self._thread = autoCompleter, None
-        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAPIs)
-
-    def runAutoCompleter(self):
-        """Runs the :attr:`autoCompleter`"""
-        if not self._autoCompleter:
-            return
-        if not self._thread:
-            self._thread = Thread(self, self._autoCompleter.run)
-        self._thread.start()
 
     def getEditorStyles(self) -> Dict[str, Dict[Union[str, List[str]]]]:
         """Returns the editor styles"""

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
 
 from psutil import process_iter
 from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
-from PyQt6.QtGui import QFileSystemModel
+from PyQt6.QtGui import QFileSystemModel, QKeyEvent, QMouseEvent
 from PyQt6.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -141,6 +141,24 @@ class FileManager(QTreeView):
             else Path(f"{self._window.localAppData}/settings.json").absolute()
         )
 
+    def mousePressEvent(self, e: QMouseEvent):
+        self.setFocus()
+        return super().mousePressEvent(e)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        key = event.key()
+        if key == int(Qt.Key.Key_Delete):
+            self.delete()
+            return event.accept()
+        elif key == int(Qt.Key.Key_Return):
+            if indexes := self.selectedIndexes():
+                self.view(indexes[0])
+                return event.accept()
+        elif key == int(Qt.Key.Key_Delete):
+            self.delete()
+            return event.accept()
+        return super().keyPressEvent(event)
+
     def view(self, index: QModelIndex) -> None:
         """What to do when a file or folder was clicked on the tree.
 
@@ -156,7 +174,7 @@ class FileManager(QTreeView):
                 return self.expand(index)
             return self.collapse(index)
 
-        return self._window.tabView.createTab(path)
+        editor.setFocus() if (editor := self._window.tabView.createTab(path)) else ...
 
     def createContextMenu(self, main: bool) -> None:
         """Creates a context menu when an index was right clicked."""
@@ -493,6 +511,7 @@ class FileManager(QTreeView):
                     self._window.fileSplitter.addFileManager(path)
 
     if sys.platform == "win32":
+
         def copyPath(self) -> None:
             """Copies the path of an index"""
             win32clipboard.OpenClipboard()
@@ -517,15 +536,15 @@ class FileManager(QTreeView):
         file = files[0]
         self.setRowHidden(file.row(), file.parent(), True)
         if self.currentFolder:
-            path = Path(self.__systemModel.filePath(file)).relative_to(self.currentFolder)
+            path = Path(self.__systemModel.filePath(file)).relative_to(
+                self.currentFolder
+            )
             settings = self.getWorkspaceSettings()
             if not (hiddenPaths := settings.get("hiddenPaths"), []):
                 settings["hiddenPaths"] = hiddenPaths
             hiddenPaths.append(str(path))
             with open(f"{self.currentFolder}/.cipher/settings.json", "w") as f:
                 json.dump(settings, f, indent=4)
-
-
 
     def getIndex(self) -> QModelIndex:
         """Gets the current selected index. If no index is selected, returns the index of the workspace.
