@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
     QTreeView,
 )
 
-from .tab import Editor
+from .editor import Editor
 from .thread import Thread
 
 if sys.platform == "win32":

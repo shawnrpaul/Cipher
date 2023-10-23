@@ -24,7 +24,7 @@ from .thread import Thread
 if TYPE_CHECKING:
     from PyQt6.QtWidgets import QWidget
 
-    from .tab import Editor
+    from .editor import Editor
     from .window import MainWindow
 
 __all__ = ("Search", "GlobalSearch")

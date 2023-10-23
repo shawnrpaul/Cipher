@@ -8,5 +8,6 @@ from .extensionlist import *
 from .search import *
 from .git import *
 from .tabview import *
-from .tab import *
+from .editor import *
+from .image import *
 from .thread import *
