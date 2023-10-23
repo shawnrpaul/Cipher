@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QFileSystemWatcher
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from cipher import MainWindow
 
 
 class Tab:

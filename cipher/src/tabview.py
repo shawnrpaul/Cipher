@@ -11,9 +11,7 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtWidgets import QTabWidget
 
-from .tab import Tab
-from .editor import Editor
-from .image import createImage
+from .tab import Tab, Editor, createImage
 
 if TYPE_CHECKING:
     from .window import MainWindow

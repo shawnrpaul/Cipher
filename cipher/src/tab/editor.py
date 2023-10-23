@@ -11,10 +11,10 @@ from PyQt6.QtGui import QDropEvent, QFont, QKeyEvent
 from PyQt6.QtWidgets import QFileDialog
 
 from .tab import Tab
-from .search import Search
+from cipher.src.search import Search
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from cipher import MainWindow
 
 __all__ = ("Editor",)
 

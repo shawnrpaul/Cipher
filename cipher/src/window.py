@@ -24,12 +24,12 @@ from .tabview import *
 from .splitter import *
 from .terminal import Terminal
 from .thread import Runnable
-from cipher.ext import Extension
+from cipher import Extension
 from cipher.ext.exceptions import EventTypeError
 
 if TYPE_CHECKING:
     from ..ext.event import Event
-    from .editor import Editor
+    from .tab import Editor
 
 __all__ = ("MainWindow",)
 
