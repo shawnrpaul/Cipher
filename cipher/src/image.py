@@ -22,7 +22,7 @@ class Image(QLabel, Tab):
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def setImage(self) -> None:
-        self.setPixmap(QPixmap(str(Path)))
+        self.setPixmap(QPixmap(str(self.path)))
 
 
 class GIF(QLabel, Tab):
@@ -32,6 +32,10 @@ class GIF(QLabel, Tab):
         self.setMovie(self._movie)
         self._movie.start()
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._watcher.fileChanged.connect(self.setVideo)
+
+    def setVideo(self) -> None:
+        self.setPixmap(QPixmap(str(self.path)))
 
 
 def createImage(window: MainWindow, path: Path):
