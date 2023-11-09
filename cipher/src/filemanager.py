@@ -12,6 +12,7 @@ from psutil import process_iter
 from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
 from PyQt6.QtGui import QFileSystemModel, QKeyEvent, QMouseEvent
 from PyQt6.QtWidgets import (
+    QApplication,
     QFileDialog,
     QInputDialog,
     QLineEdit,
@@ -190,10 +191,10 @@ class FileManager(QTreeView):
         delete = self.menu.addAction("Delete")
         delete.triggered.connect(self.delete)
         self.menu.addSeparator()
+        copyPath = self.menu.addAction("Copy Path")
+        copyPath.triggered.connect(self.copyPath)
 
         if sys.platform == "win32":
-            copyPath = self.menu.addAction("Copy Path")
-            copyPath.triggered.connect(self.copyPath)
             showInFolder = self.menu.addAction("Show in Folder")
             showInFolder.triggered.connect(self.showInFolder)
 
@@ -509,18 +510,14 @@ class FileManager(QTreeView):
             for path in workSpacesettings.get("additionalPaths", []):
                 if (path := Path(path)).exists():
                     self._window.fileSplitter.addFileManager(path)
+                    
+    def copyPath(self) -> None:
+        """Copies the path of an index"""
+        cb = QApplication.clipboard()
+        cb.clear()
+        cb.setText(self.filePath(self.getIndex()))
 
     if sys.platform == "win32":
-
-        def copyPath(self) -> None:
-            """Copies the path of an index"""
-            win32clipboard.OpenClipboard()
-            win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardText(
-                self.filePath(self.getIndex()), win32clipboard.CF_UNICODETEXT
-            )
-            win32clipboard.CloseClipboard()
-
         def showInFolder(self) -> None:
             """Opens the file or folder in the file explorer"""
             subprocess.run(
