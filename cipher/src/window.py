@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import json
 import logging
 import os
 import sys
+import zipfile
 from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+import requests
 from PyQt6.QtCore import QFileSystemWatcher, QThreadPool, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
@@ -34,11 +37,22 @@ if TYPE_CHECKING:
 __all__ = ("MainWindow",)
 
 if sys.platform == "win32":
-    localAppData = os.path.join(os.getenv("LocalAppData"), "Cipher")
+    _env = os.getenv("LocalAppData")
+    localAppData = os.path.join(_env, "Cipher")
 elif sys.platform == "linux":
-    localAppData = os.path.join(os.getenv("HOME"), "Cipher")
+    _env = os.getenv("HOME")
+    localAppData = os.path.join(_env, "Cipher")
 else:
     raise NotADirectoryError("MacOS isn't Supported")
+
+if not os.path.exists(localAppData):
+    req = requests.get(
+        "https://github.com/Srpboyz/Cipher/releases/download/v1.3.1/LocalAppData.zip"
+    )
+    req.raise_for_status()
+    with zipfile.ZipFile(io.BytesIO(req.content)) as zip_file:
+        zip_file.extractall(_env)
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)

@@ -11,7 +11,6 @@ from cipher.src.window import MainWindow, logger
 
 
 def excepthook(
-    app: QApplication,
     exc_type: Type[BaseException],
     exc_value: Optional[BaseException],
     exc_tb: TracebackType,
@@ -27,13 +26,13 @@ def excepthook(
         logger.error(f"{file.name}({line}) - {exc_type.__name__}: {exc_value}")
     except Exception:
         logger.error(f"{exc_type.__name__}: {exc_value}")
-    app.quit()
+    app.quit()  # type: ignore
     return sys.__excepthook__(exc_type, exc_value, exc_tb)
 
 
 def run() -> None:
     app = QApplication([])
-    sys.excepthook = lambda *args, **kwargs: excepthook(app, *args, **kwargs)
+    sys.excepthook = excepthook
     window = MainWindow()
     app.aboutToQuit.connect(window.close)
     app.aboutToQuit.connect(window.fileManager.saveSettings)

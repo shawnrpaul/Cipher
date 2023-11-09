@@ -12,6 +12,7 @@ pyqt6-qscintilla = "^2.14.1"
 psutil = "5.9.4"
 pywin32 = { version = "305", markers = 'sys_platform == "win32"' }
 filetype = "^1.2.0"
+requests = "^2.31.0"
 
 [build-system]
 requires = ["poetry-core"]
