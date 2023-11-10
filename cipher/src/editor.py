@@ -94,9 +94,14 @@ class Editor(QsciScintilla, Tab):
         self.commands.find(QsciCommand.Command.MoveSelectedLinesUp).setKey(
             (Qt.KeyboardModifier.AltModifier | Qt.Key.Key_Up).toCombined()
         )
-        self.commands.boundTo(
-            (Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Slash).toCombined()
-        ).setKey(0)
+        self.commands.find(QsciCommand.Command.WordPartLeft).setKey(0)
+        self.commands.find(QsciCommand.Command.LineUpExtend).setAlternateKey(
+            (
+                Qt.KeyboardModifier.ControlModifier
+                | Qt.KeyboardModifier.ShiftModifier
+                | Qt.Key.Key_Up
+            ).toCombined()
+        )
 
     @property
     def lexer(self) -> QsciLexerCustom:

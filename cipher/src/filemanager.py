@@ -26,7 +26,6 @@ from .thread import Thread
 
 if sys.platform == "win32":
     import win32api
-    import win32clipboard
     import win32con
 
 if TYPE_CHECKING:

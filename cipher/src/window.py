@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 import requests
-from PyQt6.QtCore import QFileSystemWatcher, QThreadPool, pyqtSignal
+from PyQt6.QtCore import QFileSystemWatcher, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 
@@ -26,7 +26,7 @@ from .sidebar import *
 from .tabview import *
 from .splitter import *
 from .terminal import Terminal
-from .thread import Runnable
+from .logs import *
 from cipher.ext import Extension
 from cipher.ext.exceptions import EventTypeError
 
@@ -54,12 +54,11 @@ if not os.path.exists(localAppData):
         zip_file.extractall(_env)
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
-format = logging.Formatter("%(levelname)s:%(asctime)s: %(message)s")
-fileHandler = logging.FileHandler(f"{localAppData}/logs.log")
-fileHandler.setFormatter(format)
-logger.addHandler(fileHandler)
+logging.basicConfig(
+    filename=f"{localAppData}/logs.log",
+    format="%(levelname)s:%(asctime)s: %(message)s",
+    level=logging.ERROR,
+)
 
 
 class MainWindow(QMainWindow):
@@ -93,9 +92,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Cipher")
-        self._threadPool = QThreadPool.globalInstance()
         self.localAppData = localAppData
-        self.setWindowIcon(QIcon(f"{localAppData}/icons/window.png"))
         self.settings = {
             "showHidden": False,
             "username": None,
@@ -113,6 +110,7 @@ class MainWindow(QMainWindow):
         self.sidebar = Sidebar(self)
         self.menubar = Menubar(self)
         self.terminal = Terminal(self)
+        self.logs = Logs(self)
 
         self.hsplit = HSplitter(self)
         self.fileSplitter = FileManagerSplitter(self)
@@ -137,6 +135,7 @@ class MainWindow(QMainWindow):
 
         self.hsplit.setSizes([width, originalWidth - width])
 
+        self.setWindowIcon(QIcon(f"{localAppData}/icons/window.png"))
         styles = f"{localAppData}/styles/styles.qss"
         self._styles = QFileSystemWatcher(self)
         self._styles.addPath(styles)
@@ -153,17 +152,6 @@ class MainWindow(QMainWindow):
         sys.path.insert(0, f"{localAppData}/site-packages")
 
         self.tabView.setupTabs()
-        self.tabView.currentChanged.connect(self.widgetChanged)
-
-        self._events: dict[str, list[Event]] = {}
-        self._events["widgetChanged"] = []
-        self._events["onTabOpened"] = []
-        self._events["onWorkspaceChanged"] = []
-        self._events["onSave"] = []
-        self._events["onClose"] = []
-        self.tabView.tabOpened.connect(self.onTabOpened)
-        self.fileManager.onWorkspaceChanged.connect(self.onWorkspaceChanged)
-        self.fileManager.onSave.connect(self.onSave)
 
         self._loop = asyncio.get_event_loop()
         self.addExtensions()
@@ -223,12 +211,12 @@ class MainWindow(QMainWindow):
             return self.extensionList.addItem(ExtensionItem(name, icon, settings))
 
         try:
-            mod = import_module(f"extension.{path.name}.run")
+            mod = import_module(f"extension.{path.name}")
             ext = mod.run(window=self)
         except EventTypeError:
             return
         except Exception as e:
-            logger.error(f"Failed to add Extension - {e.__class__.__name__}: {e}")
+            logging.error(f"Failed to add Extension - {e.__class__.__name__}: {e}")
             name = f"{name} (Disabled)"
             return self.extensionList.addItem(ExtensionItem(name, icon, settings))
         if not isinstance(ext, Extension):
@@ -240,19 +228,20 @@ class MainWindow(QMainWindow):
         def onExtReady():
             item.setText(name)
             onReady = ext.__events__.get("onReady", [])
-            self._events["widgetChanged"].extend(
-                ext.__events__.get("widgetChanged", [])
-            )
-            self._events["onWorkspaceChanged"].extend(
-                ext.__events__.get("onWorkspaceChanged", [])
-            )
-            self._events["onTabOpened"].extend(ext.__events__.get("onTabOpened", []))
-            self._events["onSave"].extend(ext.__events__.get("onSave", []))
-            self._events["onClose"].extend(ext.__events__.get("onClose", []))
-            for func in onReady:
-                self._threadPool.start(
-                    Runnable(func, self.currentFolder, self.currentFile)
+            for func in ext.__events__.get("onWorkspaceChanged", []):
+                self.fileManager.onWorkspaceChanged.connect(lambda path: func(path))
+            for func in ext.__events__.get("widgetChanged", []):
+                self.tabView.currentChanged.connect(
+                    lambda: func(self.currentFolder, self.currentFile)
                 )
+            for func in ext.__events__.get("onTabOpened", []):
+                self.tabView.tabOpened.connect(lambda editor: func(editor))
+            for func in ext.__events__.get("onSave", []):
+                self.fileManager.onSave.connect(lambda: func(self.currentFile))
+            for func in ext.__events__.get("onClose", []):
+                self.onClose.connect(func)
+            for func in onReady:
+                func(self.currentFolder, self.currentFile)
 
         onExtReady() if ext.isReady else ext.ready.connect(onExtReady)
         self.__extensions__[name] = ext
@@ -266,35 +255,9 @@ class MainWindow(QMainWindow):
             for event in events:
                 window_events.remove(event)
 
-    def showMessage(self, msg: str) -> None:
-        self.systemTray.showMessage("Cipher", msg=msg, msecs=30_000)
-
-    def onWorkspaceChanged(self, path: Path) -> None:
-        """An event triggered when `currentFolder` is changed"""
-        for func in self._events.get("onWorkspaceChanged", []):
-            self._threadPool.start(Runnable(func, self.currentFolder, path))
-
-    def widgetChanged(self, _: int) -> None:
-        """An event triggered when `currentFile` is changed"""
-        for func in self._events.get("widgetChanged", []):
-            self._threadPool.start(Runnable(func, self.currentFolder, self.currentFile))
-
-    def onTabOpened(self, editor):
-        """An event triggered when :class:`Editor` is opened"""
-        for func in self._events.get("onTabOpened", []):
-            self._threadPool.start(Runnable(func, editor))
-
-    def onSave(self) -> None:
-        """An event triggered when :class:`Editor` is saved"""
-        for func in self._events.get("onSave", []):
-            self._threadPool.start(Runnable(func, self.currentFile))
-
-    def close(self) -> None:
-        """An event triggered when :class:`MainWindow` is closed"""
-        for func in self._events.get("onClose", []):
-            self._threadPool.start(Runnable(func))
-
     def closeEvent(self, _: QCloseEvent) -> None:
+        self.logs.close()
+        super().closeEvent(_)
         self.onClose.emit()
 
     def updateShortcuts(self) -> None:
@@ -306,3 +269,17 @@ class MainWindow(QMainWindow):
                 if not (name := action.text()):
                     continue
                 action.setShortcut(shortcuts.get(name, ""))
+
+    def setWindowIcon(self, icon: QIcon) -> None:
+        self.logs.setWindowIcon(icon)
+        return super().setWindowIcon(icon)
+
+    def setStyleSheet(self, styleSheet: str) -> None:
+        self.logs.setStyleSheet(styleSheet)
+        return super().setStyleSheet(styleSheet)
+
+    def log(self, text: str, level=logging.ERROR):
+        self.logs.log(text, level)
+
+    def showMessage(self, msg: str) -> None:
+        self.systemTray.showMessage("Cipher", msg=msg, msecs=30_000)
