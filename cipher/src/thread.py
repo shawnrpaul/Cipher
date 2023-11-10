@@ -2,7 +2,7 @@ from typing import Any, Callable
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 
-__all__ = ("Thread", "Runnable")
+__all__ = ("Thread",)
 
 
 class Worker(QObject):

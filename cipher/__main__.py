@@ -5,7 +5,6 @@ from cipher.src.window import MainWindow
 def run() -> None:
     app = QApplication([])
     window = MainWindow()
-    app.aboutToQuit.connect(window.close)
     app.aboutToQuit.connect(window.fileManager.saveSettings)
     app.exec()
 
