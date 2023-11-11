@@ -9,7 +9,7 @@ import sys
 import zipfile
 from importlib import import_module
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, TYPE_CHECKING, Optional
 
 import requests
 from PyQt6.QtCore import QFileSystemWatcher, pyqtSignal
@@ -25,7 +25,7 @@ from .search import *
 from .sidebar import *
 from .tabview import *
 from .splitter import *
-from .terminal import Terminal
+from .terminal import *
 from .logs import *
 from cipher.ext import Extension
 from cipher.ext.exceptions import EventTypeError
@@ -91,7 +91,6 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("Cipher")
         self.localAppData = localAppData
         self.settings = {
             "showHidden": False,
@@ -101,6 +100,16 @@ class MainWindow(QMainWindow):
             "search-pattern": [],
             "search-exclude": [],
         }
+
+        styles = f"{localAppData}/styles/styles.qss"
+        self._styles = QFileSystemWatcher(self)
+        self._styles.addPath(styles)
+        self._styles.fileChanged.connect(
+            lambda: self.setStyleSheet(open(styles).read())
+        )
+        self._shortcut = QFileSystemWatcher(
+            [f"{self.localAppData}/shortcuts.json"], self
+        )
 
         self.tabView = TabView(self)
         self.fileManager = FileManager(self)
@@ -135,18 +144,9 @@ class MainWindow(QMainWindow):
 
         self.hsplit.setSizes([width, originalWidth - width])
 
+        self.setWindowTitle("Cipher")
         self.setWindowIcon(QIcon(f"{localAppData}/icons/window.png"))
-        styles = f"{localAppData}/styles/styles.qss"
-        self._styles = QFileSystemWatcher(self)
-        self._styles.addPath(styles)
-        self._styles.fileChanged.connect(
-            lambda: self.setStyleSheet(open(styles).read())
-        )
         self.setStyleSheet(open(styles).read())
-        self._shortcut = QFileSystemWatcher(
-            [f"{self.localAppData}/shortcuts.json"], self
-        )
-        self._shortcut.fileChanged.connect(self.updateShortcuts)
 
         sys.path.insert(0, f"{localAppData}/include")
         sys.path.insert(0, f"{localAppData}/site-packages")
@@ -259,16 +259,6 @@ class MainWindow(QMainWindow):
         self.logs.close()
         super().closeEvent(_)
         self.onClose.emit()
-
-    def updateShortcuts(self) -> None:
-        """Updates the shortcuts when `shortcuts.json` updates"""
-        with open(f"{self.localAppData}/shortcuts.json") as f:
-            shortcuts = json.load(f)
-        for menu in self.menubar._menus:
-            for action in menu.actions():
-                if not (name := action.text()):
-                    continue
-                action.setShortcut(shortcuts.get(name, ""))
 
     def setWindowIcon(self, icon: QIcon) -> None:
         self.logs.setWindowIcon(icon)

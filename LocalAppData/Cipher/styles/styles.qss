@@ -85,18 +85,21 @@ FileManager {
     margin: 5px 5px 5px 5px; 
     font-family: Calibri;
     font-size: 14px;
+    outline: 0;
 }
 
 FileManager::item::hover {
     background-color: #3C3C3C;
     color: #FFFFFF;
     border: none;
+    outline: 0;
 }
 
 FileManager::item::selected {
     background-color: #3C3C3C;
     color: #FFFFFF;
     border: none;
+    outline: 0;
 }
 
 ExtensionList {
@@ -241,6 +244,12 @@ Terminal > QLineEdit {
     background-color: #3C3C3C;
     color: #FFFFFF;
     margin: 2.5px 0 10px 0;
+    border: none;
+}
+
+Logs {
+    background-color: #1E1E1E; 
+    color: #FFFFFF; 
     border: none;
 }
 

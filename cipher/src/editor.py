@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Union
 
 from PyQt6.QtCore import Qt
-from PyQt6.Qsci import QsciAPIs, QsciCommand, QsciLexerCustom, QsciScintilla
-from PyQt6.QtGui import QDropEvent, QFont, QKeyEvent
+from PyQt6.Qsci import QsciAPIs, QsciLexerCustom, QsciScintilla
+from PyQt6.QtGui import QDropEvent, QFont, QKeyEvent, QKeySequence
 from PyQt6.QtWidgets import QFileDialog
 
 from .tab import Tab
@@ -83,25 +83,8 @@ class Editor(QsciScintilla, Tab):
 
         self.commands = self.standardCommands()
         self.releaseShortcut(self.grabShortcut("Ctrl+Tab"))
-        self.commands.find(QsciCommand.Command.LineCopy).setKey(0)
-        self.commands.find(QsciCommand.Command.SelectionCopy).setKey(0)
-        self.commands.find(QsciCommand.Command.LineCut).setKey(0)
-        self.commands.find(QsciCommand.Command.SelectionCut).setKey(0)
-        self.commands.find(QsciCommand.Command.LineTranspose).setKey(0)
-        self.commands.find(QsciCommand.Command.MoveSelectedLinesDown).setKey(
-            (Qt.KeyboardModifier.AltModifier | Qt.Key.Key_Down).toCombined()
-        )
-        self.commands.find(QsciCommand.Command.MoveSelectedLinesUp).setKey(
-            (Qt.KeyboardModifier.AltModifier | Qt.Key.Key_Up).toCombined()
-        )
-        self.commands.find(QsciCommand.Command.WordPartLeft).setKey(0)
-        self.commands.find(QsciCommand.Command.LineUpExtend).setAlternateKey(
-            (
-                Qt.KeyboardModifier.ControlModifier
-                | Qt.KeyboardModifier.ShiftModifier
-                | Qt.Key.Key_Up
-            ).toCombined()
-        )
+        self.setShortcutKeys()
+        self._window._shortcut.fileChanged.connect(self.setShortcutKeys)
 
     @property
     def lexer(self) -> QsciLexerCustom:
@@ -177,6 +160,20 @@ class Editor(QsciScintilla, Tab):
         cursor = self.getCursorPosition()
         self.setText(self.path.read_text("utf-8"))
         self.setCursorPosition(*cursor)
+
+    def setShortcutKeys(self) -> None:
+        with open(f"{self._window.localAppData}/shortcuts.json") as f:
+            shortcuts = json.load(f)
+        for command in self.commands.commands():
+            command = command.command()
+            name, key = command.name, 0
+            if sequence := shortcuts.get(name):
+                keySequence = QKeySequence.fromString(sequence)
+                key = keySequence[0]
+                for i in range(1, keySequence.count()):
+                    key |= keySequence[i]
+                key = key.toCombined()
+            self.commands.find(command).setKey(key)
 
     def saveFile(self) -> None:
         """Saves the editor"""

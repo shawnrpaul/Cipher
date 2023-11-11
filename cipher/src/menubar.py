@@ -10,8 +10,6 @@ from typing import TYPE_CHECKING, List
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenuBar, QFileDialog
 
-from .thread import Thread
-
 if TYPE_CHECKING:
     from .window import MainWindow
 
@@ -32,24 +30,24 @@ class Menubar(QMenuBar):
         self.setObjectName("Menubar")
         self._window = window
         self._menus: List[QAction] = []
-        with open(f"{window.localAppData}/shortcuts.json") as f:
-            shortcuts = json.load(f)
-        self.createFileMenu(shortcuts)
-        self.createEditMenu(shortcuts)
-        self.createViewMenu(shortcuts)
+        self.createFileMenu()
+        self.createEditMenu()
+        self.createViewMenu()
         self.createGitMenu()
+
+        self.window._shortcut.fileChanged.connect(self.updateShortcuts)
+        self.updateShortcuts()
 
     @property
     def window(self) -> MainWindow:
         return self._window
 
-    def createFileMenu(self, shortcuts: dict[str, str]) -> None:
+    def createFileMenu(self) -> None:
         """Create the file menu box"""
         fileMenu = self.addMenu("File")
         self._menus.append(fileMenu)
 
         saveFile = fileMenu.addAction("Save File")
-        saveFile.setShortcut(shortcuts.get("Save File", ""))
         saveFile.triggered.connect(
             lambda: self._window.currentFile.saveFile()
             if self._window.currentFile
@@ -57,7 +55,6 @@ class Menubar(QMenuBar):
         )
 
         saveAs = fileMenu.addAction("Save File As")
-        saveAs.setShortcut(shortcuts.get("Save File As", ""))
         saveAs.triggered.connect(
             lambda: self._window.currentFile.saveAs()
             if self._window.currentFile
@@ -67,37 +64,29 @@ class Menubar(QMenuBar):
         fileMenu.addSeparator()
 
         newFile = fileMenu.addAction("New File")
-        newFile.setShortcut(shortcuts.get("New File", ""))
         newFile.triggered.connect(self._window.fileManager.createFile)
 
         newFolder = fileMenu.addAction("New Folder")
-        newFolder.setShortcut(shortcuts.get("New Folder", ""))
         newFolder.triggered.connect(self._window.fileManager.createFolder)
 
         fileMenu.addSeparator()
 
         openFile = fileMenu.addAction("Open File")
-        openFile.setShortcut(shortcuts.get("Open File", ""))
         openFile.triggered.connect(self._window.fileManager.openFile)
 
         openFile = fileMenu.addAction("Open File Path")
-        openFile.setShortcut(shortcuts.get("Open File Path", ""))
         openFile.triggered.connect(self._window.fileManager.openFilePath)
 
         reopen = fileMenu.addAction("Reopen Closed Tab")
-        reopen.setShortcut(shortcuts.get("Reopen Closed Tab", ""))
         reopen.triggered.connect(self._window.tabView.reopenTab)
 
         openFolder = fileMenu.addAction("Open Folder")
-        openFolder.setShortcut(shortcuts.get("Open Folder", ""))
         openFolder.triggered.connect(self._window.fileManager.openFolder)
 
         openFolderTreeView = fileMenu.addAction("Open Folder in Tree View")
-        openFolderTreeView.setShortcut(shortcuts.get("Open Folder in Tree View", ""))
         openFolderTreeView.triggered.connect(self.openFolderTreeView)
 
         closeFolder = fileMenu.addAction("Close Folder")
-        closeFolder.setShortcut(shortcuts.get("Close Folder", ""))
         closeFolder.triggered.connect(self._window.fileManager.closeFolder)
 
     def openFolderTreeView(self) -> None:
@@ -110,25 +99,22 @@ class Menubar(QMenuBar):
             return
         self._window.fileSplitter.addFileManager(Path(folder))
 
-    def createEditMenu(self, shortcuts: dict[str, str]) -> None:
+    def createEditMenu(self) -> None:
         """Creates the edit menu box"""
         editMenu = self.addMenu("Edit")
         self._menus.append(editMenu)
 
         copy = editMenu.addAction("Copy")
-        copy.setShortcut(shortcuts.get("Copy", ""))
         copy.triggered.connect(
             lambda: self._window.currentFile.copy() if self._window.currentFile else ...
         )
 
         cut = editMenu.addAction("Cut")
-        cut.setShortcut(shortcuts.get("Cut", ""))
         cut.triggered.connect(
             lambda: self._window.currentFile.cut() if self._window.currentFile else ...
         )
 
         paste = editMenu.addAction("Paste")
-        paste.setShortcut(shortcuts.get("Paste", ""))
         paste.triggered.connect(
             lambda: self._window.currentFile.paste()
             if self._window.currentFile
@@ -136,22 +122,19 @@ class Menubar(QMenuBar):
         )
 
         find = editMenu.addAction("Find")
-        find.setShortcut(shortcuts.get("Find", ""))
         find.triggered.connect(
             lambda: self._window.currentFile.find() if self._window.currentFile else ...
         )
         editMenu.addSeparator()
 
-        styles = editMenu.addAction("Styles")
-        styles.setShortcut(shortcuts.get("Styles", ""))
+        styles = editMenu.addAction("Edit Styles")
         styles.triggered.connect(
             lambda: self._window.tabView.createTab(
                 Path(f"{self._window.localAppData}/styles/styles.qss")
             )
         )
 
-        shortcut = editMenu.addAction("Shortcuts")
-        shortcut.setShortcut(shortcuts.get("Shortcuts", ""))
+        shortcut = editMenu.addAction("Edit Shortcuts")
         shortcut.triggered.connect(
             lambda: self._window.tabView.createTab(
                 Path(f"{self._window.localAppData}/shortcuts.json")
@@ -159,15 +142,12 @@ class Menubar(QMenuBar):
         )
 
         globalSettings = editMenu.addAction("Global Settings")
-        globalSettings.setShortcut(shortcuts.get("Global Settings", ""))
         globalSettings.triggered.connect(self.editGlobalSettings)
 
         workspaceSettings = editMenu.addAction("Workspace Settings")
-        workspaceSettings.setShortcut(shortcuts.get("Workspace Settings", ""))
         workspaceSettings.triggered.connect(self.editWorkspaceSettings)
 
         editRunFile = editMenu.addAction("Run Settings")
-        editRunFile.setShortcut(shortcuts.get("Run Settings", ""))
         editRunFile.triggered.connect(self.editRunFile)
 
     def editGlobalSettings(self) -> None:
@@ -195,48 +175,26 @@ class Menubar(QMenuBar):
             path = Path(f"{self._window.currentFolder}/.cipher/run.sh")
         self._window.tabView.createTab(path)
 
-    def createViewMenu(self, shortcuts: dict[str, str]) -> None:
+    def createViewMenu(self) -> None:
         """Creates the view menu box"""
         view = self.addMenu("View")
         self._menus.append(view)
 
-        run = view.addAction("Run")
-        run.setShortcut(shortcuts.get("Run", ""))
-        run.triggered.connect(lambda: self._window.terminal.run())
+        explorer = view.addAction("Explorer")
+        explorer.triggered.connect(self.explorer)
 
         terminal = view.addAction("Terminal")
-        terminal.setShortcut(shortcuts.get("Terminal", ""))
         terminal.triggered.connect(
             lambda: self._window.terminal.show()
             if self._window.terminal.isHidden()
             else self._window.terminal.hide()
         )
 
-        explorer = view.addAction("Explorer")
-        explorer.setShortcut(shortcuts.get("Explorer", ""))
-        explorer.triggered.connect(self.explorer)
+        run = view.addAction("Run")
+        run.triggered.connect(lambda: self._window.terminal.run())
 
         close = view.addAction("Close Editor")
-        close.setShortcut(shortcuts.get("Close Editor", ""))
         close.triggered.connect(self._window.tabView.closeCurrentTab)
-
-    def run(self) -> None:
-        """Starts the thread to run the command"""
-        if not self._window.currentFolder:
-            return
-        path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
-        path.write_text("@echo off\n") if not path.exists() else ...
-        powershell = f"{os.getenv('AppData')}/Microsoft/Windows/Start Menu/Programs/Windows PowerShell/Windows PowerShell.lnk"
-        subprocess.run(
-            [
-                "start",
-                "/d",
-                str(self._window.currentFolder),
-                powershell,
-                f"{self._window.currentFolder}/.cipher/run.bat",
-            ],
-            shell=True,
-        )
 
     def explorer(self) -> None:
         """Opens or closes the :class:`sidebar.Explorer`"""
@@ -250,24 +208,19 @@ class Menubar(QMenuBar):
 
         init = git.addAction("Init")
         init.triggered.connect(self._window.git.init)
-
         clone = git.addAction("Clone")
         clone.triggered.connect(self._window.git.clone)
-
         branch = git.addAction("Branch")
         branch.triggered.connect(self._window.git.branch)
 
         checkout = git.addAction("Checkout")
         checkout.triggered.connect(self._window.git.checkout)
-
         git.addSeparator()
 
         status = git.addAction("Status")
         status.triggered.connect(self._window.git.status)
-
         add = git.addAction("Add")
         add.triggered.connect(self._window.git.add)
-
         remove = git.addAction("Remove")
         remove.triggered.connect(self._window.git.remove)
 
@@ -275,9 +228,17 @@ class Menubar(QMenuBar):
 
         commit = git.addAction("Commit")
         commit.triggered.connect(self._window.git.commit)
-
         push = git.addAction("Push")
         push.triggered.connect(self._window.git.push)
-
         pull = git.addAction("Pull")
         pull.triggered.connect(self._window.git.pull)
+
+    def updateShortcuts(self) -> None:
+        """Updates the shortcuts when `shortcuts.json` updates"""
+        with open(f"{self.window.localAppData}/shortcuts.json") as f:
+            shortcuts = json.load(f)
+        for menu in self._menus:
+            for action in menu.actions():
+                if not (name := action.text()):
+                    continue
+                action.setShortcut(shortcuts.get(name, ""))

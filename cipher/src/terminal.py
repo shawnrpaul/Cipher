@@ -17,6 +17,9 @@ if sys.platform == "win32":
 else:
     defaultPath = Path(os.getenv("HOME")).absolute()
 
+__all__ = ("Terminal",)
+
+
 class Stdin(QLineEdit):
     def __init__(self, terminal: Terminal) -> None:
         super().__init__(terminal)
@@ -47,7 +50,11 @@ class Stdin(QLineEdit):
                 else:
                     self.clear()
                 return a0.accept()
-        elif a0.modifiers() == Qt.KeyboardModifier.ControlModifier and key == int(Qt.Key.Key_C) and self.terminal.isRunning():
+        elif (
+            a0.modifiers() == Qt.KeyboardModifier.ControlModifier
+            and key == int(Qt.Key.Key_C)
+            and self.terminal.isRunning()
+        ):
             self.terminal._process.kill()
             return a0.accept()
         return super().keyPressEvent(a0)
@@ -159,9 +166,9 @@ class Terminal(QWidget):
         if not self._window.currentFolder or self.isRunning():
             return
         if sys.platform == "win32":
-            program, args  = "powershell", [".cipher\\run.bat"]
+            program, args = "powershell", [".cipher\\run.bat"]
         elif sys.platform == "linux":
-            program, args  = "bash", [".cipher/run.sh"]
+            program, args = "bash", [".cipher/run.sh"]
         output = f"{program} {' '.join(args)}"
         self.stdout.setPlainText(f"{self.stdout.toPlainText()}{output}\n")
         self.stdin.prevCommands.append(f"{output}")
