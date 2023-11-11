@@ -72,7 +72,7 @@ class FileManager(QTreeView):
     onWorkspaceChanged = pyqtSignal(object)
     folderCreated = pyqtSignal(Path)
     fileCreated = pyqtSignal(Path)
-    onSave = pyqtSignal()
+    onSave = pyqtSignal(Editor)
 
     def __init__(self, window: MainWindow, main: bool = True) -> None:
         super().__init__()
@@ -509,7 +509,7 @@ class FileManager(QTreeView):
             for path in workSpacesettings.get("additionalPaths", []):
                 if (path := Path(path)).exists():
                     self._window.fileSplitter.addFileManager(path)
-                    
+
     def copyPath(self) -> None:
         """Copies the path of an index"""
         cb = QApplication.clipboard()
@@ -517,6 +517,7 @@ class FileManager(QTreeView):
         cb.setText(self.filePath(self.getIndex()))
 
     if sys.platform == "win32":
+
         def showInFolder(self) -> None:
             """Opens the file or folder in the file explorer"""
             subprocess.run(

@@ -31,8 +31,7 @@ from cipher.ext import Extension
 from cipher.ext.exceptions import EventTypeError
 
 if TYPE_CHECKING:
-    from ..ext.event import Event
-    from .editor import Editor
+    from .tab import Tab
 
 __all__ = ("MainWindow",)
 
@@ -163,7 +162,7 @@ class MainWindow(QMainWindow):
         return self.fileManager.currentFolder
 
     @property
-    def currentFile(self) -> Optional[Editor]:
+    def currentFile(self) -> Optional[Tab]:
         """Returns the current `Editor` tab. Returns `None` if there isn't a current tab."""
         return self.tabView.currentFile
 
@@ -229,15 +228,13 @@ class MainWindow(QMainWindow):
             item.setText(name)
             onReady = ext.__events__.get("onReady", [])
             for func in ext.__events__.get("onWorkspaceChanged", []):
-                self.fileManager.onWorkspaceChanged.connect(lambda path: func(path))
+                self.fileManager.onWorkspaceChanged.connect(func)
             for func in ext.__events__.get("widgetChanged", []):
-                self.tabView.currentChanged.connect(
-                    lambda: func(self.currentFolder, self.currentFile)
-                )
+                self.tabView.widgetChanged.connect(func)
             for func in ext.__events__.get("onTabOpened", []):
-                self.tabView.tabOpened.connect(lambda editor: func(editor))
+                self.tabView.tabOpened.connect(func)
             for func in ext.__events__.get("onSave", []):
-                self.fileManager.onSave.connect(lambda: func(self.currentFile))
+                self.fileManager.onSave.connect(func)
             for func in ext.__events__.get("onClose", []):
                 self.onClose.connect(func)
             for func in onReady:
@@ -250,10 +247,21 @@ class MainWindow(QMainWindow):
         if not (ext := self.__extensions__.pop(name, None)):
             return
         for name, events in ext.__events__.items():
-            if not (window_events := self._events.get(name)):
-                continue
-            for event in events:
-                window_events.remove(event)
+            if signal := (
+                self.fileManager.onWorkspaceChanged
+                if name == "onWorkspaceChanged"
+                else self.tabView.widgetChanged
+                if name == "widgetChanged"
+                else self.tabView.tabOpened
+                if name == "onTabOpened"
+                else self.fileManager.onSave
+                if name == "onSave"
+                else self.onClose
+                if name == "onClose"
+                else None
+            ):
+                for event in events:
+                    signal.disconnect(event)
 
     def closeEvent(self, _: QCloseEvent) -> None:
         self.logs.close()

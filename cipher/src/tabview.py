@@ -36,6 +36,7 @@ class TabView(QTabWidget):
     """
 
     tabOpened = pyqtSignal(object)
+    widgetChanged = pyqtSignal(object)
 
     def __init__(self, window: MainWindow) -> None:
         super().__init__(window)
@@ -53,6 +54,7 @@ class TabView(QTabWidget):
                 __to, (self.__tabList.pop(__from))
             )
         )
+        self.currentChanged.connect(lambda _: self.widgetChanged.emit(self.currentFile))
 
     @property
     def window(self) -> MainWindow:
@@ -65,8 +67,8 @@ class TabView(QTabWidget):
         Alias for :func:`currentWidget` function
         Returns
         -------
-        Optional[Editor]
-            The current opened :class:`Editor` tab if opened.
+        Optional[Tab]
+            The current opened :class:`Tab` tab if opened.
         """
         return self.currentWidget()
 

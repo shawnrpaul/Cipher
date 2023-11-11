@@ -180,7 +180,7 @@ class Editor(QsciScintilla, Tab):
         self._watcher.removePath(str(self.path))
         self.path.write_text(self.text(), encoding="utf-8")
         self._watcher.addPath(str(self.path))
-        self._window.fileManager.onSave.emit()
+        self._window.fileManager.onSave.emit(self)
 
     def saveAs(self) -> None:
         """Saves the editor as a new file"""
@@ -199,7 +199,7 @@ class Editor(QsciScintilla, Tab):
         self._window.tabView.setTabText(
             self._window.tabView.currentIndex(), self.path.name
         )
-        self._window.fileManager.onSave.emit()
+        self._window.fileManager.onSave.emit(self)
 
     def copy(self) -> None:
         """Copies the selected text. If no text is selected, the line will copied"""
