@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QApplication
-from cipher.src.window import MainWindow
+from cipher import MainWindow
 
 
 def run() -> None:
