@@ -1,13 +1,14 @@
-from PyQt6.QtWidgets import QApplication
+from cipher.core import Application
 from cipher import MainWindow
+
 import sys
 
 
 def run() -> None:
-    app = QApplication(sys.argv)
+    app = Application(sys.argv)
     window = MainWindow()
     app.aboutToQuit.connect(window.fileManager.saveSettings)
-    app.exec()
+    app.start()
 
 
 if __name__ == "__main__":

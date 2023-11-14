@@ -19,7 +19,7 @@ from PyQt6.QtCore import (
     pyqtSignal,
 )
 from PyQt6.QtGui import QCloseEvent, QIcon
-from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon
+from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 
 from .body import *
 from .extensionlist import *
@@ -32,6 +32,7 @@ from .tabview import *
 from .splitter import *
 from .terminal import *
 from .logs import *
+from cipher.core import Application
 from cipher.ext import Extension
 from cipher.ext.exceptions import EventTypeError
 
@@ -177,7 +178,7 @@ class MainWindow(QMainWindow):
 
         _path = QCommandLineOption(["p", "path"], "Open a specific path", "path")
         parser.addOption(_path)
-        parser.process(QApplication.instance())
+        parser.process(Application.instance())
 
         if parser.isSet(_path):
             path = Path(parser.value(_path)).absolute()
@@ -298,14 +299,14 @@ class MainWindow(QMainWindow):
         self.logs.close()
         super().closeEvent(_)
         self.onClose.emit()
+        Application.instance().close()
 
     def setWindowIcon(self, icon: QIcon) -> None:
         self.logs.setWindowIcon(icon)
         return super().setWindowIcon(icon)
 
     def setStyleSheet(self, styleSheet: str) -> None:
-        self.logs.setStyleSheet(styleSheet)
-        return super().setStyleSheet(styleSheet)
+        Application.instance().setStyleSheet(styleSheet)
 
     def log(self, text: str, level=logging.ERROR):
         self.logs.log(text, level)
