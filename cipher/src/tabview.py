@@ -35,7 +35,7 @@ class TabView(QTabWidget):
         A signal emitted when a new tab is opened
     """
 
-    tabOpened = pyqtSignal(object)
+    tabOpened = pyqtSignal(Tab)
     widgetChanged = pyqtSignal(object)
 
     def __init__(self, window: MainWindow) -> None:
@@ -180,21 +180,6 @@ class TabView(QTabWidget):
             The new name for the tab
         """
         return super().setTabText(self.indexOf(widget), a1)
-
-    def setupTabs(self) -> None:
-        """Reopen the tabs and open the folder the editor is opened"""
-        if len(sys.argv) > 1:
-            self.createTab(Path(sys.argv[1]))
-            return
-
-        settings = self._window.fileManager.getGlobalSettings()
-        folder = settings.get("lastFolder")
-        if folder and not Path(folder).absolute().exists():
-            folder = None
-        self._window.fileManager.changeFolder(folder)
-        if self._window.currentFolder:
-            settings = self._window.fileManager.getWorkspaceSettings()
-            self.openTabs(settings.get("currentFile"), settings.get("openedFiles", []))
 
     def openTabs(self, currentFile: str, files: List[str]) -> None:
         """Opens all tabs. Used when the folder is changed.

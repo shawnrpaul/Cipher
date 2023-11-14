@@ -12,9 +12,14 @@ from pathlib import Path
 from typing import Any, TYPE_CHECKING, Optional
 
 import requests
-from PyQt6.QtCore import QFileSystemWatcher, pyqtSignal
+from PyQt6.QtCore import (
+    QCommandLineOption,
+    QCommandLineParser,
+    QFileSystemWatcher,
+    pyqtSignal,
+)
 from PyQt6.QtGui import QCloseEvent, QIcon
-from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
+from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon
 
 from .body import *
 from .extensionlist import *
@@ -150,7 +155,7 @@ class MainWindow(QMainWindow):
         sys.path.insert(0, f"{localAppData}/include")
         sys.path.insert(0, f"{localAppData}/site-packages")
 
-        self.tabView.setupTabs()
+        self.parseArgs()
 
         self._loop = asyncio.get_event_loop()
         self.addExtensions()
@@ -165,6 +170,33 @@ class MainWindow(QMainWindow):
     def currentFile(self) -> Optional[Tab]:
         """Returns the current `Editor` tab. Returns `None` if there isn't a current tab."""
         return self.tabView.currentFile
+
+    def parseArgs(self):
+        parser = QCommandLineParser()
+        parser.addHelpOption()
+
+        _path = QCommandLineOption(["p", "path"], "Open a specific path", "path")
+        parser.addOption(_path)
+        parser.process(QApplication.instance())
+
+        if parser.isSet(_path):
+            path = Path(parser.value(_path)).absolute()
+            if path.exists():
+                if path.is_dir():
+                    return self.fileManager.changeFolder(str(path))
+                self.fileManager.changeFolder(str(path.parent))
+                self.tabView.createTab(path)
+        else:
+            settings = self.fileManager.getGlobalSettings()
+            folder = settings.get("lastFolder")
+            if folder and not Path(folder).absolute().exists():
+                folder = None
+            self.fileManager.changeFolder(folder)
+            if self.currentFolder:
+                settings = self.fileManager.getWorkspaceSettings()
+                self.tabView.openTabs(
+                    settings.get("currentFile"), settings.get("openedFiles", [])
+                )
 
     def addExtensions(self) -> None:
         """Gets the list of extension folder and starts a thread to activate each extension.
@@ -215,7 +247,7 @@ class MainWindow(QMainWindow):
         except EventTypeError:
             return
         except Exception as e:
-            logging.error(f"Failed to add Extension - {e.__class__.__name__}: {e}")
+            print(f"Failed to add Extension - {e.__class__.__name__}: {e}")
             name = f"{name} (Disabled)"
             return self.extensionList.addItem(ExtensionItem(name, icon, settings))
         if not isinstance(ext, Extension):
@@ -226,7 +258,6 @@ class MainWindow(QMainWindow):
 
         def onExtReady():
             item.setText(name)
-            onReady = ext.__events__.get("onReady", [])
             for func in ext.__events__.get("onWorkspaceChanged", []):
                 self.fileManager.onWorkspaceChanged.connect(func)
             for func in ext.__events__.get("widgetChanged", []):
@@ -237,7 +268,7 @@ class MainWindow(QMainWindow):
                 self.fileManager.onSave.connect(func)
             for func in ext.__events__.get("onClose", []):
                 self.onClose.connect(func)
-            for func in onReady:
+            for func in ext.__events__.get("onReady", []):
                 func(self.currentFolder, self.currentFile)
 
         onExtReady() if ext.isReady else ext.ready.connect(onExtReady)
