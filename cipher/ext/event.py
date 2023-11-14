@@ -1,5 +1,7 @@
 from types import FunctionType
 from typing import Any, Callable, Dict, Optional, Tuple
+import asyncio
+import inspect
 
 from .exceptions import EventTypeError
 
@@ -23,6 +25,8 @@ class Event:
 
     def __call__(self, *args: Tuple[Any], **kwargs: Dict[Any, Any]) -> Any:
         try:
+            if inspect.iscoroutinefunction(self.func):
+                return asyncio.create_task(self.func(self._instance, *args, **kwargs))
             return self.func(self._instance, *args, **kwargs)
         except Exception as e:
             if self._error:
