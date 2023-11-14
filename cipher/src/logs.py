@@ -35,7 +35,7 @@ class Logs(QPlainTextEdit):
         self.setContentsMargins(0, 0, 0, 0)
         self.setReadOnly(True)
 
-        sys.stdout.write = sys.stderr.write = self.write
+        sys.stdout.write = self.write
         sys.excepthook = self.excepthook
 
     @property
