@@ -10,7 +10,6 @@ python = "^3.9"
 pyqt6 = "6.4.1"
 pyqt6-qscintilla = "^2.14.1"
 psutil = "5.9.4"
-pywin32 = { version = "305", markers = 'sys_platform == "win32"' }
 filetype = "^1.2.0"
 requests = "^2.31.0"
 
