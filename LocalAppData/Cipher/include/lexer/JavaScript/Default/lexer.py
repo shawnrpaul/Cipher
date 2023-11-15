@@ -4,10 +4,11 @@ from typing import Dict
 from pathlib import Path
 import json
 
+
 class JSLexer(QsciLexerJavaScript):
     def __init__(self, editor) -> None:
         super().__init__(editor)
-        
+
         styles = getStyling()
 
         self.setFont(QFont(styles.get("font")))
@@ -41,11 +42,15 @@ class JSLexer(QsciLexerJavaScript):
         self.setColor(QColor(styles.get("comment")), self.CommentDocKeyword)
         self.setColor(QColor(styles.get("comment")), self.InactiveCommentDocKeyword)
         self.setColor(QColor(styles.get("comment")), self.CommentDocKeywordError)
-        self.setColor(QColor(styles.get("comment")), self.InactiveCommentDocKeywordError)
+        self.setColor(
+            QColor(styles.get("comment")), self.InactiveCommentDocKeywordError
+        )
         self.setColor(QColor(styles.get("comment")), self.PreProcessorComment)
         self.setColor(QColor(styles.get("comment")), self.InactivePreProcessorComment)
         self.setColor(QColor(styles.get("comment")), self.PreProcessorCommentLineDoc)
-        self.setColor(QColor(styles.get("comment")), self.InactivePreProcessorCommentLineDoc)
+        self.setColor(
+            QColor(styles.get("comment")), self.InactivePreProcessorCommentLineDoc
+        )
 
         self.setColor(QColor(styles.get("string")), self.DoubleQuotedString)
         self.setColor(QColor(styles.get("string")), self.InactiveDoubleQuotedString)
@@ -58,16 +63,17 @@ class JSLexer(QsciLexerJavaScript):
         self.setColor(QColor(styles.get("string")), self.RawString)
         self.setColor(QColor(styles.get("string")), self.InactiveRawString)
         self.setColor(QColor(styles.get("string")), self.TripleQuotedVerbatimString)
-        self.setColor(QColor(styles.get("string")), self.InactiveTripleQuotedVerbatimString)
+        self.setColor(
+            QColor(styles.get("string")), self.InactiveTripleQuotedVerbatimString
+        )
         self.setColor(QColor(styles.get("string")), self.HashQuotedString)
         self.setColor(QColor(styles.get("string")), self.InactiveHashQuotedString)
-
 
         editor.setMarginsBackgroundColor(QColor(styles.get("paper")))
         editor.setMarginsForegroundColor(QColor(styles.get("margin")))
         editor.setCaretLineBackgroundColor(QColor(styles.get("caretBackground")))
         editor.setCaretForegroundColor(QColor(styles.get("caretForeground")))
-        
+
 
 def getStyling() -> Dict[str, str]:
     with open(f"{Path(__file__).absolute().parent}/syntax.json") as f:

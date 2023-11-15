@@ -69,9 +69,10 @@ class GitModel(QStandardItemModel):
         process.start("git", ["init"])
 
     def clone(self) -> None:
-        username, password = self._window.settings.get(
-            "username"
-        ), self._window.settings.get("password")
+        username, password = (
+            self._window.settings.get("username"),
+            self._window.settings.get("password"),
+        )
         if (
             not username
             or not password
@@ -311,9 +312,10 @@ class GitModel(QStandardItemModel):
         process.start("git", ["reset", parameters])
 
     def push(self) -> None:
-        username, password = self._window.settings.get(
-            "username"
-        ), self._window.settings.get("password")
+        username, password = (
+            self._window.settings.get("username"),
+            self._window.settings.get("password"),
+        )
         if (
             not username
             or not password
@@ -335,9 +337,10 @@ class GitModel(QStandardItemModel):
         process.write(f"{username}\n{password}\n".encode())
 
     def pull(self) -> None:
-        username, password = self._window.settings.get(
-            "username"
-        ), self._window.settings.get("password")
+        username, password = (
+            self._window.settings.get("username"),
+            self._window.settings.get("password"),
+        )
         if (
             not username
             or not password

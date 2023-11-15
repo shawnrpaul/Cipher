@@ -8,7 +8,6 @@ from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
 
-from psutil import process_iter
 from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
 from PyQt6.QtGui import QFileSystemModel, QKeyEvent, QMouseEvent
 from PyQt6.QtWidgets import (
@@ -23,10 +22,6 @@ from PyQt6.QtWidgets import (
 
 from .editor import Editor
 from .thread import Thread
-
-if sys.platform == "win32":
-    import win32api
-    import win32con
 
 if TYPE_CHECKING:
     from .window import Window
@@ -591,7 +586,6 @@ class FileManager(QTreeView):
         if not path.exists():
             path.mkdir()
             if sys.platform == "win32":
-                win32api.SetFileAttributes(str(path), win32con.FILE_ATTRIBUTE_HIDDEN)
                 with open(f"{path}/run.bat", "w") as f:
                     f.write("@echo off\nEXIT")
             else:
@@ -631,8 +625,7 @@ class FileManager(QTreeView):
 
     def saveSettings(self) -> None:
         """Saves the workspace when the window is closed. If another instance of the window is open, the function returns"""
-        processes = tuple(process.name() for process in process_iter())
-        if processes.count("Cipher.exe") > 1:
+        if not self.window.isMainWindow():
             return
         settings = self.getGlobalSettings()
         settings["lastFolder"] = str(self.currentFolder) if self.currentFolder else None
