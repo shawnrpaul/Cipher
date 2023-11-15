@@ -17,12 +17,15 @@ __all__ = ("Application", "ServerApplication")
 class Application(QApplication):
     def __init__(self, argv: List[str]) -> None:
         super().__init__(argv)
+        self.setApplicationDisplayName("Cipher")
+        self.setApplicationName("Cipher")
+        self.setApplicationVersion("1.3.2")
         self.isRunning = False
 
     @staticmethod
     def getApplication() -> Application:
         processes = tuple(process.name() for process in process_iter())
-        if processes.count("python.exe") > 12:
+        if processes.count("Cipher.exe") > 1:
             return ClientApplication(sys.argv)
         return ServerApplication(sys.argv)
 
