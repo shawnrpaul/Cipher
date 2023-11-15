@@ -29,7 +29,7 @@ if sys.platform == "win32":
     import win32con
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("FileManager",)
 
@@ -54,7 +54,7 @@ class FileManager(QTreeView):
 
     Parameters
     ----------
-    window: :class:`MainWindow`
+    window: :class:`Window`
         The code editor window
 
     Attributes
@@ -74,7 +74,7 @@ class FileManager(QTreeView):
     fileCreated = pyqtSignal(Path)
     onSave = pyqtSignal(Editor)
 
-    def __init__(self, window: MainWindow, main: bool = True) -> None:
+    def __init__(self, window: Window, main: bool = True) -> None:
         super().__init__()
         self.setObjectName("FileManager")
         self._window = window
@@ -112,7 +112,7 @@ class FileManager(QTreeView):
             self.updateSettings()
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     @property

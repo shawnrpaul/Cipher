@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSizePolicy
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("Body",)
 
@@ -13,7 +13,7 @@ __all__ = ("Body",)
 class Body(QFrame):
     """Body of the editor. Holds all the widgets"""
 
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self.setObjectName("Body")
         self._window = window
@@ -29,7 +29,7 @@ class Body(QFrame):
         self._layout.setSpacing(0)
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def setLayout(self) -> None:

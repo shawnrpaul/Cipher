@@ -14,7 +14,7 @@ from .tab import Tab
 from .search import Search
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("Editor",)
 
@@ -24,7 +24,7 @@ class Editor(QsciScintilla, Tab):
 
     Parameters
     ----------
-    window: `MainWindow`
+    window: `Window`
         The window object
     path: `Path`
         The path of the file being edited
@@ -35,7 +35,7 @@ class Editor(QsciScintilla, Tab):
         The path of the file being edited
     """
 
-    def __init__(self, window: MainWindow, path: Path) -> None:
+    def __init__(self, window: Window, path: Path) -> None:
         super().__init__(window=window, path=path)
         self.setObjectName(path.name)
         self._watcher.fileChanged.connect(self.updateText)

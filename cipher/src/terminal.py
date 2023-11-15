@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import QLineEdit, QPlainTextEdit, QVBoxLayout, QWidget
 
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 if sys.platform == "win32":
     defaultPath = Path(os.getenv("USERPROFILE")).absolute()
@@ -95,7 +95,7 @@ class Stdin(QLineEdit):
 
 
 class Terminal(QWidget):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self._window = window
         self._process = None
@@ -121,7 +121,7 @@ class Terminal(QWidget):
         self.hide()
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def isRunning(self) -> bool:

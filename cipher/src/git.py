@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("Git", "GitItem")
 
@@ -36,7 +36,7 @@ class GitType(QStandardItem):
 
 
 class GitModel(QStandardItemModel):
-    def __init__(self, parent: QTreeView, window: MainWindow) -> None:
+    def __init__(self, parent: QTreeView, window: Window) -> None:
         super().__init__(parent)
         self.setObjectName("GitModel")
         self._window = window
@@ -47,7 +47,7 @@ class GitModel(QStandardItemModel):
         self._window.fileManager.onSave.connect(self.status)
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def displayError(self, title: str, msg: str) -> None:
@@ -359,7 +359,7 @@ class GitModel(QStandardItemModel):
 
 
 class GitView(QTreeView):
-    def __init__(self, parent: QFrame, window: MainWindow, *args, **kwargs) -> None:
+    def __init__(self, parent: QFrame, window: Window, *args, **kwargs) -> None:
         super().__init__(parent, *args, **kwargs)
         self._window = window
         self.setObjectName("GitView")
@@ -423,7 +423,7 @@ class GitView(QTreeView):
 
 
 class Git(QFrame):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self.setObjectName("Git")
         self._window = window

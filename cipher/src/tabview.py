@@ -16,7 +16,7 @@ from .editor import Editor
 from .image import createImage
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("TabView",)
 
@@ -26,7 +26,7 @@ class TabView(QTabWidget):
 
     Parameters
     ----------
-    window : :class:`MainWindow`
+    window : :class:`Window`
         The window
 
     Attributes
@@ -38,7 +38,7 @@ class TabView(QTabWidget):
     tabOpened = pyqtSignal(Tab)
     widgetChanged = pyqtSignal(object)
 
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self._window = window
         self.__tabList: List[Tab] = []
@@ -57,7 +57,7 @@ class TabView(QTabWidget):
         self.currentChanged.connect(lambda _: self.widgetChanged.emit(self.currentFile))
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     @property

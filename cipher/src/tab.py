@@ -5,16 +5,16 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QFileSystemWatcher
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 
 class Tab:
-    def __init__(self, window: MainWindow, path: Path) -> None:
+    def __init__(self, window: Window, path: Path) -> None:
         self._window = window
         self.path = path
         self._watcher = QFileSystemWatcher()
         self._watcher.addPath(str(path))
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window

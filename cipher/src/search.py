@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from PyQt6.QtWidgets import QWidget
 
     from .editor import Editor
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("Search", "GlobalSearch")
 
@@ -95,13 +95,13 @@ class GlobalSearchMatch(QStandardItem):
 
 
 class GlobalSearchModel(QStandardItemModel):
-    def __init__(self, parent, window: MainWindow):
+    def __init__(self, parent, window: Window):
         super().__init__(parent)
         self.rootNode = self.invisibleRootItem()
         self._window = window
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def isBinary(self, path: Path) -> None:
@@ -197,7 +197,7 @@ class GlobalSearchModel(QStandardItemModel):
 
 
 class GlobalSearchView(QTreeView):
-    def __init__(self, parent: QWidget, window: MainWindow, *args, **kwargs) -> None:
+    def __init__(self, parent: QWidget, window: Window, *args, **kwargs) -> None:
         super().__init__(parent, *args, **kwargs)
         self._window = window
         self.setObjectName("SearchView")
@@ -241,7 +241,7 @@ class GlobalSearchView(QTreeView):
 
 
 class GlobalSearch(QFrame):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self.setLineWidth(1)
         self.setMaximumWidth(self.screen().size().width() // 2)

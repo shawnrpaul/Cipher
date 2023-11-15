@@ -11,7 +11,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QPlainTextEdit
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
     from types import TracebackType
 
 
@@ -19,7 +19,7 @@ __all__ = ("Logs",)
 
 
 class Logs(QPlainTextEdit):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__()
         self._window = window
         action = self.addAction("Hide Logs")
@@ -35,11 +35,10 @@ class Logs(QPlainTextEdit):
         self.setContentsMargins(0, 0, 0, 0)
         self.setReadOnly(True)
 
-        sys.stdout.write = self.write
         sys.excepthook = self.excepthook
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def write(self, text: str):

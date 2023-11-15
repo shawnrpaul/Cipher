@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QSplitter, QSizePolicy, QFrame, QSplitterHandle, QVB
 from .filemanager import FileManager
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("VSplitter", "HSplitter", "FileManagerSplitter")
 
@@ -35,13 +35,13 @@ class Explorer(QFrame):
 
 
 class BaseSplitter(QSplitter):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self._window = window
         self.setMouseTracking(True)
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def createHandle(self) -> QSplitterHandle:
@@ -51,21 +51,21 @@ class BaseSplitter(QSplitter):
 
 
 class HSplitter(BaseSplitter):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self.setObjectName("HSplitter")
         self.setOrientation(Qt.Orientation.Horizontal)
 
 
 class VSplitter(BaseSplitter):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self.setObjectName("VSplitter")
         self.setOrientation(Qt.Orientation.Vertical)
 
 
 class FileManagerSplitter(VSplitter):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self.setObjectName("FileManagerSplitter")
         self.addWidget(Explorer(window.fileManager))

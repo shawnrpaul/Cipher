@@ -9,7 +9,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QMessageBox
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 
 __all__ = ("ExtensionItem", "ExtensionList")
@@ -38,14 +38,14 @@ class ExtensionList(QListWidget):
 
     Parameters
     ----------
-    window: :class:`MainWindow`
+    window: :class:`Window`
 
     Attributes
     ----------
 
     """
 
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__()
         self.setObjectName("ExtensionList")
         self._window = window
@@ -59,7 +59,7 @@ class ExtensionList(QListWidget):
         )
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def createContextMenu(self):

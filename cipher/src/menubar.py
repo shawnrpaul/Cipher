@@ -11,7 +11,7 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenuBar, QFileDialog
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("Menubar",)
 
@@ -21,11 +21,11 @@ class Menubar(QMenuBar):
 
     Parameters
     ----------
-    window: :class:`MainWindow`
+    window: :class:`Window`
         The window
     """
 
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__()
         self.setObjectName("Menubar")
         self._window = window
@@ -39,7 +39,7 @@ class Menubar(QMenuBar):
         self.updateShortcuts()
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def createFileMenu(self) -> None:

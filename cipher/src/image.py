@@ -10,11 +10,11 @@ from PyQt6.QtWidgets import QLabel
 from .tab import Tab
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 
 class Image(QLabel, Tab):
-    def __init__(self, window: MainWindow, path: Path) -> None:
+    def __init__(self, window: Window, path: Path) -> None:
         super().__init__(window=window, path=path)
         self.path = path
         self._watcher.fileChanged.connect(self.setImage)
@@ -26,7 +26,7 @@ class Image(QLabel, Tab):
 
 
 class GIF(QLabel, Tab):
-    def __init__(self, window: MainWindow, path: Path) -> None:
+    def __init__(self, window: Window, path: Path) -> None:
         super().__init__(window=window, path=path)
         self._movie = QMovie(str(path))
         self.setMovie(self._movie)
@@ -38,7 +38,7 @@ class GIF(QLabel, Tab):
         self.setPixmap(QPixmap(str(self.path)))
 
 
-def createImage(window: MainWindow, path: Path):
+def createImage(window: Window, path: Path):
     if path.suffix == ".gif":
         return GIF(window, path)
     return Image(window, path)

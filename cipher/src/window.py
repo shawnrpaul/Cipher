@@ -12,12 +12,7 @@ from pathlib import Path
 from typing import Any, TYPE_CHECKING, Optional
 
 import requests
-from PyQt6.QtCore import (
-    QCommandLineOption,
-    QCommandLineParser,
-    QFileSystemWatcher,
-    pyqtSignal,
-)
+from PyQt6.QtCore import QFileSystemWatcher, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 
@@ -32,14 +27,14 @@ from .tabview import *
 from .splitter import *
 from .terminal import *
 from .logs import *
-from cipher.core import Application
 from cipher.ext import Extension
 from cipher.ext.exceptions import EventTypeError
 
 if TYPE_CHECKING:
+    from cipher.core import ServerApplication
     from .tab import Tab
 
-__all__ = ("MainWindow",)
+__all__ = ("Window",)
 
 if sys.platform == "win32":
     _env = os.getenv("LocalAppData")
@@ -66,7 +61,7 @@ logging.basicConfig(
 )
 
 
-class MainWindow(QMainWindow):
+class Window(QMainWindow):
     """The window object. Holds all other objects.
 
     Attributes
@@ -94,8 +89,10 @@ class MainWindow(QMainWindow):
     __extensions__: dict[str, Extension]
     onClose = pyqtSignal()
 
-    def __init__(self) -> None:
+    def __init__(self, app: ServerApplication) -> None:
         super().__init__()
+        self.application = app
+        self._mainWindow = False
         self.localAppData = localAppData
         self.settings = {
             "showHidden": False,
@@ -155,9 +152,6 @@ class MainWindow(QMainWindow):
 
         sys.path.insert(0, f"{localAppData}/include")
         sys.path.insert(0, f"{localAppData}/site-packages")
-
-        self.parseArgs()
-
         self._loop = asyncio.get_event_loop()
         self.addExtensions()
         self.showMaximized()
@@ -172,36 +166,28 @@ class MainWindow(QMainWindow):
         """Returns the current `Editor` tab. Returns `None` if there isn't a current tab."""
         return self.tabView.currentFile
 
-    def parseArgs(self):
-        parser = QCommandLineParser()
-        parser.addHelpOption()
+    def isMainWindow(self) -> bool:
+        return self._mainWindow
 
-        _path = QCommandLineOption(["p", "path"], "Open a specific path", "path")
-        parser.addOption(_path)
-        parser.process(Application.instance())
+    def setMainWindow(self, main: bool = False) -> bool:
+        self._mainWindow = main
+        sys.stdout.write = self.logs.write
 
-        if parser.isSet(_path):
-            path = Path(parser.value(_path)).absolute()
-            if path.exists():
-                if path.is_dir():
-                    return self.fileManager.changeFolder(str(path))
-                self.fileManager.changeFolder(str(path.parent))
-                self.tabView.createTab(path)
-        else:
-            settings = self.fileManager.getGlobalSettings()
-            folder = settings.get("lastFolder")
-            if folder and not Path(folder).absolute().exists():
-                folder = None
-            self.fileManager.changeFolder(folder)
-            if self.currentFolder:
-                settings = self.fileManager.getWorkspaceSettings()
-                self.tabView.openTabs(
-                    settings.get("currentFile"), settings.get("openedFiles", [])
-                )
+    def resumeSession(self):
+        settings = self.fileManager.getGlobalSettings()
+        folder = settings.get("lastFolder")
+        if folder and not Path(folder).absolute().exists():
+            folder = None
+        self.fileManager.changeFolder(folder)
+        if self.currentFolder:
+            settings = self.fileManager.getWorkspaceSettings()
+            self.tabView.openTabs(
+                settings.get("currentFile"), settings.get("openedFiles", [])
+            )
 
     def addExtensions(self) -> None:
         """Gets the list of extension folder and starts a thread to activate each extension.
-        Meant to be used by :class:`MainWindow`
+        Meant to be used by :class:`Window`
         """
         self.__extensions__ = {}
         extensions = f"{localAppData}/include/extension"
@@ -216,7 +202,7 @@ class MainWindow(QMainWindow):
 
     def addExtension(self, path: Path, settings: Path) -> None:
         """Adds the :class:`Extension`
-        Meant to be used by :class:`MainWindow`
+        Meant to be used by :class:`Window`
 
         Parameters
         ----------
@@ -297,16 +283,18 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, _: QCloseEvent) -> None:
         self.logs.close()
-        super().closeEvent(_)
+        self.hide()
         self.onClose.emit()
-        Application.instance().close()
+        self.fileManager.saveSettings()
+        super().closeEvent(_)
+        self.application.closeWindow(self)
 
     def setWindowIcon(self, icon: QIcon) -> None:
         self.logs.setWindowIcon(icon)
         return super().setWindowIcon(icon)
 
     def setStyleSheet(self, styleSheet: str) -> None:
-        Application.instance().setStyleSheet(styleSheet)
+        self.application.setStyleSheet(styleSheet)
 
     def log(self, text: str, level=logging.ERROR):
         self.logs.log(text, level)

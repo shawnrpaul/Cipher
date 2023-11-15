@@ -12,13 +12,13 @@ from .git import Git
 from .search import GlobalSearch
 
 if TYPE_CHECKING:
-    from .window import MainWindow
+    from .window import Window
 
 __all__ = ("Sidebar",)
 
 
 class Sidebar(QFrame):
-    def __init__(self, window: MainWindow) -> None:
+    def __init__(self, window: Window) -> None:
         super().__init__(window)
         self.setObjectName("Sidebar")
         self._window = window
@@ -38,7 +38,7 @@ class Sidebar(QFrame):
         self.setLayout(self._layout)
 
     @property
-    def window(self) -> MainWindow:
+    def window(self) -> Window:
         return self._window
 
     def createFolder(self) -> None:
