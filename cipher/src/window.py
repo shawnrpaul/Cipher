@@ -171,7 +171,8 @@ class Window(QMainWindow):
 
     def setMainWindow(self, main: bool = False) -> bool:
         self._mainWindow = main
-        sys.stdout.write = self.logs.write
+        sys.stdout = self.logs.stdout
+        sys.excepthook = self.logs.excepthook
 
     def resumeSession(self):
         settings = self.fileManager.getGlobalSettings()

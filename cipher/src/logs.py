@@ -7,7 +7,6 @@ import sys
 import os
 
 
-from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QPlainTextEdit
 
 if TYPE_CHECKING:
@@ -16,6 +15,17 @@ if TYPE_CHECKING:
 
 
 __all__ = ("Logs",)
+
+
+class Stdout:
+    def __init__(self, logs: Logs) -> None:
+        self.logs = logs
+
+    def write(self, text: str):
+        self.logs.setPlainText(f"{self.logs.toPlainText()}{text}")
+
+    def flush(self) -> None:
+        ...
 
 
 class Logs(QPlainTextEdit):
@@ -35,14 +45,11 @@ class Logs(QPlainTextEdit):
         self.setContentsMargins(0, 0, 0, 0)
         self.setReadOnly(True)
 
-        sys.excepthook = self.excepthook
+        self.stdout = Stdout(self)
 
     @property
     def window(self) -> Window:
         return self._window
-
-    def write(self, text: str):
-        self.setPlainText(f"{self.toPlainText()}{text}")
 
     def log(self, text: str, level=logging.ERROR):
         self.write(text)
