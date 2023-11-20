@@ -1,15 +1,13 @@
 from __future__ import annotations
-
-import sys
-from copy import copy
 from functools import singledispatchmethod
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
+from pathlib import Path
+from copy import copy
 
-import filetype
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtWidgets import QTabWidget
+import filetype
 
 from .tab import Tab
 from .editor import Editor

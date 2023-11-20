@@ -1,20 +1,18 @@
 from __future__ import annotations
-
-import asyncio
+from typing import Any, TYPE_CHECKING, Optional
+from importlib import import_module
+from pathlib import Path
 import io
 import json
 import logging
 import os
 import sys
-import zipfile
-from importlib import import_module
-from pathlib import Path
-from typing import Any, TYPE_CHECKING, Optional
 
-import requests
 from PyQt6.QtCore import QFileSystemWatcher, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
+import requests
+import zipfile
 
 from .body import *
 from .extensionlist import *
@@ -28,7 +26,6 @@ from .splitter import *
 from .terminal import *
 from .logs import *
 from cipher.ext import Extension
-from cipher.ext.exceptions import EventTypeError
 
 if TYPE_CHECKING:
     from cipher.core import ServerApplication
@@ -47,7 +44,7 @@ else:
 
 if not os.path.exists(localAppData):
     req = requests.get(
-        "https://github.com/Srpboyz/Cipher/releases/download/v1.3.1/LocalAppData.zip"
+        "https://github.com/Srpboyz/Cipher/releases/latest/download/LocalAppData.zip"
     )
     req.raise_for_status()
     with zipfile.ZipFile(io.BytesIO(req.content)) as zip_file:
@@ -92,6 +89,7 @@ class Window(QMainWindow):
     def __init__(self, app: ServerApplication) -> None:
         super().__init__()
         self.application = app
+        self._loop = app.loop
         self._mainWindow = False
         self.localAppData = localAppData
         self.settings = {
@@ -152,7 +150,6 @@ class Window(QMainWindow):
 
         sys.path.insert(0, f"{localAppData}/include")
         sys.path.insert(0, f"{localAppData}/site-packages")
-        self._loop = asyncio.get_event_loop()
         self.addExtensions()
         self.showMaximized()
 
@@ -173,6 +170,9 @@ class Window(QMainWindow):
         self._mainWindow = main
         sys.stdout = self.logs.stdout
         sys.excepthook = self.logs.excepthook
+
+    def createTask(self, coro) -> None:
+        return self.application.createTask(coro)
 
     def resumeSession(self):
         settings = self.fileManager.getGlobalSettings()
@@ -232,8 +232,6 @@ class Window(QMainWindow):
         try:
             mod = import_module(f"extension.{path.name}")
             ext = mod.run(window=self)
-        except EventTypeError:
-            return
         except Exception as e:
             print(f"Failed to add Extension - {e.__class__.__name__}: {e}")
             name = f"{name} (Disabled)"

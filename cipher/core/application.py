@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import List
 from pathlib import Path
 import asyncio
 import sys
@@ -15,11 +14,13 @@ __all__ = ("Application", "ServerApplication")
 
 
 class Application(QApplication):
-    def __init__(self, argv: List[str]) -> None:
+    def __init__(self, argv: list[str]) -> None:
         super().__init__(argv)
         self.setApplicationDisplayName("Cipher")
         self.setApplicationName("Cipher")
         self.setApplicationVersion("1.3.2")
+        self.loop = asyncio.get_event_loop()
+        self._background_tasks: list[asyncio.Task] = []
         self.isRunning = False
 
     @staticmethod
@@ -32,45 +33,63 @@ class Application(QApplication):
     async def eventLoop(self):
         while self.isRunning:
             self.processEvents()
-            await asyncio.sleep(0)
+            await asyncio.sleep(1e-4)
+
+    def _taskFinished(self, task: asyncio.Task) -> None:
+        self._background_tasks.remove(task)
+
+    def createTask(self, coro) -> asyncio.Task:
+        task = self.loop.create_task(coro)
+        task.add_done_callback(self._taskFinished)
+        self._background_tasks.append(task)
+        return task
 
     def start(self) -> None:
         if not self.isRunning:
             self.isRunning = True
-            asyncio.get_event_loop().run_until_complete(self.eventLoop())
+            self.loop.create_task(self.eventLoop())
+            try:
+                self.loop.run_forever()
+            except KeyboardInterrupt:
+                self.close()
+            finally:
+                self.loop.run_until_complete(asyncio.sleep(0.5))
 
     def close(self):
         self.quit()
         self.isRunning = False
+        for task in self._background_tasks:
+            task.cancel()
+        self.loop.stop() if self.loop.is_running() else ...
 
 
 class ClientApplication(Application):
-    def __init__(self, argv: List[str]) -> None:
+    def __init__(self, argv: list[str]) -> None:
         super().__init__(argv)
         self.client = Client(self)
         self.start()
 
 
 class ServerApplication(Application):
-    def __init__(self, argv: List[str]) -> None:
+    def __init__(self, argv: list[str]) -> None:
         super().__init__(argv)
         self.server = Server(self)
         self.windows: list[Window] = []
         self.parseArgs(argv)
 
-    def parseArgs(self, argv: List[str]):
+    def parseArgs(self, argv: list[str]):
         parser = QCommandLineParser()
         parser.addHelpOption()
 
-        _path = QCommandLineOption(["p", "path"], "Open a specific path", "path")
-        parser.addOption(_path)
         new = QCommandLineOption(["n", "new-window"], "Use a new window")
         parser.addOption(new)
 
         parser.process(argv)
 
-        if parser.isSet(_path):
-            val = parser.value(_path)
+        args = parser.positionalArguments()
+
+        if args:
+            val = args[0]
             if not (path := Path(val).absolute()).exists():
                 msg = f"Path {val} doesn't exist"
                 if self.isRunning:

@@ -1,8 +1,11 @@
-from typing import Any, Dict, List
+from __future__ import annotations
+from typing import Dict, List, TYPE_CHECKING
 
 from PyQt6.QtCore import QObject, pyqtSignal
-
 from .event import Event
+
+if TYPE_CHECKING:
+    from cipher import Window
 
 __all__ = ("Extension",)
 
@@ -39,8 +42,9 @@ class Extension(QObject, metaclass=ExtensionCore):
 
         return self
 
-    def __init__(self, parent: QObject | None = None) -> None:
-        super().__init__(parent=parent)
+    def __init__(self, window: Window) -> None:
+        super().__init__(parent=window)
+        self.window = window
         self.isReady = False
 
     def prepare(self):

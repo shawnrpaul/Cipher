@@ -1,11 +1,12 @@
-from types import FunctionType
-from typing import Any, Callable, Dict, Optional, Tuple
-import asyncio
+from __future__ import annotations
+from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING
 import inspect
 
-from .exceptions import EventTypeError
 
 __all__ = ("event",)
+
+if TYPE_CHECKING:
+    from .extension import Extension
 
 
 class Event:
@@ -19,15 +20,13 @@ class Event:
 
     def __init__(self, *, name: str = None, func: Callable[..., Any] = None) -> None:
         self.name: str = name if name else func.__name__
-        self._instance = None
+        self._instance: Extension = None
         self.func = func
         self._error: Optional[Callable[..., Any]] = None
 
-    def __call__(self, *args: Tuple[Any], **kwargs: Dict[Any, Any]) -> Any:
+    async def invoke(self, *args, **kwargs) -> None:
         try:
-            if inspect.iscoroutinefunction(self.func):
-                return asyncio.create_task(self.func(self._instance, *args, **kwargs))
-            return self.func(self._instance, *args, **kwargs)
+            await self.func(self._instance, *args, **kwargs)
         except Exception as e:
             if self._error:
                 try:
@@ -35,7 +34,13 @@ class Event:
                 except Exception:
                     ...
 
+    def __call__(self, *args: Tuple[Any], **kwargs: Dict[Any, Any]) -> Any:
+        window = self._instance.window
+        window.createTask(self.invoke(*args, **kwargs))
+
     def error(self, func: Callable[..., Any]) -> Callable[..., Any]:
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError("The function must be async")
         self._error = func
         return func
 
@@ -55,8 +60,8 @@ def event(name: str = None) -> Event:
     """
 
     def decorator(func: Callable[..., Any]) -> Event:
-        if not isinstance(func, FunctionType):
-            raise EventTypeError("Object is not a function.")
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError("The function must be async.")
         return Event(name=name, func=func)
 
     return decorator
