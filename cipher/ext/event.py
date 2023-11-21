@@ -30,7 +30,7 @@ class Event:
         except Exception as e:
             if self._error:
                 try:
-                    return self._error(self._instance, e, *args, **kwargs)
+                    await self._error(self._instance, e, *args, **kwargs)
                 except Exception:
                     ...
 

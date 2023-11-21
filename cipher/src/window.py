@@ -250,6 +250,8 @@ class Window(QMainWindow):
                 self.tabView.widgetChanged.connect(func)
             for func in ext.__events__.get("onTabOpened", []):
                 self.tabView.tabOpened.connect(func)
+            for func in ext.__events__.get("onTabClosed", []):
+                self.tabView.tabClosed.connect(func)
             for func in ext.__events__.get("onSave", []):
                 self.fileManager.onSave.connect(func)
             for func in ext.__events__.get("onClose", []):

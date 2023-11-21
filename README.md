@@ -27,7 +27,6 @@ A text editor written using PyQt6 and QScintilla.
 ### Linux
 - Download the tar.gz
 - Extract the contents
-- Move the Cipher folder in LocalAppData to Home(Linux)
 - Run Cipher
 
 ### Windows (MSI)
@@ -38,13 +37,11 @@ A text editor written using PyQt6 and QScintilla.
 ### Windows (Zip)
 - Download the zip
 - Unzip the file
-- Move the Cipher folder in LocalAppData to the LocalAppData path
 - Run Cipher.exe
 
 ### Pip
 - Clone the Repo
 - Run `python -m pip install .`
-- Move the Cipher folder in LocalAppData to LocalAppData(Windows)/Home(Linux)
 - Run `pythonw -m cipher`
 
 

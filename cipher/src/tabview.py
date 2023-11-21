@@ -35,6 +35,7 @@ class TabView(QTabWidget):
 
     tabOpened = pyqtSignal(Tab)
     widgetChanged = pyqtSignal(object)
+    tabClosed = pyqtSignal(Tab)
 
     def __init__(self, window: Window) -> None:
         super().__init__(window)
@@ -134,9 +135,10 @@ class TabView(QTabWidget):
         index : int
             The index of the tab
         """
-        editor: Tab = self.__tabList.pop(index)
-        editor._watcher.removePath(str(editor.path))
-        self.__stack.append(editor)
+        tab = self.__tabList.pop(index)
+        tab._watcher.removePath(str(tab.path))
+        self.__stack.append(tab)
+        self.tabClosed.emit(tab)
         return super().removeTab(index)
 
     @removeTab.register
@@ -151,6 +153,7 @@ class TabView(QTabWidget):
         widget._watcher.removePath(str(widget.path))
         self.__stack.append(widget)
         self.__tabList.remove(widget)
+        self.tabClosed.emit(widget)
         return super().removeTab(self.indexOf(widget))
 
     @singledispatchmethod

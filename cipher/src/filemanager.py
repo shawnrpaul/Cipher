@@ -103,6 +103,12 @@ class FileManager(QTreeView):
         self._workspaceSettings = QFileSystemWatcher(self)
         self._workspaceSettings.fileChanged.connect(lambda: self.updateSettings())
 
+        self.window.tabView.widgetChanged.connect(
+            lambda widget: self.setCurrentIndex(self.__systemModel.index(str(path)))
+            if widget and (path := getattr(widget, "path", None))
+            else ...
+        )
+
         if main:
             self.updateSettings()
 
