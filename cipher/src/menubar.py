@@ -35,7 +35,7 @@ class Menubar(QMenuBar):
         self.createViewMenu()
         self.createGitMenu()
 
-        self.window._shortcut.fileChanged.connect(self.updateShortcuts)
+        self.window.shortcut.fileChanged.connect(self.updateShortcuts)
         self.updateShortcuts()
 
     @property

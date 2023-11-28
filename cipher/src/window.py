@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 
-from PyQt6.QtCore import QFileSystemWatcher, pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 import requests
@@ -32,33 +32,6 @@ if TYPE_CHECKING:
     from .tab import Tab
 
 __all__ = ("Window",)
-
-if sys.platform == "win32":
-    _env = os.getenv("LocalAppData")
-    localAppData = os.path.join(_env, "Cipher")
-elif sys.platform == "linux":
-    _env = os.getenv("HOME")
-    localAppData = os.path.join(_env, "Cipher")
-else:
-    raise NotADirectoryError("MacOS isn't Supported")
-
-sys.path.insert(0, f"{localAppData}/include")
-sys.path.insert(0, f"{localAppData}/site-packages")
-
-if not os.path.exists(localAppData):
-    req = requests.get(
-        "https://github.com/Srpboyz/Cipher/releases/latest/download/LocalAppData.zip"
-    )
-    req.raise_for_status()
-    with zipfile.ZipFile(io.BytesIO(req.content)) as zip_file:
-        zip_file.extractall(_env)
-
-
-logging.basicConfig(
-    filename=f"{localAppData}/logs.log",
-    format="%(levelname)s:%(asctime)s: %(message)s",
-    level=logging.ERROR,
-)
 
 
 class Window(QMainWindow):
@@ -91,10 +64,9 @@ class Window(QMainWindow):
 
     def __init__(self, app: ServerApplication) -> None:
         super().__init__()
+        self.setWindowTitle("Cipher")
         self.application = app
-        self._loop = app.loop
         self._mainWindow = False
-        self.localAppData = localAppData
         self.settings = {
             "showHidden": False,
             "username": None,
@@ -103,16 +75,6 @@ class Window(QMainWindow):
             "search-pattern": [],
             "search-exclude": [],
         }
-
-        styles = f"{localAppData}/styles/styles.qss"
-        self._styles = QFileSystemWatcher(self)
-        self._styles.addPath(styles)
-        self._styles.fileChanged.connect(
-            lambda: self.setStyleSheet(open(styles).read())
-        )
-        self._shortcut = QFileSystemWatcher(
-            [f"{self.localAppData}/shortcuts.json"], self
-        )
 
         self.tabView = TabView(self)
         self.fileManager = FileManager(self)
@@ -139,16 +101,12 @@ class Window(QMainWindow):
         self.setCentralWidget(body)
 
         self.systemTray = QSystemTrayIcon(self)
-        self.systemTray.setIcon(QIcon(f"{localAppData}/icons/window.png"))
+        self.systemTray.setIcon(QIcon(f"{self.localAppData}/icons/window.png"))
 
         originalWidth = self.screen().size().width()
         width = int(originalWidth / 5.25)
 
         self.hsplit.setSizes([width, originalWidth - width])
-
-        self.setWindowTitle("Cipher")
-        self.setWindowIcon(QIcon(f"{localAppData}/icons/window.png"))
-        self.setStyleSheet(open(styles).read())
 
         self.addExtensions()
         self.showMaximized()
@@ -162,6 +120,22 @@ class Window(QMainWindow):
     def currentFile(self) -> Optional[Tab]:
         """Returns the current `Editor` tab. Returns `None` if there isn't a current tab."""
         return self.tabView.currentFile
+
+    @property
+    def localAppData(self) -> str:
+        return self.application.localAppData
+
+    @property
+    def shortcut(self):
+        return self.application._shortcut
+
+    @property
+    def styles(self):
+        return self.application._styles
+
+    @property
+    def loop(self):
+        return self.application.loop
 
     def isMainWindow(self) -> bool:
         return self._mainWindow
@@ -191,7 +165,7 @@ class Window(QMainWindow):
         Meant to be used by :class:`Window`
         """
         self.__extensions__ = {}
-        extensions = f"{localAppData}/include/extension"
+        extensions = f"{self.localAppData}/include/extension"
         for folder in os.listdir(extensions):
             path = Path(f"{extensions}/{folder}").absolute()
             if path.is_file():
@@ -224,7 +198,7 @@ class Window(QMainWindow):
 
         icon = f"{path}/icon.ico"
         if not Path(icon).exists():
-            icon = f"{localAppData}/icons/blank.ico"
+            icon = f"{self.localAppData}/icons/blank.ico"
 
         if not data.get("enabled"):
             return self.extensionList.addItem(ExtensionItem(name, icon, settings))
@@ -289,13 +263,6 @@ class Window(QMainWindow):
         self.fileManager.saveSettings()
         super().closeEvent(_)
         self.application.closeWindow(self)
-
-    def setWindowIcon(self, icon: QIcon) -> None:
-        self.logs.setWindowIcon(icon)
-        return super().setWindowIcon(icon)
-
-    def setStyleSheet(self, styleSheet: str) -> None:
-        self.application.setStyleSheet(styleSheet)
 
     def log(self, text: str, level=logging.ERROR):
         self.logs.log(text, level)

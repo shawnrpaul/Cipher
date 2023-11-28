@@ -84,7 +84,7 @@ class Editor(QsciScintilla, Tab):
         self.commands = self.standardCommands()
         self.releaseShortcut(self.grabShortcut("Ctrl+Tab"))
         self.setShortcutKeys()
-        self._window._shortcut.fileChanged.connect(self.setShortcutKeys)
+        self._window.shortcut.fileChanged.connect(self.setShortcutKeys)
 
     @property
     def lexer(self) -> QsciLexerCustom:
