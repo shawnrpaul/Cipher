@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSizePolicy
+from PyQt6.QtWidgets import QWidget, QFrame, QHBoxLayout, QSizePolicy
 
 if TYPE_CHECKING:
     from .window import Window
@@ -27,10 +27,11 @@ class Body(QFrame):
         self._layout = QHBoxLayout()
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)
+        self.setLayout(self._layout)
 
     @property
     def window(self) -> Window:
         return self._window
 
-    def setLayout(self) -> None:
-        return super().setLayout(self._layout)
+    def addWidget(self, widget: QWidget) -> None:
+        self._layout.addWidget(widget)

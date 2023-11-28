@@ -42,6 +42,9 @@ elif sys.platform == "linux":
 else:
     raise NotADirectoryError("MacOS isn't Supported")
 
+sys.path.insert(0, f"{localAppData}/include")
+sys.path.insert(0, f"{localAppData}/site-packages")
+
 if not os.path.exists(localAppData):
     req = requests.get(
         "https://github.com/Srpboyz/Cipher/releases/latest/download/LocalAppData.zip"
@@ -130,9 +133,8 @@ class Window(QMainWindow):
         self.hsplit.addWidget(self.vsplit)
 
         body = Body(self)
-        body._layout.addWidget(self.sidebar)
-        body._layout.addWidget(self.hsplit)
-        body.setLayout()
+        body.addWidget(self.sidebar)
+        body.addWidget(self.hsplit)
         self.setMenuBar(self.menubar)
         self.setCentralWidget(body)
 
@@ -148,8 +150,6 @@ class Window(QMainWindow):
         self.setWindowIcon(QIcon(f"{localAppData}/icons/window.png"))
         self.setStyleSheet(open(styles).read())
 
-        sys.path.insert(0, f"{localAppData}/include")
-        sys.path.insert(0, f"{localAppData}/site-packages")
         self.addExtensions()
         self.showMaximized()
 
