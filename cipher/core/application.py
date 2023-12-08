@@ -32,6 +32,10 @@ class Application(QApplication):
         self.isRunning = False
 
     @staticmethod
+    def instance() -> Application:
+        return QApplication.instance()
+
+    @staticmethod
     def getApplication() -> Application:
         processes = tuple(process.name() for process in process_iter())
         if processes.count("Cipher.exe") > 1:
@@ -42,6 +46,7 @@ class Application(QApplication):
         while self.isRunning:
             self.processEvents()
             await asyncio.sleep(1e-4)
+        self.loop.stop() if self.loop.is_running() else ...
 
     def _taskFinished(self, task: asyncio.Task) -> None:
         self._background_tasks.remove(task)
@@ -68,7 +73,6 @@ class Application(QApplication):
         self.isRunning = False
         for task in self._background_tasks:
             task.cancel()
-        self.loop.stop() if self.loop.is_running() else ...
 
 
 class ClientApplication(Application):
@@ -186,3 +190,8 @@ class ServerApplication(Application):
             if not self.windows:
                 return self.close()
             self.windows[0].setMainWindow(True)
+
+    def close(self):
+        for _ in range(len(self.windows)):
+            self.windows[0].close()
+        return super().close()

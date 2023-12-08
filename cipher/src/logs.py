@@ -39,6 +39,8 @@ class Logs(QPlainTextEdit):
         )
         self.window.addAction(action)
 
+        self.scrollbar = self.verticalScrollBar()
+
         self.setWindowTitle("Log")
         self.resize(700, 350)
 
@@ -54,6 +56,12 @@ class Logs(QPlainTextEdit):
     def log(self, text: str, level=logging.ERROR):
         self.write(text)
         logging.log(msg=text, level=level)
+
+    def setPlainText(self, text: str) -> None:
+        value = self.scrollbar.value()
+        max = self.scrollbar.maximum()
+        super().setPlainText(text)
+        self.scrollbar.setValue(self.scrollbar.maximum()) if value != max else ...
 
     def excepthook(
         self,

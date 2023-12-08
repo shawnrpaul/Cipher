@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Optional
 from importlib import import_module
 from pathlib import Path
-import io
 import json
 import logging
 import os
@@ -11,8 +10,6 @@ import sys
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
-import requests
-import zipfile
 
 from .body import *
 from .extensionlist import *
@@ -216,24 +213,9 @@ class Window(QMainWindow):
         item = ExtensionItem(name, icon, settings, True)
         self.extensionList.addItem(item)
 
-        def onExtReady():
-            item.setText(name)
-            for func in ext.__events__.get("onWorkspaceChanged", []):
-                self.fileManager.onWorkspaceChanged.connect(func)
-            for func in ext.__events__.get("widgetChanged", []):
-                self.tabView.widgetChanged.connect(func)
-            for func in ext.__events__.get("onTabOpened", []):
-                self.tabView.tabOpened.connect(func)
-            for func in ext.__events__.get("onTabClosed", []):
-                self.tabView.tabClosed.connect(func)
-            for func in ext.__events__.get("onSave", []):
-                self.fileManager.onSave.connect(func)
-            for func in ext.__events__.get("onClose", []):
-                self.onClose.connect(func)
-            for func in ext.__events__.get("onReady", []):
-                func(self.currentFolder, self.currentFile)
-
-        onExtReady() if ext.isReady else ext.ready.connect(onExtReady)
+        item.setText(name) if ext.isReady else ext.ready.connect(
+            lambda: item.setText(name)
+        )
         self.__extensions__[name] = ext
 
     def removeExtension(self, name: str) -> None:
