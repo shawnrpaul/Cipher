@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, List, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from PyQt6.QtCore import QObject, pyqtSignal
 from .event import Event
@@ -11,7 +11,7 @@ __all__ = ("Extension",)
 
 
 class ExtensionMeta(type):
-    __events__: Dict[str, List[Event]]
+    __events__: dict[str, list[Event]]
 
     def __new__(cls, *args, **kwargs):
         self = super().__new__(cls, *args, **kwargs)
@@ -31,7 +31,7 @@ class ExtensionCore(type(QObject), ExtensionMeta):
 
 
 class Extension(QObject, metaclass=ExtensionCore):
-    __events__: Dict[str, List[Event]] = {}
+    __events__: dict[str, list[Event]] = {}
     ready = pyqtSignal()
 
     def __new__(cls, *args, **kwargs):
@@ -47,6 +47,9 @@ class Extension(QObject, metaclass=ExtensionCore):
         self.window = window
         self.isReady = False
 
-    def prepare(self):
+    def prepare(self) -> None:
         self.isReady = True
         self.ready.emit()
+
+    def unload(self) -> Any:
+        ...

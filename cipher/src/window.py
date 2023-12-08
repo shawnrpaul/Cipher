@@ -221,22 +221,7 @@ class Window(QMainWindow):
     def removeExtension(self, name: str) -> None:
         if not (ext := self.__extensions__.pop(name, None)):
             return
-        for name, events in ext.__events__.items():
-            if signal := (
-                self.fileManager.onWorkspaceChanged
-                if name == "onWorkspaceChanged"
-                else self.tabView.widgetChanged
-                if name == "widgetChanged"
-                else self.tabView.tabOpened
-                if name == "onTabOpened"
-                else self.fileManager.onSave
-                if name == "onSave"
-                else self.onClose
-                if name == "onClose"
-                else None
-            ):
-                for event in events:
-                    signal.disconnect(event)
+        ext.unload()
 
     def closeEvent(self, _: QCloseEvent) -> None:
         self.logs.close()
