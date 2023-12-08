@@ -190,9 +190,6 @@ class Menubar(QMenuBar):
             else self._window.terminal.hide()
         )
 
-        run = view.addAction("Run")
-        run.triggered.connect(lambda: self._window.terminal.run())
-
         close = view.addAction("Close Editor")
         close.triggered.connect(self._window.tabView.closeCurrentTab)
 

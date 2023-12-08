@@ -1,10 +1,11 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
+from enum import Enum
 from pathlib import Path
-import os
 import sys
+import os
 
-from PyQt6.QtCore import QProcess, Qt
+from PyQt6.QtCore import QProcess, QProcessEnvironment, Qt
 from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import QLineEdit, QPlainTextEdit, QVBoxLayout, QWidget
 
@@ -12,21 +13,89 @@ from PyQt6.QtWidgets import QLineEdit, QPlainTextEdit, QVBoxLayout, QWidget
 if TYPE_CHECKING:
     from .window import Window
 
+
+class ShellType(Enum):
+    Powershell = 0
+    Bash = 1
+
+
 if sys.platform == "win32":
     defaultPath = Path(os.getenv("USERPROFILE")).absolute()
+    shell = ShellType.Powershell
 else:
     defaultPath = Path(os.getenv("HOME")).absolute()
+    shell = ShellType.Bash
 
 __all__ = ("Terminal",)
+
+
+class Process(QProcess):
+    def __init__(self, terminal: Terminal) -> None:
+        super().__init__()
+        self.terminal = terminal
+        self.readyReadStandardOutput.connect(self.dataRecieved)
+        self.readyReadStandardError.connect(self.errorRecieved)
+        self.createProcess(self.terminal.window.currentFolder)
+
+    def createProcess(self, path: Optional[Path]) -> None:
+        match shell:
+            case ShellType.Powershell:
+                self.setProgram("powershell")
+                self.setArguments(["-nologo"])
+            case ShellType.Bash:
+                self.setProgram("bash")
+        self.setWorkingDirectory(str(path) if path else str(defaultPath))
+        env = QProcessEnvironment()
+        env.insert(env.systemEnvironment())
+        env.insert("PYTHONUNBUFFERED", "True")
+        self.setProcessEnvironment(env)
+        self.start()
+
+    @property
+    def stdout(self) -> QPlainTextEdit:
+        return self.terminal.stdout
+
+    def changeDirectory(self, path: Optional[Path]) -> None:
+        self.kill()
+        self.stdout.clear()
+        self.createProcess(path)
+
+    def readAll(self) -> str:
+        return super().readAll().data().decode()
+
+    def readAllStandardOutput(self) -> str:
+        return super().readAllStandardOutput().data().decode()
+
+    def readAllStandardError(self) -> str:
+        return super().readAllStandardError().data().decode()
+
+    def dataRecieved(self) -> None:
+        data = self.readAllStandardOutput()
+        if data.startswith("clear\n"):
+            self.stdout.clear()
+            data = data.split("\n")[1]
+        self.stdout.setPlainText(f"{self.stdout.toPlainText()}{data}")
+
+    def errorRecieved(self) -> None:
+        self.stdout.setPlainText(
+            f"{self.stdout.toPlainText()}{self.readAllStandardError()}"
+        )
+
+    def kill(self) -> None:
+        super().kill()
+        self.waitForFinished()
 
 
 class Stdin(QLineEdit):
     def __init__(self, terminal: Terminal) -> None:
         super().__init__(terminal)
         self.terminal = terminal
-        self.stdout = terminal.stdout
         self.prevCommands = []
         self.index = 0
+
+    @property
+    def stdout(self) -> QPlainTextEdit:
+        return self.terminal.stdout
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:
         key = a0.key()
@@ -50,66 +119,32 @@ class Stdin(QLineEdit):
                 else:
                     self.clear()
                 return a0.accept()
-        elif (
-            a0.modifiers() == Qt.KeyboardModifier.ControlModifier
-            and key == int(Qt.Key.Key_C)
-            and self.terminal.isRunning()
+        elif a0.modifiers() == Qt.KeyboardModifier.ControlModifier and key == int(
+            Qt.Key.Key_C
         ):
-            self.terminal._process.kill()
+            self.terminal._process.write("Ctrl+C\n".encode())
             return a0.accept()
         return super().keyPressEvent(a0)
 
     def returnPressed(self) -> None:
         text = self.text()
-        if self.terminal.isRunning():
-            self.stdout.setPlainText(f"{self.stdout.toPlainText()}{text}\n")
-            self.terminal._process.write(f"{text}\n".encode())
-        else:
-            self.processCommand(text)
+        self.terminal._process.write(f"{text}\n".encode())
         self.clear()
-
-    def processCommand(self, text: str) -> None:
-        command = text.lstrip().lower()
-        if command == "clear":
-            return self.stdout.setPlainText(f"{self.terminal.currentDirectory}>")
-        self.stdout.setPlainText(f"{self.stdout.toPlainText()}{text}\n")
-        if command == "ls":
-            contents = "    ".join(
-                path for path in os.listdir(self.terminal.currentDirectory)
-            )
-            return self.stdout.setPlainText(
-                f"{self.stdout.toPlainText()}{contents}\n\n{self.terminal.currentDirectory}>"
-            )
-        if text.startswith("cd") and len(command := text.rstrip().split(" ")) > 1:
-            self.terminal.currentDirectory = (
-                self.terminal.currentDirectory.parent
-                if command[1] == ".."
-                else path
-                if (path := Path(command[1]).absolute()).exists()
-                else defaultPath
-            )
-            return self.stdout.setPlainText(
-                f"{self.stdout.toPlainText()}\n{self.terminal.currentDirectory}>"
-            )
-        self.terminal.runProcess(text)
 
 
 class Terminal(QWidget):
     def __init__(self, window: Window) -> None:
         super().__init__(window)
         self._window = window
-        self._process = None
+        self._process = Process(self)
 
-        self.window.onClose.connect(
-            lambda: self._process.kill() if self.isRunning() else ...
+        self.window.fileManager.onWorkspaceChanged.connect(
+            self._process.changeDirectory
         )
-
-        self.currentDirectory = self.window.currentFolder
-        self.window.fileManager.onWorkspaceChanged.connect(self.changeDirectory)
+        self.window.onClose.connect(self._process.close)
 
         self.stdout = QPlainTextEdit(self)
         self.stdout.setReadOnly(True)
-
         self.stdin = Stdin(self)
 
         layout = QVBoxLayout()
@@ -124,59 +159,6 @@ class Terminal(QWidget):
     def window(self) -> Window:
         return self._window
 
-    def isRunning(self) -> bool:
-        return bool(self._process)
-
     def show(self) -> None:
         self.stdin.setFocus()
         return super().show()
-
-    def changeDirectory(self, path: Optional[Path]) -> None:
-        self.currentDirectory = path if path else defaultPath
-        self.stdout.clear()
-        self.stdout.setPlainText(f"{self.currentDirectory}>")
-
-    def stateChanged(self, state: QProcess.ProcessState) -> None:
-        if state == QProcess.ProcessState.NotRunning:
-            self._process = None
-            self.stdout.setPlainText(
-                f"{self.stdout.toPlainText()}\n{self.currentDirectory}>"
-            )
-
-    def _run(self, program: str, args: list[str], directory: str):
-        self.show() if self.isHidden() else ...
-        self._process = QProcess(self)
-        self._process.setProgram(program)
-        self._process.setArguments(args)
-        self._process.setWorkingDirectory(directory)
-        self._process.stateChanged.connect(self.stateChanged)
-        self._process.readyReadStandardOutput.connect(
-            lambda: self.stdout.setPlainText(
-                f"{self.stdout.toPlainText()}{self._process.readAllStandardOutput().data().decode()}"
-            )
-        )
-        self._process.readyReadStandardError.connect(
-            lambda: self.stdout.setPlainText(
-                f"{self.stdout.toPlainText()}{self._process.readAllStandardError().data().decode()}"
-            )
-        )
-        self._process.start()
-
-    def run(self) -> None:
-        if not self._window.currentFolder or self.isRunning():
-            return
-        if sys.platform == "win32":
-            program, args = "powershell", [".cipher\\run.bat"]
-        elif sys.platform == "linux":
-            program, args = "bash", [".cipher/run.sh"]
-        output = f"{program} {' '.join(args)}"
-        self.stdout.setPlainText(f"{self.stdout.toPlainText()}{output}\n")
-        self.stdin.prevCommands.append(f"{output}")
-        self.stdin.index = len(self.stdin.prevCommands)
-        self._run(program, args, str(self.currentDirectory))
-
-    def runProcess(self, text: str) -> None:
-        if self.isRunning():
-            return
-        program, *args = text.split(" ")
-        self._run(program, args, str(self.currentDirectory))
