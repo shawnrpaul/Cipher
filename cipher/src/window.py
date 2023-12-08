@@ -139,7 +139,7 @@ class Window(QMainWindow):
 
     def setMainWindow(self, main: bool = False) -> bool:
         self._mainWindow = main
-        sys.stdout = self.logs.stdout
+        sys.stdout = sys.stderr = self.logs.stdout
         sys.excepthook = self.logs.excepthook
 
     def createTask(self, coro) -> None:

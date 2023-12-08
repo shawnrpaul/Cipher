@@ -69,16 +69,12 @@ class Logs(QPlainTextEdit):
         exc_value: Optional[BaseException],
         exc_tb: TracebackType,
     ):
-        tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
-        cwd = Path(os.path.dirname(os.path.dirname(__file__))).absolute()
         try:
-            for frame in tb.stack[::-1]:
-                file = Path(frame.filename).absolute()
-                if file.is_relative_to(cwd):
-                    line = frame.lineno
-                    break
+            file = Path(exc_tb.tb_frame.f_code.co_filename)
+            line = exc_tb.tb_lineno
             logging.error(f"{file.name}({line}) - {exc_type.__name__}: {exc_value}")
+            if file.is_relative_to(os.getcwd()):
+                return self.window.application.close()
         except Exception:
             logging.error(f"{exc_type.__name__}: {exc_value}")
-        self.window.close()
-        return sys.__excepthook__(exc_type, exc_value, exc_tb)
+        traceback.print_exception(exc_type, exc_value, exc_tb)
