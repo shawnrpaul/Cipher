@@ -102,7 +102,7 @@ class Window(QMainWindow):
         self.systemTray.setIcon(QIcon(f"{self.localAppData}/icons/window.png"))
 
         originalWidth = self.screen().size().width()
-        originalHeight = self.screen().size().width()
+        originalHeight = self.screen().size().height()
         width = int(originalWidth / 5.25)
         height = int(originalHeight / 2)
 
