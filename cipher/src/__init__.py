@@ -11,3 +11,4 @@ from .tabview import *
 from .editor import *
 from .image import *
 from .thread import *
+from .logs import *

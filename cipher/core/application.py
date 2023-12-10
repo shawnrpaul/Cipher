@@ -1,6 +1,9 @@
 from __future__ import annotations
+from typing import Optional, Type
+from types import TracebackType
 from pathlib import Path
 import asyncio
+import traceback
 import logging
 import sys
 import os
@@ -16,6 +19,7 @@ import zipfile
 from cipher.src import Window
 from .server import Server
 from .client import Client
+from .stdout import Stdout
 
 __all__ = ("Application", "ServerApplication")
 
@@ -98,7 +102,9 @@ class ServerApplication(Application):
             [f"{self.localAppData}/shortcuts.json"], self
         )
 
-        self.windows: list[Window] = []
+        self._windows: list[Window] = []
+        sys.stdout = sys.stderr = Stdout(self)
+        sys.excepthook = self.excepthook
         self.parseArgs(argv)
 
     @property
@@ -151,7 +157,7 @@ class ServerApplication(Application):
                 print(msg, file=sys.stderr)
                 sys.exit(1)
 
-            if parser.isSet(new) or not self.windows:
+            if parser.isSet(new) or not self._windows:
                 window = self.createWindow()
             else:
                 window = self.mainWindow()
@@ -173,25 +179,41 @@ class ServerApplication(Application):
 
     def createWindow(self) -> Window:
         window = Window(self)
-        window.setMainWindow(True) if not self.windows else ...
-        self.windows.append(window)
+        window.setMainWindow(True) if not self._windows else ...
+        self._windows.append(window)
         return window
 
     def mainWindow(self) -> Window:
-        if not self.windows:
+        if not self._windows:
             window = Window(self)
             window.setMainWindow(True)
-            self.windows.append(window)
-        return self.windows[0]
+            self._windows.append(window)
+        return self._windows[0]
 
     def closeWindow(self, window: Window):
-        self.windows.remove(window)
+        self._windows.remove(window)
         if window.isMainWindow():
-            if not self.windows:
+            if not self._windows:
                 return self.close()
-            self.windows[0].setMainWindow(True)
+            self._windows[0].setMainWindow(True)
 
     def close(self):
-        for _ in range(len(self.windows)):
-            self.windows[0].close()
+        for _ in range(len(self._windows)):
+            self._windows[0].close()
         return super().close()
+
+    def excepthook(
+        self,
+        exc_type: Type[BaseException],
+        exc_value: Optional[BaseException],
+        exc_tb: TracebackType,
+    ):
+        try:
+            file = Path(exc_tb.tb_frame.f_code.co_filename)
+            line = exc_tb.tb_lineno
+            logging.error(f"{file.name}({line}) - {exc_type.__name__}: {exc_value}")
+            if file.is_relative_to(os.getcwd()):
+                return self.close()
+        except Exception:
+            logging.error(f"{exc_type.__name__}: {exc_value}")
+        traceback.print_exception(exc_type, exc_value, exc_tb)

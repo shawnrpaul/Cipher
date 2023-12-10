@@ -7,7 +7,7 @@ import os
 
 from PyQt6.QtCore import QProcess, QProcessEnvironment, Qt
 from PyQt6.QtGui import QKeyEvent
-from PyQt6.QtWidgets import QLineEdit, QPlainTextEdit, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QFrame, QLineEdit, QPlainTextEdit, QVBoxLayout
 
 
 if TYPE_CHECKING:
@@ -132,7 +132,7 @@ class Stdin(QLineEdit):
         self.clear()
 
 
-class Terminal(QWidget):
+class Terminal(QFrame):
     def __init__(self, window: Window) -> None:
         super().__init__(window)
         self._window = window
@@ -153,11 +153,17 @@ class Terminal(QWidget):
         layout.addWidget(self.stdin)
         self.setLayout(layout)
 
-        self.hide()
-
     @property
     def window(self) -> Window:
         return self._window
+
+    def run(self) -> None:
+        match shell:
+            case ShellType.Powershell:
+                path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
+            case ShellType.Bash:
+                path = Path(f"{self._window.currentFolder}/.cipher/run.sh")
+        self._process.write(str(path).encode())
 
     def show(self) -> None:
         self.stdin.setFocus()

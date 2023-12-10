@@ -5,7 +5,6 @@ from pathlib import Path
 import json
 import logging
 import os
-import sys
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
@@ -18,8 +17,9 @@ from .git import *
 from .menubar import *
 from .search import *
 from .sidebar import *
-from .tabview import *
 from .splitter import *
+from .tabview import *
+from .outputview import *
 from .terminal import *
 from .logs import *
 from cipher.ext import Extension
@@ -78,16 +78,17 @@ class Window(QMainWindow):
         self.extensionList = ExtensionList(self)
         self.git = Git(self)
         self.search = GlobalSearch(self)
-        self.sidebar = Sidebar(self)
-        self.menubar = Menubar(self)
         self.terminal = Terminal(self)
         self.logs = Logs(self)
+        self.outputView = OutputView(self)
+        self.sidebar = Sidebar(self)
+        self.menubar = Menubar(self)
 
         self.hsplit = HSplitter(self)
         self.fileSplitter = FileManagerSplitter(self)
         self.vsplit = VSplitter(self)
         self.vsplit.addWidget(self.tabView)
-        self.vsplit.addWidget(self.terminal)
+        self.vsplit.addWidget(self.outputView)
         self.hsplit.addWidget(self.fileSplitter)
         self.hsplit.addWidget(self.vsplit)
 
@@ -101,9 +102,12 @@ class Window(QMainWindow):
         self.systemTray.setIcon(QIcon(f"{self.localAppData}/icons/window.png"))
 
         originalWidth = self.screen().size().width()
+        originalHeight = self.screen().size().width()
         width = int(originalWidth / 5.25)
+        height = int(originalHeight / 2)
 
         self.hsplit.setSizes([width, originalWidth - width])
+        self.vsplit.setSizes([height, height])
 
         self.addExtensions()
         self.showMaximized()
@@ -139,8 +143,6 @@ class Window(QMainWindow):
 
     def setMainWindow(self, main: bool = False) -> bool:
         self._mainWindow = main
-        sys.stdout = sys.stderr = self.logs.stdout
-        sys.excepthook = self.logs.excepthook
 
     def createTask(self, coro) -> None:
         return self.application.createTask(coro)
