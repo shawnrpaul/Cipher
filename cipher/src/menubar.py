@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, List
@@ -184,11 +182,13 @@ class Menubar(QMenuBar):
         explorer.triggered.connect(self.explorer)
 
         terminal = view.addAction("Terminal")
-        terminal.triggered.connect(
-            lambda: self._window.terminal.show()
-            if self._window.terminal.isHidden()
-            else self._window.terminal.hide()
-        )
+        terminal.triggered.connect(self.terminal)
+
+        logs = view.addAction("Logs")
+        logs.triggered.connect(self.logs)
+
+        run = view.addAction("Run")
+        run.triggered.connect(self.window.terminal.run)
 
         close = view.addAction("Close Editor")
         close.triggered.connect(self._window.tabView.closeCurrentTab)
@@ -197,6 +197,23 @@ class Menubar(QMenuBar):
         """Opens or closes the :class:`sidebar.Explorer`"""
         widget = self._window.hsplit.widget(0)
         widget.setVisible(not widget.isVisible())
+
+    def terminal(self) -> None:
+        outputView = self.window.outputView
+        if (
+            not outputView.isHidden()
+            and outputView.currentWidget() == self.window.terminal
+        ):
+            return outputView.hide()
+        outputView.show()
+        outputView.setCurrentWidget(self.window.terminal)
+
+    def logs(self) -> None:
+        outputView = self.window.outputView
+        if not outputView.isHidden() and outputView.currentWidget() == self.window.logs:
+            return outputView.hide()
+        outputView.show()
+        outputView.setCurrentWidget(self.window.logs)
 
     def createGitMenu(self) -> None:
         """Creates the git menu box"""

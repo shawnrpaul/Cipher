@@ -180,20 +180,20 @@ Git > GitView::item::selected {
     border: none;
 }
 
-TabView > QTabBar::tab::selected {
-    border-style: none;
-    background-color: #252526;
-    color: #FFFFFF;
+TabView::pane {
+    background-color: #1E1E1E;
+    color: #1E1E1E;
 }
-TabView {
-    background-color: #252526;
-    border: none;
-}
-
 TabView > QTabBar {
     background-color: #252526;
     color: #909685;
     border: none;
+}
+
+TabView > QTabBar::tab::selected {
+    border-style: none;
+    background-color: #252526;
+    color: #FFFFFF;
 }
 
 TabView > QTabBar::tab {
@@ -227,6 +227,34 @@ Editor > QListView::item::selected {
     border: none;
 }
 
+OutputView::pane {
+    background-color: #1E1E1E;
+    color: #1E1E1E;
+}
+
+OutputView > QTabBar {
+    background-color: #252526;
+    border: none;
+}
+
+OutputView > QTabBar::tab {
+    background-color: #1E1E1E;
+    color: #AFAFAF;
+    border: none;
+    min-width: 10px;
+    min-height: 10px;
+    padding: 5px 10px;
+}
+
+OutputView > QTabBar::tab::selected {
+    background-color: #1E1E1E;
+    color: #FFFFFF;
+    border: none;
+    min-width: 10px;
+    min-height: 10px;
+    padding: 5px 10px;
+}
+
 Terminal {
     background-color: #3C3C3C;
     color: #3C3C3C;
@@ -243,8 +271,12 @@ Terminal > QPlainTextEdit {
 Terminal > QLineEdit {
     background-color: #3C3C3C;
     color: #FFFFFF;
-    margin: 2.5px 0 10px 0;
-    border: none;
+    margin: 2.5px 2px 8px 2px;
+    padding: 0px 4px 0px 4px;
+    border-style: solid;
+    border-width: 3px;
+    border-color: #626262;
+    border-radius: 10px;
 }
 
 Logs {
