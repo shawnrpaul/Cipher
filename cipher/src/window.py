@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Optional
 from importlib import import_module
 from pathlib import Path
-import json
 import logging
+import json
 import os
 
 from PyQt6.QtCore import pyqtSignal
@@ -172,9 +172,9 @@ class Window(QMainWindow):
             settings = Path(f"{path}/settings.json").absolute()
             if not settings.exists():
                 continue
-            self.addExtension(path, settings)
+            self.createTask(self.addExtension(path, settings))
 
-    def addExtension(self, path: Path, settings: Path) -> None:
+    async def addExtension(self, path: Path, settings: Path) -> None:
         """Adds the :class:`Extension`
         Meant to be used by :class:`Window`
 
@@ -204,10 +204,9 @@ class Window(QMainWindow):
 
         try:
             mod = import_module(f"extension.{path.name}")
-            ext = mod.run(window=self)
+            ext = await mod.run(window=self)
         except Exception as e:
-            print(f"Failed to add Extension - {e.__class__.__name__}: {e}")
-            name = f"{name} (Disabled)"
+            print(f"Failed to add Extension {name} - {e.__class__.__name__}: {e}")
             return self.extensionList.addItem(ExtensionItem(name, icon, settings))
         if not isinstance(ext, Extension):
             return
@@ -226,7 +225,6 @@ class Window(QMainWindow):
         ext.unload()
 
     def closeEvent(self, _: QCloseEvent) -> None:
-        self.logs.close()
         self.hide()
         self.onClose.emit()
         self.fileManager.saveSettings()

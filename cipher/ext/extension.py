@@ -10,6 +10,13 @@ if TYPE_CHECKING:
 __all__ = ("Extension",)
 
 
+class AsyncMixin(type):
+    async def __call__(cls, *args, **kwargs):
+        self = cls.__new__(cls, *args, **kwargs)
+        await self.__init__(*args, **kwargs)
+        return self
+
+
 class ExtensionMeta(type):
     __events__: dict[str, list[Event]]
 
@@ -26,7 +33,7 @@ class ExtensionMeta(type):
         return self
 
 
-class ExtensionCore(type(QObject), ExtensionMeta):
+class ExtensionCore(type(QObject), ExtensionMeta, AsyncMixin):
     ...
 
 

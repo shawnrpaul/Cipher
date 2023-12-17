@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import os
 
-from PyQt6.QtCore import QProcess, QProcessEnvironment, Qt
+from PyQt6.QtCore import pyqtSignal, QProcess, QProcessEnvironment, Qt
 from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import QFrame, QLineEdit, QPlainTextEdit, QVBoxLayout
 
@@ -30,6 +30,8 @@ __all__ = ("Terminal",)
 
 
 class Process(QProcess):
+    newProcess = pyqtSignal()
+
     def __init__(self, terminal: Terminal) -> None:
         super().__init__()
         self.terminal = terminal
@@ -50,9 +52,10 @@ class Process(QProcess):
         env.insert("PYTHONUNBUFFERED", "True")
         self.setProcessEnvironment(env)
         self.start()
+        self.newProcess.emit()
 
     @property
-    def stdout(self) -> QPlainTextEdit:
+    def stdout(self) -> Stdout:
         return self.terminal.stdout
 
     def changeDirectory(self, path: Optional[Path]) -> None:
@@ -94,7 +97,7 @@ class Stdin(QLineEdit):
         self.index = 0
 
     @property
-    def stdout(self) -> QPlainTextEdit:
+    def stdout(self) -> Stdout:
         return self.terminal.stdout
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:
@@ -132,18 +135,34 @@ class Stdin(QLineEdit):
         self.clear()
 
 
+class Stdout(QPlainTextEdit):
+    def __init__(self, terminal: Terminal) -> None:
+        super().__init__(terminal)
+        self.scrollbar = self.verticalScrollBar()
+
+    def setPlainText(self, text: str) -> None:
+        value = self.scrollbar.value()
+        max = self.scrollbar.maximum()
+        super().setPlainText(text)
+        if value == max:
+            self.scrollbar.setValue(self.scrollbar.maximum())
+
+
 class Terminal(QFrame):
+    newProcess = pyqtSignal()
+
     def __init__(self, window: Window) -> None:
         super().__init__(window)
         self._window = window
         self._process = Process(self)
+        self._process.newProcess.connect(self.newProcess.emit)
 
         self.window.fileManager.onWorkspaceChanged.connect(
             self._process.changeDirectory
         )
         self.window.onClose.connect(self._process.close)
 
-        self.stdout = QPlainTextEdit(self)
+        self.stdout = Stdout(self)
         self.stdout.setReadOnly(True)
         self.stdin = Stdin(self)
 
@@ -160,11 +179,7 @@ class Terminal(QFrame):
     def run(self) -> None:
         match shell:
             case ShellType.Powershell:
-                path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
+                path = Path(f"{self._window.currentFolder}/.cipher/run.bat\n")
             case ShellType.Bash:
-                path = Path(f"{self._window.currentFolder}/.cipher/run.sh")
+                path = Path(f"{self._window.currentFolder}/.cipher/run.sh\n")
         self._process.write(str(path).encode())
-
-    def show(self) -> None:
-        self.stdin.setFocus()
-        return super().show()

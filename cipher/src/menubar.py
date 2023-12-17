@@ -40,10 +40,14 @@ class Menubar(QMenuBar):
     def window(self) -> Window:
         return self._window
 
+    def addMenu(self, name: str) -> None:
+        menu = super().addMenu(name)
+        self._menus.append(menu)
+        return menu
+
     def createFileMenu(self) -> None:
         """Create the file menu box"""
         fileMenu = self.addMenu("File")
-        self._menus.append(fileMenu)
 
         saveFile = fileMenu.addAction("Save File")
         saveFile.triggered.connect(
@@ -100,7 +104,6 @@ class Menubar(QMenuBar):
     def createEditMenu(self) -> None:
         """Creates the edit menu box"""
         editMenu = self.addMenu("Edit")
-        self._menus.append(editMenu)
 
         copy = editMenu.addAction("Copy")
         copy.triggered.connect(
@@ -176,7 +179,6 @@ class Menubar(QMenuBar):
     def createViewMenu(self) -> None:
         """Creates the view menu box"""
         view = self.addMenu("View")
-        self._menus.append(view)
 
         explorer = view.addAction("Explorer")
         explorer.triggered.connect(self.explorer)
@@ -188,7 +190,7 @@ class Menubar(QMenuBar):
         logs.triggered.connect(self.logs)
 
         run = view.addAction("Run")
-        run.triggered.connect(self.window.terminal.run)
+        run.triggered.connect(self.run)
 
         close = view.addAction("Close Editor")
         close.triggered.connect(self._window.tabView.closeCurrentTab)
@@ -215,11 +217,14 @@ class Menubar(QMenuBar):
         outputView.show()
         outputView.setCurrentWidget(self.window.logs)
 
+    def run(self) -> None:
+        if self.window.outputView.isHidden():
+            self.window.outputView.show()
+        self.window.terminal.run()
+
     def createGitMenu(self) -> None:
         """Creates the git menu box"""
         git = self.addMenu("Git")
-        self._menus.append(git)
-
         init = git.addAction("Init")
         init.triggered.connect(self._window.git.init)
         clone = git.addAction("Clone")

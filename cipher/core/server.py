@@ -9,19 +9,14 @@ if TYPE_CHECKING:
     from .application import ServerApplication
 
 
-class ConnectionError(Exception):
-    def __init__(self) -> None:
-        super().__init__("Port 6969 is already in use")
+class PortError(Exception):
+    def __init__(self, port: int) -> None:
+        super().__init__(f"Port {port} is already in use")
 
 
 class Server(QWebSocketServer):
     def __init__(self, app: ServerApplication) -> None:
         super().__init__("Cipher Server", QWebSocketServer.SslMode.NonSecureMode, app)
-        if not self.listen(QHostAddress.SpecialAddress.LocalHost, 6969):
-            raise ConnectionError()
-        self.newConnection.connect(self.onNewConnection)
-        self.closed.connect(self.application.close)
-        self.client = None
 
     @property
     def application(self) -> ServerApplication:
@@ -29,12 +24,22 @@ class Server(QWebSocketServer):
 
     app = application
 
-    def onNewConnection(self):
+    def setPort(self, port: int) -> None:
+        self.port = port
+
+    def listen(self) -> None:
+        if not super().listen(QHostAddress.SpecialAddress.LocalHost, self.port):
+            raise PortError(self.port)
+        self.newConnection.connect(self.onNewConnection)
+        self.closed.connect(self.application.close)
+        self.client = None
+
+    def onNewConnection(self) -> None:
         self.client = self.nextPendingConnection()
         self.client.textMessageReceived.connect(self.processTextMessage)
         self.client.disconnected.connect(self.socketDisconnected)
 
-    def processTextMessage(self, message: str):
+    def processTextMessage(self, message: str) -> None:
         if not self.client:
             return
         try:

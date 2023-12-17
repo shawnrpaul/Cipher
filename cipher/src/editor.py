@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Union
 
 from PyQt6.QtCore import Qt
-from PyQt6.Qsci import QsciAPIs, QsciLexerCustom, QsciScintilla
-from PyQt6.QtGui import QDropEvent, QFont, QKeyEvent, QKeySequence
+from PyQt6.Qsci import QsciAPIs, QsciLexer, QsciLexerCustom, QsciScintilla
+from PyQt6.QtGui import QDropEvent, QKeyEvent, QKeySequence
 from PyQt6.QtWidgets import QFileDialog
 
 from .tab import Tab
@@ -45,14 +45,14 @@ class Editor(QsciScintilla, Tab):
         self.setCaretLineVisible(True)
         self.setCaretWidth(2)
 
-        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsNone)
+        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAPIs)
         self.setAutoCompletionThreshold(1)
         self.setAutoCompletionCaseSensitivity(False)
         self.setAutoCompletionUseSingle(QsciScintilla.AutoCompletionUseSingle.AcusNever)
+        self.setCallTipsStyle(QsciScintilla.CallTipsStyle.CallTipsContext)
 
         self.setAnnotationDisplay(QsciScintilla.AnnotationDisplay.AnnotationBoxed)
         self.setBraceMatching(QsciScintilla.BraceMatch.SloppyBraceMatch)
-        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAPIs)
         self.setIndentationGuides(True)
         self.setTabWidth(4)
         self.setIndentationsUseTabs(False)
@@ -62,27 +62,24 @@ class Editor(QsciScintilla, Tab):
 
         styles = self.getEditorStyles()
         localAppData = f"{window.localAppData}/include"
-        self._lexer = None
+        lexer = None
         if info := styles.get(path.suffix):
-            language, lexer = info.get("language"), info.get("lexer")
+            language, folder = info.get("language"), info.get("lexer")
             lexerPath = Path(
-                f"{localAppData}/lexer/{language}/{lexer}/run.py"
+                f"{localAppData}/lexer/{language}/{folder}/run.py"
             ).absolute()
             if lexerPath.exists():
-                self._lexer = self.loadLexer(language, lexer)
+                lexer = self.loadLexer(language, folder)
 
-        if not self._lexer:
-            self._lexer = self.loadLexer("Default", "Default")
-        self.api = QsciAPIs(self._lexer)
+        if not lexer:
+            lexer = self.loadLexer("Default", "Default")
 
-        self.setLexer(self._lexer)
+        self.setLexer(lexer)
 
         self.setMarginType(0, QsciScintilla.MarginType.NumberMargin)
         self.setMarginWidth(0, 30)
-        self.setMarginsFont(QFont("Consolas"))
 
         self.commands = self.standardCommands()
-        self.releaseShortcut(self.grabShortcut("Ctrl+Tab"))
         self.setShortcutKeys()
         self._window.shortcut.fileChanged.connect(self.setShortcutKeys)
 
@@ -96,6 +93,10 @@ class Editor(QsciScintilla, Tab):
             The custom lexer used per language
         """
         return self._lexer
+
+    @property
+    def api(self) -> QsciAPIs:
+        return self._api
 
     def dropEvent(self, e: QDropEvent) -> None:
         """Overrides the :meth:`dropEvent` to open a tab if a file was dropped
@@ -272,8 +273,7 @@ class Editor(QsciScintilla, Tab):
         pos: `int`
             The starting position of the highlight
         """
-        search = self.SendScintilla
-        search(self.SCI_SETSEL, pos, pos + length)
+        self.SendScintilla(self.SCI_SETSEL, pos, pos + length)
 
     def loadLexer(self, language: str, lexerFolder: str) -> QsciLexerCustom:
         """Loads the lexer and api
@@ -297,6 +297,11 @@ class Editor(QsciScintilla, Tab):
             return lexer
         except Exception as e:
             return None
+
+    def setLexer(self, lexer: QsciLexer | None = None) -> None:
+        self._lexer = lexer
+        self._api = QsciAPIs(lexer) if lexer else None
+        return super().setLexer(lexer)
 
     def getEditorStyles(self) -> Dict[str, Dict[Union[str, List[str]]]]:
         """Returns the editor styles"""

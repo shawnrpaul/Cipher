@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QMouseEvent, QPixmap
-from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 from .splitter import VSplitter
 from .extensionlist import ExtensionList
@@ -58,6 +58,7 @@ class Sidebar(QFrame):
             )
         self._window.hsplit.replaceWidget(0, self._window.fileSplitter)
         self._window.fileSplitter.setVisible(True)
+        self._window.fileManager.setFocus()
 
     def createExtensionList(self) -> None:
         extensions = QLabel()
@@ -79,6 +80,7 @@ class Sidebar(QFrame):
             )
         self._window.hsplit.replaceWidget(0, self._window.extensionList)
         self._window.extensionList.setVisible(True)
+        self._window.extensionList.setFocus()
 
     def createSearch(self) -> None:
         search = QLabel()
@@ -95,9 +97,9 @@ class Sidebar(QFrame):
         if isinstance(self._window.hsplit.widget(0), GlobalSearch):
             return self._window.search.setVisible(not self._window.search.isVisible())
         self._window.hsplit.replaceWidget(0, self._window.search)
+        self._window.search.setVisible(True)
         self._window.search.textBox.selectAll()
         self._window.search.textBox.setFocus()
-        self._window.search.setVisible(True)
 
     def createGitList(self) -> None:
         git = QLabel()
@@ -115,6 +117,7 @@ class Sidebar(QFrame):
             return self._window.git.setVisible(not self._window.git.isVisible())
         self._window.hsplit.replaceWidget(0, self._window.git)
         self._window.git.setVisible(True)
+        self._window.git.setFocus()
 
     def createSettings(self) -> None:
         settings = QLabel()

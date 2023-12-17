@@ -141,9 +141,14 @@ class ServerApplication(Application):
         parser = QCommandLineParser()
         parser.addHelpOption()
 
-        new = QCommandLineOption(["n", "new-window"], "Use a new window")
-        parser.addOption(new)
+        port = QCommandLineOption(
+            ["p", "port"], "Port to use", valueName="port", defaultValue="6969"
+        )
 
+        new = QCommandLineOption(["n", "new-window"], "Use a new window")
+
+        parser.addOption(new)
+        parser.addOption(port)
         parser.process(argv)
 
         args = parser.positionalArguments()
@@ -175,6 +180,8 @@ class ServerApplication(Application):
 
         window = self.mainWindow()
         window.resumeSession()
+        _port = parser.value(port)
+        self.server.setPort(int(_port))
         self.start()
 
     def createWindow(self) -> Window:
@@ -196,6 +203,10 @@ class ServerApplication(Application):
             if not self._windows:
                 return self.close()
             self._windows[0].setMainWindow(True)
+
+    def start(self) -> None:
+        self.server.listen()
+        super().start()
 
     def close(self):
         for _ in range(len(self._windows)):
