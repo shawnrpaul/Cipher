@@ -144,6 +144,8 @@ class FileManager(QTreeView):
 
     def mousePressEvent(self, e: QMouseEvent):
         self.setFocus()
+        if not self.indexAt(e.pos()).data():
+            self.clearSelection()
         return super().mousePressEvent(e)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -157,6 +159,9 @@ class FileManager(QTreeView):
                 return event.accept()
         elif key == int(Qt.Key.Key_Delete):
             self.delete()
+            return event.accept()
+        if key == int(Qt.Key.Key_Escape):
+            self.clearSelection()
             return event.accept()
         return super().keyPressEvent(event)
 
