@@ -33,7 +33,7 @@ class Application(QApplication):
         self.setApplicationName("Cipher")
         self.setApplicationVersion("1.3.2")
         self._background_tasks: list[asyncio.Task] = []
-        self.isRunning = False
+        self._isRunning = False
 
     @staticmethod
     def instance() -> Application:
@@ -45,6 +45,10 @@ class Application(QApplication):
         if processes.count("Cipher.exe") > 1:
             return ClientApplication(sys.argv)
         return ServerApplication(sys.argv)
+
+    @property
+    def isRunning(self) -> bool:
+        return self._isRunning
 
     async def eventLoop(self):
         while self.isRunning:
@@ -62,19 +66,20 @@ class Application(QApplication):
         return task
 
     def start(self) -> None:
-        if not self.isRunning:
-            self.isRunning = True
-            self.loop.create_task(self.eventLoop())
-            try:
-                self.loop.run_forever()
-            except KeyboardInterrupt:
-                self.close()
-            finally:
-                self.loop.run_until_complete(asyncio.sleep(0.5))
+        if self.isRunning:
+            return
+        self._isRunning = True
+        self.loop.create_task(self.eventLoop())
+        try:
+            self.loop.run_forever()
+        except KeyboardInterrupt:
+            self.close()
+        finally:
+            self.loop.run_until_complete(asyncio.sleep(0.5))
 
     def close(self):
         self.quit()
-        self.isRunning = False
+        self._isRunning = False
         for task in self._background_tasks:
             task.cancel()
 
@@ -205,7 +210,7 @@ class ServerApplication(Application):
             self._windows[0].setMainWindow(True)
 
     def start(self) -> None:
-        self.server.listen()
+        self.server.listen() if not self.isRunning else ...
         super().start()
 
     def close(self):

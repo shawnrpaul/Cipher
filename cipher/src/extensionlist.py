@@ -51,7 +51,6 @@ class ExtensionList(QListWidget):
         self._window = window
         self.setMaximumWidth(self.screen().size().width() // 2)
         self.itemClicked.connect(lambda item: window.tabView.createTab(item.path))
-        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.createContextMenu()
         self.customContextMenuRequested.connect(

@@ -18,8 +18,7 @@ class Event:
     func: `~typing.Callable[..., ~typing.Any]`
     """
 
-    def __init__(self, *, name: str = None, func: Callable[..., Any] = None) -> None:
-        self.name: str = name if name else func.__name__
+    def __init__(self, func: Callable[..., Any] = None) -> None:
         self._instance: Extension = None
         self.func = func
         self._error: Optional[Callable[..., Any]] = None
@@ -45,13 +44,8 @@ class Event:
         return func
 
 
-def event(name: str = None) -> Event:
+def event(func: Callable[..., Any]) -> Event:
     """Decorator to create an `Event` object
-
-    Parameters
-    ----------
-    name : str, optional
-        Name of the editor event. If not provided, the function name must be the event name. By default None
 
     Returns
     -------
@@ -59,9 +53,6 @@ def event(name: str = None) -> Event:
         The event object
     """
 
-    def decorator(func: Callable[..., Any]) -> Event:
-        if not inspect.iscoroutinefunction(func):
-            raise TypeError("The function must be async.")
-        return Event(name=name, func=func)
-
-    return decorator
+    if not inspect.iscoroutinefunction(func):
+        raise TypeError("The function must be async.")
+    return Event(func)

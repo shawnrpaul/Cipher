@@ -18,17 +18,15 @@ class AsyncMixin(type):
 
 
 class ExtensionMeta(type):
-    __events__: dict[str, list[Event]]
+    __events__: list[Event]
 
     def __new__(cls, *args, **kwargs):
         self = super().__new__(cls, *args, **kwargs)
-        events = {}
+        events = []
         for base in reversed(self.__mro__):
             for value in base.__dict__.values():
                 if isinstance(value, Event):
-                    if not events.get(value.name):
-                        events[value.name] = []
-                    events[value.name].append(value)
+                    events.append(value)
         self.__events__ = events
         return self
 
@@ -38,14 +36,13 @@ class ExtensionCore(type(QObject), ExtensionMeta, AsyncMixin):
 
 
 class Extension(QObject, metaclass=ExtensionCore):
-    __events__: dict[str, list[Event]] = {}
+    __events__: list[Event] = []
     ready = pyqtSignal()
 
     def __new__(cls, *args, **kwargs):
         self = super(Extension, cls).__new__(cls)
-        for events in self.__events__.values():
-            for event in events:
-                event._instance = self
+        for event in self.__events__:
+            event._instance = self
 
         return self
 

@@ -198,7 +198,9 @@ class Menubar(QMenuBar):
     def explorer(self) -> None:
         """Opens or closes the :class:`sidebar.Explorer`"""
         widget = self._window.hsplit.widget(0)
-        widget.setVisible(not widget.isVisible())
+        visible = not widget.isVisible()
+        widget.setVisible(visible)
+        widget.setFocus() if visible else ...
 
     def terminal(self) -> None:
         outputView = self.window.outputView

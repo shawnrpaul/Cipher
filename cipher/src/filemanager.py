@@ -93,7 +93,6 @@ class FileManager(QTreeView):
         self.setColumnHidden(1, True)
         self.setColumnHidden(2, True)
         self.setColumnHidden(3, True)
-        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setDragDropMode(QTreeView.DragDropMode.DragDrop)
 
         self._globalSettings = QFileSystemWatcher(

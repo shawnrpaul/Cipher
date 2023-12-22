@@ -69,6 +69,7 @@ class FileManagerSplitter(VSplitter):
         super().__init__(window)
         self.setObjectName("FileManagerSplitter")
         self.addWidget(Explorer(window.fileManager))
+        self.setFocusProxy(window.fileManager)
 
     def getPaths(self) -> list[Path]:
         return [
