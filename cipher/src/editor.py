@@ -1,11 +1,10 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING, Dict, List, Union
 
 import json
 from importlib import import_module
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Union
-
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.Qsci import QsciAPIs, QsciLexer, QsciLexerCustom, QsciScintilla
 from PyQt6.QtGui import QDropEvent, QKeyEvent, QKeySequence
 from PyQt6.QtWidgets import QFileDialog
@@ -35,10 +34,13 @@ class Editor(QsciScintilla, Tab):
         The path of the file being edited
     """
 
+    saved = pyqtSignal()
+
     def __init__(self, window: Window, path: Path) -> None:
         super().__init__(window=window, path=path)
         self.setObjectName(path.name)
         self._watcher.fileChanged.connect(self.updateText)
+        self.saved.connect(lambda: window.fileManager.onSave.emit(self))
         self.setUtf8(True)
         self.zoomOut(2)
 
@@ -181,7 +183,7 @@ class Editor(QsciScintilla, Tab):
         self._watcher.removePath(str(self.path))
         self.path.write_text(self.text(), encoding="utf-8")
         self._watcher.addPath(str(self.path))
-        self._window.fileManager.onSave.emit(self)
+        self.saved.emit()
 
     def saveAs(self) -> None:
         """Saves the editor as a new file"""
@@ -200,7 +202,7 @@ class Editor(QsciScintilla, Tab):
         self._window.tabView.setTabText(
             self._window.tabView.currentIndex(), self.path.name
         )
-        self._window.fileManager.onSave.emit(self)
+        self.saved.emit()
 
     def copy(self) -> None:
         """Copies the selected text. If no text is selected, the line will copied"""

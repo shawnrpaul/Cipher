@@ -1,12 +1,9 @@
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING, Optional
-from importlib import import_module
+from typing import TYPE_CHECKING, Optional
 from pathlib import Path
 import logging
-import json
-import os
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 
@@ -22,7 +19,6 @@ from .tabview import *
 from .outputview import *
 from .terminal import *
 from .logs import *
-from cipher.ext import Extension
 
 if TYPE_CHECKING:
     from cipher.core import ServerApplication
@@ -56,7 +52,6 @@ class Window(QMainWindow):
         Sends a windows notification. Meant to be used by :class:`Extension`
     """
 
-    __extensions__: dict[str, Extension]
     onClose = pyqtSignal()
 
     def __init__(self, app: ServerApplication) -> None:
@@ -109,7 +104,6 @@ class Window(QMainWindow):
         self.hsplit.setSizes([width, originalWidth - width])
         self.vsplit.setSizes([height, height])
 
-        self.addExtensions()
         self.showMaximized()
 
     @property
@@ -159,70 +153,11 @@ class Window(QMainWindow):
                 settings.get("currentFile"), settings.get("openedFiles", [])
             )
 
-    def addExtensions(self) -> None:
-        """Gets the list of extension folder and starts a thread to activate each extension.
-        Meant to be used by :class:`Window`
-        """
-        self.__extensions__ = {}
-        extensions = f"{self.localAppData}/include/extension"
-        for folder in os.listdir(extensions):
-            path = Path(f"{extensions}/{folder}").absolute()
-            if path.is_file():
-                continue
-            settings = Path(f"{path}/settings.json").absolute()
-            if not settings.exists():
-                continue
-            self.createTask(self.addExtension(path, settings))
-
-    async def addExtension(self, path: Path, settings: Path) -> None:
-        """Adds the :class:`Extension`
-        Meant to be used by :class:`Window`
-
-        Parameters
-        ----------
-        path : `Path`
-            The path of the extension folder
-        settings : `Path`
-            The path of the extension settings.
-            If the extension is disabled in settings, the :class:`Extension` won't be added.
-        """
-        try:
-            with open(settings) as f:
-                data: dict[str, Any] = json.load(f)
-        except json.JSONDecodeError:
-            return
-
-        if not (name := data.get("name")):
-            return
-
-        icon = f"{path}/icon.ico"
-        if not Path(icon).exists():
-            icon = f"{self.localAppData}/icons/blank.ico"
-
-        if not data.get("enabled"):
-            return self.extensionList.addItem(ExtensionItem(name, icon, settings))
-
-        try:
-            mod = import_module(f"extension.{path.name}")
-            ext = await mod.run(window=self)
-        except Exception as e:
-            print(f"Failed to add Extension {name} - {e.__class__.__name__}: {e}")
-            return self.extensionList.addItem(ExtensionItem(name, icon, settings))
-        if not isinstance(ext, Extension):
-            return
-
-        item = ExtensionItem(name, icon, settings, True)
-        self.extensionList.addItem(item)
-
-        item.setText(name) if ext.isReady else ext.ready.connect(
-            lambda: item.setText(name)
-        )
-        self.__extensions__[name] = ext
-
-    def removeExtension(self, name: str) -> None:
-        if not (ext := self.__extensions__.pop(name, None)):
-            return
-        ext.unload()
+    def event(self, event: QEvent) -> bool:
+        if hasattr(self, "extensionList"):
+            for ext in self.extensionList.extensions:
+                self.application.sendEvent(ext, event)
+        return super().event(event)
 
     def closeEvent(self, _: QCloseEvent) -> None:
         self.hide()

@@ -1,7 +1,8 @@
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QEvent, QObject, pyqtSignal
+from PyQt6.QtGui import QKeyEvent, QMouseEvent
 from .event import Event
 
 if TYPE_CHECKING:
@@ -40,16 +41,31 @@ class Extension(QObject, metaclass=ExtensionCore):
     ready = pyqtSignal()
 
     def __new__(cls, *args, **kwargs):
-        self = super(Extension, cls).__new__(cls)
+        self = super().__new__(cls)
         for event in self.__events__:
             event._instance = self
-
         return self
 
     def __init__(self, window: Window) -> None:
         super().__init__(parent=window)
         self.window = window
         self.isReady = False
+
+    def event(self, event: QEvent) -> bool:
+        self.eventReceived(event)
+        return super().event(event)
+
+    def eventReceived(self, event: QEvent) -> None:
+        if isinstance(event, QKeyEvent):
+            return self.keyPressEvent(event)
+        if isinstance(event, QMouseEvent):
+            return self.mousePressEvent(event)
+
+    def keyPressEvent(self, a0: QKeyEvent) -> None:
+        ...
+
+    def mousePressEvent(self, a0: QMouseEvent) -> None:
+        ...
 
     def prepare(self) -> None:
         self.isReady = True
