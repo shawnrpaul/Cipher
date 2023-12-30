@@ -1,14 +1,14 @@
 from __future__ import annotations
-from typing import Any, List, TYPE_CHECKING, Optional
+from typing import Any, TYPE_CHECKING, Optional
 
 from importlib import import_module
+from enum import IntEnum
 from pathlib import Path
 import json
 import os
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QMessageBox
+from PyQt6.QtGui import QContextMenuEvent, QIcon, QMouseEvent
+from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QMenu
 from cipher.ext import Extension
 
 if TYPE_CHECKING:
@@ -19,66 +19,84 @@ __all__ = ("ExtensionItem", "ExtensionList")
 
 
 class ExtensionItem(QListWidgetItem):
-    __slots__ = ("name", "path")
+    class Status(IntEnum):
+        LOADING = 1
+        ENABLED = 2
+        FAILED = 3
+        DISABLED = 4
 
-    def __init__(self, name: str, icon: str, path: Path, enabled: bool) -> None:
+    def __init__(self, name: str, icon: str, path: Path) -> None:
         super().__init__()
         self.name = name
         self.path = path
-        self.enabled = enabled
         self.ext: Optional[Extension] = None
 
+        self.setStatus(ExtensionItem.Status.DISABLED)
         self.setIcon(QIcon(icon))
-        self.setText(f"{self.name} (Disabled)") if not enabled else ...
+
+    def __str__(self) -> str:
+        return self.name
 
     def listWidget(self) -> ExtensionList:
         return super().listWidget()
 
+    def setStatus(self, status: ExtensionItem.Status) -> None:
+        self.status = status
+        match status:
+            case ExtensionItem.Status.LOADING:
+                self.setText(f"{self.name} (Loading)")
+            case ExtensionItem.Status.ENABLED:
+                self.setText(self.name)
+            case ExtensionItem.Status.FAILED:
+                self.setText(f"{self.name} (Failed)")
+            case ExtensionItem.Status.DISABLED:
+                self.setText(f"{self.name} (Disabled)")
+            case _:
+                raise TypeError(
+                    f"Status must be of type ExtensionItem.Status not {type(status)}"
+                )
+
     async def initialize(self) -> None:
-        self.setText(f"{self.name} (Loading)")
+        self.setStatus(ExtensionItem.Status.LOADING)
         window = self.listWidget().window
         try:
             mod = import_module(f"extension.{self.path.name}")
             self.ext: Extension = await mod.run(window=window)
         except Exception as e:
             print(f"Failed to add Extension {self.name} - {e.__class__.__name__}: {e}")
-            return self.setText(f"{self.name} (Disabled)")
+            return self.setStatus(ExtensionItem.Status.FAILED)
         if not isinstance(self.ext, Extension):
             self.ext = None
-            return self.setText(f"{self.name} (Disabled)")
-        setText = lambda: self.setText(self.name)
-        setText() if self.ext.isReady else self.ext.ready.connect(setText)
+            return self.setStatus(ExtensionItem.Status.FAILED)
+        self.setStatus(ExtensionItem.Status.ENABLED)
 
-    def enable(self) -> None:
+    async def enable(self) -> None:
         with open(f"{self.path}/settings.json") as f:
             data = json.load(f)
-        data["enabled"] = self.enabled = True
+        data["enabled"] = True
         with open(f"{self.path}/settings.json", "w") as f:
             json.dump(data, f, indent=4)
-        self.listWidget().window.createTask(self.initialize())
+        await self.initialize()
 
-    def reload(self) -> None:
-        if self.enabled:
-            self.setText(f"{self.name} (Disabled)")
-            self.ext.unload()
-            self.ext = None
-        self.listWidget().window.createTask(self.initialize())
+    async def reload(self) -> None:
+        match self.status:
+            case ExtensionItem.Status.DISABLED:
+                return await self.enable()
+            case ExtensionItem.Status.ENABLED:
+                await self.ext.unload()
+                self.ext = None
+                self.setStatus(ExtensionItem.Status.DISABLED)
+        await self.initialize()
 
-    def disable(self) -> None:
+    async def disable(self) -> None:
         with open(f"{self.path}/settings.json") as f:
             data = json.load(f)
-        data["enabled"] = self.enabled = False
+        data["enabled"] = False
         with open(f"{self.path}/settings.json", "w") as f:
             json.dump(data, f, indent=4)
-        self.ext.unload()
+        await self.ext.unload()
         self.ext = None
-        self.setText(f"{self.name} (Disabled)")
-
-    def __str__(self) -> str:
-        return self.name
-
-    def __repr__(self) -> str:
-        return self.name
+        self.setStatus(ExtensionItem.Status.DISABLED)
 
 
 class ExtensionList(QListWidget):
@@ -98,11 +116,8 @@ class ExtensionList(QListWidget):
         self.setObjectName("ExtensionList")
         self._window = window
         self.setMaximumWidth(self.screen().size().width() // 2)
-        self.itemClicked.connect(lambda item: window.tabView.createTab(item.path))
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.createContextMenu()
-        self.customContextMenuRequested.connect(
-            lambda pos: self.menu.exec(self.viewport().mapToGlobal(pos))
+        self.itemClicked.connect(
+            lambda item: window.tabView.createTab(Path(f"{item.path}/settings.json"))
         )
         self.addExtensions()
 
@@ -116,19 +131,49 @@ class ExtensionList(QListWidget):
             (
                 item.ext
                 for i in range(self.count())
-                if ((item := self.item(i)) and item.ext)
+                if (
+                    (item := self.item(i))
+                    and item.status == ExtensionItem.Status.ENABLED
+                )
             )
         )
 
-    def createContextMenu(self):
-        self.menu = QMenu(self._window)
-        self.menu.setObjectName("ExtensionContextMenu")
-        enabledisable = self.menu.addAction("Enable/Disable")
-        enabledisable.triggered.connect(self.enabledisable)
-        enabledisable = self.menu.addAction("Reload")
-        enabledisable.triggered.connect(self.reload)
+    def mousePressEvent(self, e: QMouseEvent) -> None:
+        if not self.indexAt(e.pos()).data():
+            self.clearSelection()
+        return super().mousePressEvent(e)
 
-    def selectedItems(self) -> List[ExtensionItem]:
+    def contextMenuEvent(self, a0: QContextMenuEvent) -> None:
+        if not (indexes := self.selectedItems()):
+            return
+        index = indexes[0]
+        menu = QMenu(self._window)
+        menu.setObjectName("ExtensionContextMenu")
+
+        enableExtension = menu.addAction("Enable Extension")
+        enableExtension.triggered.connect(self.enableExtension)
+        disableExtension = menu.addAction("Disable Extension")
+        disableExtension.triggered.connect(self.disableExtension)
+        reloadExtension = menu.addAction("Reload Extension")
+        reloadExtension.triggered.connect(self.reloadExtension)
+        menu.addSeparator()
+        menu.addAction("Settings").triggered.connect(
+            lambda: self.window.tabView.createTab(Path(f"{index.path}/settings.json"))
+        )
+
+        match index.status:
+            case ExtensionItem.Status.LOADING:
+                enableExtension.setEnabled(False)
+                disableExtension.setEnabled(False)
+                reloadExtension.setEnabled(False)
+            case ExtensionItem.Status.ENABLED:
+                enableExtension.setEnabled(False)
+            case _:
+                disableExtension.setEnabled(False)
+
+        menu.exec(self.viewport().mapToGlobal(a0.pos()))
+
+    def selectedItems(self) -> list[ExtensionItem]:
         return super().selectedItems()
 
     def addExtensions(self) -> None:
@@ -159,26 +204,24 @@ class ExtensionList(QListWidget):
                 data: dict[str, Any] = json.load(f)
         except json.JSONDecodeError:
             return
-
         if not (name := data.get("name")):
             return
-
         icon = f"{path}/icon.ico"
         if not Path(icon).exists():
             icon = f"{self.window.localAppData}/icons/blank.ico"
-
         enabled = data.get("enabled")
-        item = ExtensionItem(name, icon, path, enabled)
+        item = ExtensionItem(name, icon, path)
         self.addItem(item)
         (await item.initialize()) if enabled else ...
 
-    def enabledisable(self) -> None:
-        index = self.selectedItems()
-        if not index:
-            return
-        index = index[0]
-        index.enable() if not index.enabled else index.disable()
+    def enableExtension(self) -> None:
+        indexes = self.selectedItems()
+        self.window.createTask(indexes[0].enable()) if indexes else ...
 
-    def reload(self) -> None:
-        index = self.selectedItems()
-        index[0].reload() if not index else ...
+    def reloadExtension(self) -> None:
+        indexes = self.selectedItems()
+        self.window.createTask(indexes[0].reload()) if indexes else ...
+
+    def disableExtension(self) -> None:
+        indexes = self.selectedItems()
+        self.window.createTask(indexes[0].disable()) if indexes else ...

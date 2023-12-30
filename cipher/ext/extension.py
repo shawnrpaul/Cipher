@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
-from PyQt6.QtCore import QEvent, QObject, pyqtSignal
+from PyQt6.QtCore import QEvent, QObject
 from PyQt6.QtGui import QKeyEvent, QMouseEvent
 from .event import Event
 
@@ -38,7 +38,6 @@ class ExtensionCore(type(QObject), ExtensionMeta, AsyncMixin):
 
 class Extension(QObject, metaclass=ExtensionCore):
     __events__: list[Event] = []
-    ready = pyqtSignal()
 
     def __new__(cls, *args, **kwargs):
         self = super().__new__(cls)
@@ -49,27 +48,45 @@ class Extension(QObject, metaclass=ExtensionCore):
     def __init__(self, window: Window) -> None:
         super().__init__(parent=window)
         self.window = window
-        self.isReady = False
 
     def event(self, event: QEvent) -> bool:
         self.eventReceived(event)
         return super().event(event)
 
     def eventReceived(self, event: QEvent) -> None:
-        if isinstance(event, QKeyEvent):
+        type = event.type()
+        if type == QEvent.Type.KeyPress:
             return self.keyPressEvent(event)
-        if isinstance(event, QMouseEvent):
+        if type == QEvent.Type.KeyRelease:
+            return self.keyReleaseEvent(event)
+        if type == QEvent.Type.MouseButtonPress:
             return self.mousePressEvent(event)
+        if type == QEvent.Type.MouseButtonDblClick:
+            return self.mouseDoubleClickEvent(event)
+        if type == QEvent.Type.MouseButtonRelease:
+            return self.mouseReleaseEvent(event)
+        if type == QEvent.Type.MouseMove:
+            return self.mouseMoveEvent(event)
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:
+        ...
+
+    def keyReleaseEvent(self, a0: QKeyEvent) -> None:
         ...
 
     def mousePressEvent(self, a0: QMouseEvent) -> None:
         ...
 
-    def prepare(self) -> None:
-        self.isReady = True
-        self.ready.emit()
-
-    def unload(self) -> Any:
+    def mouseDoubleClickEvent(self, a0: QMouseEvent) -> None:
         ...
+
+    def mouseReleaseEvent(self, a0: QMouseEvent) -> None:
+        ...
+
+    def mouseMoveEvent(self, a0: QMouseEvent) -> None:
+        ...
+
+    async def unload(self) -> Any:
+        for event in self.__events__:
+            event._instance = None
+        self.setParent(None)

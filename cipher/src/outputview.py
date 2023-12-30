@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from PyQt6.QtWidgets import QTabWidget, QWidget
+from PyQt6.QtWidgets import QTabWidget
 
 if TYPE_CHECKING:
     from .window import Window

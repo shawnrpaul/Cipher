@@ -49,7 +49,6 @@ class Process(QProcess):
         self.setWorkingDirectory(str(path) if path else str(defaultPath))
         env = QProcessEnvironment()
         env.insert(env.systemEnvironment())
-        env.insert("PYTHONUNBUFFERED", "True")
         self.setProcessEnvironment(env)
         self.start()
         self.newProcess.emit()
