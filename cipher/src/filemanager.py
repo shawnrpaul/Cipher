@@ -54,20 +54,20 @@ class FileManager(QTreeView):
 
     Attributes
     ----------
-    onWorkspaceChanged: :class:`pyqtSignal`
+    workspaceChanged: :class:`pyqtSignal`
         A signal emitted when the workspace is changed
     folderCreated: :class:`pyqtSignal`
         A signal emitted when the folder is created
     fileCreated: :class:`pyqtSignal`
         A signal emitted when the file is created
-    onSave: :class:`pyqtSignal`
+    fileSaved: :class:`pyqtSignal`
         A signal emitted when a file is saved
     """
 
-    onWorkspaceChanged = pyqtSignal(object)
+    workspaceChanged = pyqtSignal(object)
     folderCreated = pyqtSignal(Path)
     fileCreated = pyqtSignal(Path)
-    onSave = pyqtSignal(Editor)
+    fileSaved = pyqtSignal(Editor)
 
     def __init__(self, window: Window, main: bool = True) -> None:
         super().__init__()
@@ -417,7 +417,7 @@ class FileManager(QTreeView):
         self.setRootIndex(self.__systemModel.setRootPath(path))
 
     def changeFolder(self, folderPath: Optional[str]) -> None:
-        """Changes the workspace and triggers :attr:`onWorkspaceChanged`
+        """Changes the workspace and triggers :attr:`workspaceChanged`
 
         Parameters
         ----------
@@ -440,7 +440,7 @@ class FileManager(QTreeView):
         self.setFolder(folder)
         if folder:
             self._workspaceSettings.addPath(str(Path(self.settingsPath)))
-        self.onWorkspaceChanged.emit(folder)
+        self.workspaceChanged.emit(folder)
         self.updateSettings(True)
 
     def updateSettings(self, changeFolder: bool = False) -> None:

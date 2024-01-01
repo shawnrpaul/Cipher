@@ -52,7 +52,7 @@ class Window(QMainWindow):
         Sends a windows notification. Meant to be used by :class:`Extension`
     """
 
-    onClose = pyqtSignal()
+    closed = pyqtSignal()
 
     def __init__(self, app: ServerApplication) -> None:
         super().__init__()
@@ -161,7 +161,7 @@ class Window(QMainWindow):
 
     def closeEvent(self, _: QCloseEvent) -> None:
         self.hide()
-        self.onClose.emit()
+        self.closed.emit()
         self.fileManager.saveSettings()
         super().closeEvent(_)
         self.application.closeWindow(self)

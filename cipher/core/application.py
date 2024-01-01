@@ -31,7 +31,7 @@ class Application(QApplication):
         asyncio.set_event_loop(self.loop)
         self.setApplicationDisplayName("Cipher")
         self.setApplicationName("Cipher")
-        self.setApplicationVersion("1.3.2")
+        self.setApplicationVersion("1.4.0")
         self._background_tasks: list[asyncio.Task] = []
         self._isRunning = False
 

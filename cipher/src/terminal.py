@@ -156,10 +156,8 @@ class Terminal(QFrame):
         self._process = Process(self)
         self._process.newProcess.connect(self.newProcess.emit)
 
-        self.window.fileManager.onWorkspaceChanged.connect(
-            self._process.changeDirectory
-        )
-        self.window.onClose.connect(self._process.close)
+        self.window.fileManager.workspaceChanged.connect(self._process.changeDirectory)
+        self.window.closed.connect(self._process.close)
 
         self.stdout = Stdout(self)
         self.stdout.setReadOnly(True)

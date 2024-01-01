@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 __all__ = ("Editor",)
 
 
-class Editor(QsciScintilla, Tab):
+class Editor(Tab, QsciScintilla):
     """The text editor
 
     Parameters
@@ -37,10 +37,11 @@ class Editor(QsciScintilla, Tab):
     saved = pyqtSignal()
 
     def __init__(self, window: Window, path: Path) -> None:
-        super().__init__(window=window, path=path)
+        Tab.__init__(self, window, path)
+        QsciScintilla.__init__(self)
         self.setObjectName(path.name)
         self._watcher.fileChanged.connect(self.updateText)
-        self.saved.connect(lambda: window.fileManager.onSave.emit(self))
+        self.saved.connect(lambda: window.fileManager.fileSaved.emit(self))
         self.setUtf8(True)
         self.zoomOut(2)
 
@@ -67,10 +68,7 @@ class Editor(QsciScintilla, Tab):
         lexer = None
         if info := styles.get(path.suffix):
             language, folder = info.get("language"), info.get("lexer")
-            lexerPath = Path(
-                f"{localAppData}/lexer/{language}/{folder}/run.py"
-            ).absolute()
-            if lexerPath.exists():
+            if Path(f"{localAppData}/lexer/{language}/{folder}").exists():
                 lexer = self.loadLexer(language, folder)
 
         if not lexer:
@@ -110,8 +108,7 @@ class Editor(QsciScintilla, Tab):
         """
         urls = e.mimeData().urls()
         if urls and (path := urls[0]).isLocalFile():
-            self._window.tabView.createTab(Path(path.toLocalFile()))
-            return
+            return self._window.tabView.createTab(Path(path.toLocalFile()))
 
         return super().dropEvent(e)
 
@@ -292,13 +289,15 @@ class Editor(QsciScintilla, Tab):
         QsciLexerCustom
             The lexer
         """
-        path = f"lexer.{language}.{lexerFolder}.run"
+        path = f"lexer.{language}.{lexerFolder}"
         try:
             mod = import_module(path)
             lexer = mod.run(self)
             return lexer
         except Exception as e:
-            return None
+            self.window.log(
+                f"Failed to load lexer {lexerFolder} - {e.__class__.__name__}: e"
+            )
 
     def setLexer(self, lexer: QsciLexer | None = None) -> None:
         self._lexer = lexer

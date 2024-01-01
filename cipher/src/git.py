@@ -41,10 +41,10 @@ class GitModel(QStandardItemModel):
         self.setObjectName("GitModel")
         self._window = window
         self._treeView = parent
-        self._window.fileManager.onWorkspaceChanged.connect(lambda _: self.status())
+        self._window.fileManager.workspaceChanged.connect(lambda _: self.status())
         self._window.fileManager.folderCreated.connect(lambda _: self.status())
         self._window.fileManager.fileCreated.connect(lambda _: self.status())
-        self._window.fileManager.onSave.connect(self.status)
+        self._window.fileManager.fileSaved.connect(self.status)
 
     @property
     def window(self) -> Window:
@@ -65,7 +65,7 @@ class GitModel(QStandardItemModel):
         process = QProcess(self)
         process.setWorkingDirectory(str(self._window.currentFolder))
         process.finished.connect(self.status)
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["init"])
 
     def clone(self) -> None:
@@ -94,7 +94,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.status()
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["clone", "--recursive", url])
         process.write(f"{username}\n{password}\n".encode())
 
@@ -118,7 +118,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.status()
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["checkout", "-b", str(branch)])
 
     def checkout(self) -> None:
@@ -154,7 +154,7 @@ class GitModel(QStandardItemModel):
                 tuple((editor.updateText() for editor in self._window.tabView)),
             ]
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["checkout", branch])
 
     def __status(self, ouput: str) -> None:
@@ -192,7 +192,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.__status(process.readAllStandardOutput().data().decode())
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["status", "-s"])
 
     def add(self, path: Optional[QModelIndex] = None) -> None:
@@ -223,7 +223,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.status()
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["add", str(path)])
 
     def remove(self, path: Optional[QModelIndex] = None) -> None:
@@ -254,7 +254,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.status()
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["restore", "--staged", str(path)])
 
     def commit(self):
@@ -281,7 +281,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.status()
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["commit", "-m", message])
 
     def reset(self) -> None:
@@ -308,7 +308,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.status()
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["reset", parameters])
 
     def push(self) -> None:
@@ -332,7 +332,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.status()
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["push"])
         process.write(f"{username}\n{password}\n".encode())
 
@@ -357,7 +357,7 @@ class GitModel(QStandardItemModel):
             if process.exitCode()
             else self.status()
         )
-        self._window.onClose.connect(process.kill)
+        self._window.closed.connect(process.kill)
         process.start("git", ["pull"])
 
 

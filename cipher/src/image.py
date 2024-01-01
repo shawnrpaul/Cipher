@@ -13,9 +13,10 @@ if TYPE_CHECKING:
     from .window import Window
 
 
-class Image(QLabel, Tab):
+class Image(Tab, QLabel):
     def __init__(self, window: Window, path: Path) -> None:
-        super().__init__(window=window, path=path)
+        Tab.__init__(self, window, path)
+        QLabel.__init__(self)
         self.path = path
         self._watcher.fileChanged.connect(self.setImage)
         self.setPixmap(QPixmap(str(path)))
@@ -25,9 +26,10 @@ class Image(QLabel, Tab):
         self.setPixmap(QPixmap(str(self.path)))
 
 
-class GIF(QLabel, Tab):
+class GIF(Tab, QLabel):
     def __init__(self, window: Window, path: Path) -> None:
-        super().__init__(window=window, path=path)
+        Tab.__init__(self, window, path)
+        QLabel.__init__(self)
         self._movie = QMovie(str(path))
         self.setMovie(self._movie)
         self._movie.start()
