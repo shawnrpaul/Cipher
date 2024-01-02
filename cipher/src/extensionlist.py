@@ -5,6 +5,7 @@ from importlib import import_module
 from enum import IntEnum
 from pathlib import Path
 import json
+import sys
 import os
 
 from PyQt6.QtGui import QContextMenuEvent, QIcon, QMouseEvent
@@ -85,6 +86,7 @@ class ExtensionItem(QListWidgetItem):
             case ExtensionItem.Status.ENABLED:
                 await self.ext.unload()
                 self.ext = None
+                self._clear_modules()
                 self.setStatus(ExtensionItem.Status.DISABLED)
         await self.initialize()
 
@@ -96,7 +98,14 @@ class ExtensionItem(QListWidgetItem):
             json.dump(data, f, indent=4)
         await self.ext.unload()
         self.ext = None
+        self._clear_modules()
         self.setStatus(ExtensionItem.Status.DISABLED)
+
+    def _clear_modules(self) -> None:
+        mod_name = f"extension.{self.path.name}"
+        for name in list(sys.modules):
+            if name.startswith(mod_name):
+                sys.modules.pop(name)
 
 
 class ExtensionList(QListWidget):

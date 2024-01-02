@@ -121,9 +121,7 @@ class Stdin(QLineEdit):
                 else:
                     self.clear()
                 return a0.accept()
-        elif a0.modifiers() == Qt.KeyboardModifier.ControlModifier and key == int(
-            Qt.Key.Key_C
-        ):
+        elif a0.modifiers() == Qt.KeyboardModifier.ControlModifier and key == int(Qt.Key.Key_C):  # fmt: skip
             self.terminal._process.write("Ctrl+C\n".encode())
             return a0.accept()
         return super().keyPressEvent(a0)
