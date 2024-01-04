@@ -296,7 +296,7 @@ class Editor(Tab, QsciScintilla):
             return lexer
         except Exception as e:
             self.window.log(
-                f"Failed to load lexer {lexerFolder} - {e.__class__.__name__}: e"
+                f"Failed to load lexer {lexerFolder} - {e.__class__.__name__}: {e}"
             )
 
     def setLexer(self, lexer: QsciLexer | None = None) -> None:

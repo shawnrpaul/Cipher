@@ -40,6 +40,7 @@ class Logs(QPlainTextEdit):
     def write(self, text: str):
         self.setPlainText(f"{self.toPlainText()}{text}")
 
-    def log(self, text: str, level=logging.ERROR):
+    def log(self, text: str, *, newline: bool = False, level=logging.ERROR):
         self.write(text)
+        self.write("\n") if newline else ...
         logging.log(msg=text, level=level)

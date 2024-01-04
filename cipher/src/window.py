@@ -166,8 +166,8 @@ class Window(QMainWindow):
         super().closeEvent(_)
         self.application.closeWindow(self)
 
-    def log(self, text: str, level=logging.ERROR):
-        self.logs.log(text, level)
+    def log(self, text: str, newline: bool = False, level=logging.ERROR):
+        self.logs.log(text, newline=newline, level=level)
 
     def showMessage(self, msg: str) -> None:
         self.systemTray.showMessage("Cipher", msg=msg, msecs=30_000)

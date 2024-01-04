@@ -74,8 +74,6 @@ class Application(QApplication):
             self.loop.run_forever()
         except KeyboardInterrupt:
             self.close()
-        finally:
-            self.loop.run_until_complete(asyncio.sleep(0.5))
 
     def close(self):
         self.quit()
@@ -156,9 +154,10 @@ class ServerApplication(Application):
         parser.addOption(port)
         parser.process(argv)
 
-        args = parser.positionalArguments()
+        _port = parser.value(port)
+        self.server.setPort(int(_port))
 
-        if args:
+        if args := parser.positionalArguments():
             val = args[0]
             if not (path := Path(val).absolute()).exists():
                 msg = f"Path {val} doesn't exist"
@@ -185,8 +184,6 @@ class ServerApplication(Application):
 
         window = self.mainWindow()
         window.resumeSession()
-        _port = parser.value(port)
-        self.server.setPort(int(_port))
         self.start()
 
     def createWindow(self) -> Window:

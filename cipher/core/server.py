@@ -17,6 +17,8 @@ class PortError(Exception):
 class Server(QWebSocketServer):
     def __init__(self, app: ServerApplication) -> None:
         super().__init__("Cipher Server", QWebSocketServer.SslMode.NonSecureMode, app)
+        self.client = None
+        self.port = 6969
 
     @property
     def application(self) -> ServerApplication:
