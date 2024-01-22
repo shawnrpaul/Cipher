@@ -153,6 +153,10 @@ class Editor(Tab, QsciScintilla):
                 return self.setSelection(*selection)
         return super().keyPressEvent(e)
 
+    def focusInEvent(self, _) -> None:
+        QsciScintilla.focusInEvent(self, _)
+        return super().focusInEvent(_)
+
     def updateText(self) -> None:
         """Updates the text. Triggers when :attr:`watcher` detects a change."""
         if not self.path.exists():
