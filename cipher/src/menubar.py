@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List
 
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMenuBar, QFileDialog
+from PyQt6.QtWidgets import QMenuBar, QFileDialog, QMenu
 
 if TYPE_CHECKING:
     from .window import Window
@@ -40,7 +40,7 @@ class Menubar(QMenuBar):
     def window(self) -> Window:
         return self._window
 
-    def addMenu(self, name: str) -> None:
+    def addMenu(self, name: str) -> QMenu:
         menu = super().addMenu(name)
         self._menus.append(menu)
         return menu
@@ -128,14 +128,14 @@ class Menubar(QMenuBar):
         )
         editMenu.addSeparator()
 
-        styles = editMenu.addAction("Edit Styles")
+        styles = editMenu.addAction("Styles")
         styles.triggered.connect(
             lambda: self._window.tabView.createTab(
                 Path(f"{self._window.localAppData}/styles/styles.qss")
             )
         )
 
-        shortcut = editMenu.addAction("Edit Shortcuts")
+        shortcut = editMenu.addAction("Shortcuts")
         shortcut.triggered.connect(
             lambda: self._window.tabView.createTab(
                 Path(f"{self._window.localAppData}/shortcuts.json")
@@ -180,20 +180,18 @@ class Menubar(QMenuBar):
         """Creates the view menu box"""
         view = self.addMenu("View")
 
-        explorer = view.addAction("Explorer")
-        explorer.triggered.connect(self.explorer)
-
-        terminal = view.addAction("Terminal")
-        terminal.triggered.connect(self.terminal)
-
-        logs = view.addAction("Logs")
-        logs.triggered.connect(self.logs)
-
-        run = view.addAction("Run")
-        run.triggered.connect(self.run)
-
-        close = view.addAction("Close Editor")
-        close.triggered.connect(self._window.tabView.closeCurrentTab)
+        view.addAction("Fullscreen").triggered.connect(
+            lambda: self.window.showFullScreen()
+            if not self.window.isFullScreen()
+            else self.window.showMaximized()
+        )
+        view.addAction("Explorer").triggered.connect(self.explorer)
+        view.addAction("Terminal").triggered.connect(self.terminal)
+        view.addAction("Logs").triggered.connect(self.logs)
+        view.addAction("Run").triggered.connect(self.run)
+        view.addAction("Close Editor").triggered.connect(
+            self._window.tabView.closeCurrentTab
+        )
 
     def explorer(self) -> None:
         """Opens or closes the :class:`sidebar.Explorer`"""

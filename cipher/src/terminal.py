@@ -122,7 +122,7 @@ class Stdin(QLineEdit):
                     self.clear()
                 return a0.accept()
         elif a0.modifiers() == Qt.KeyboardModifier.ControlModifier and key == int(Qt.Key.Key_C):  # fmt: skip
-            self.terminal._process.write("Ctrl+C\n".encode())
+            self.terminal._process.write("\\x03\n".encode())
             return a0.accept()
         return super().keyPressEvent(a0)
 
@@ -136,6 +136,12 @@ class Stdout(QPlainTextEdit):
     def __init__(self, terminal: Terminal) -> None:
         super().__init__(terminal)
         self.scrollbar = self.verticalScrollBar()
+
+    def keyPressEvent(self, e: QKeyEvent) -> None:
+        if e.modifiers() == Qt.KeyboardModifier.ControlModifier and e.key() == int(Qt.Key.Key_C):  # fmt: skip
+            self.copy()
+            return e.accept()
+        return super().keyPressEvent(e)
 
     def setPlainText(self, text: str) -> None:
         value = self.scrollbar.value()

@@ -5,10 +5,9 @@ import subprocess
 import sys
 from copy import copy
 from pathlib import Path
-from shutil import rmtree
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
 
-from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
+from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, QFile, pyqtSignal
 from PyQt6.QtGui import QFileSystemModel, QKeyEvent, QMouseEvent
 from PyQt6.QtWidgets import (
     QApplication,
@@ -21,7 +20,6 @@ from PyQt6.QtWidgets import (
 )
 
 from .editor import Editor
-from .thread import Thread
 
 if TYPE_CHECKING:
     from .window import Window
@@ -33,6 +31,7 @@ class FileSystemModel(QFileSystemModel):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.setRootPath(None)
+        self.setReadOnly(False)
 
     @property
     def currentFolder(self) -> Optional[Path]:
@@ -93,7 +92,7 @@ class FileManager(QTreeView):
         self.setColumnHidden(1, True)
         self.setColumnHidden(2, True)
         self.setColumnHidden(3, True)
-        self.setDragDropMode(QTreeView.DragDropMode.DragDrop)
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
 
         self._globalSettings = QFileSystemWatcher(
             [f"{window.localAppData}/settings.json"], self
@@ -102,11 +101,7 @@ class FileManager(QTreeView):
         self._workspaceSettings = QFileSystemWatcher(self)
         self._workspaceSettings.fileChanged.connect(lambda: self.updateSettings())
 
-        self.window.tabView.widgetChanged.connect(
-            lambda widget: self.setCurrentIndex(self.__systemModel.index(str(path)))
-            if widget and (path := getattr(widget, "path", None))
-            else ...
-        )
+        self.window.tabView.widgetChanged.connect(self.setSelectedIndex)
 
         if main:
             self.updateSettings()
@@ -180,6 +175,10 @@ class FileManager(QTreeView):
             return self.collapse(index)
 
         editor.setFocus() if (editor := self._window.tabView.createTab(path)) else ...
+
+    def setSelectedIndex(self, widget) -> None:
+        if widget and (path := getattr(widget, "path", None)):
+            self.setCurrentIndex(self.__systemModel.index(str(path)))
 
     def createContextMenu(self, main: bool) -> None:
         """Creates a context menu when an index was right clicked."""
@@ -255,14 +254,14 @@ class FileManager(QTreeView):
     def createFile(self) -> None:
         """Creates a new file."""
         if not self.currentFolder:
-            index = self.selectedIndexes()
-            if not index:
+            indexes = self.selectedIndexes()
+            if not indexes:
                 return
-            index = index[0]
+            index = indexes[0]
         else:
             index = self.getIndex()
-            if Path(self.filePath(index)).is_file():
-                index = index.parent()
+        if not self.__systemModel.isDir(index):
+            index = index.parent()
         name, ok = QInputDialog.getText(
             self, "File Name", "Give a name", QLineEdit.EchoMode.Normal, ""
         )
@@ -284,12 +283,14 @@ class FileManager(QTreeView):
     def createFolder(self) -> None:
         """Creates a new folder"""
         if not self.currentFolder:
-            index = self.selectedIndexes()
-            if not index:
+            indexes = self.selectedIndexes()
+            if not indexes:
                 return
             index = index[0]
         else:
             index = self.getIndex()
+        if not self.__systemModel.isDir(index):
+            index = index.parent()
         name, ok = QInputDialog.getText(
             self, "Folder Name", "Give a name", QLineEdit.EchoMode.Normal, ""
         )
@@ -378,40 +379,17 @@ class FileManager(QTreeView):
                 ).absolute()
                 editor._watcher.addPath(str(editor.path))
 
-    def __delete(self, path: Path) -> None:
-        if path.is_file():
-            for widget in self._window.tabView:
-                if widget.path == path:
-                    self._window.tabView.removeTab(widget)
-                    widget._watcher.removePath(str(widget.path))
-                    break
-            try:
-                return path.unlink()
-            except PermissionError:
-                return
-
-        for widget in self._window.tabView:
-            if widget.path.is_relative_to(str(path)):
-                self._window.tabView.removeTab(widget)
-                widget._watcher.removePath(str(widget.path))
-        try:
-            rmtree(path.absolute())
-        except PermissionError:
-            ...
-
     def delete(self) -> None:
         """Deletes a folder or file"""
         selectedIndexes = self.selectedIndexes()
         if not selectedIndexes:
             return
         index = selectedIndexes[0]
-        path = Path(self.filePath(index)).absolute()
-        if not path.exists():
-            return
-        self.collapse(index)
-        thread = Thread(self, self.__delete, path)
-        thread.finished.connect(self._window.git.status)
-        thread.start()
+        if self.__systemModel.isDir(index):
+            if not QDir(self.__systemModel.filePath(index)).removeRecursively():
+                print("Failed to remove all files")
+        else:
+            self.__systemModel.remove(index)
 
     def setFolder(self, path: Optional[Path]) -> None:
         self.setRootIndex(self.__systemModel.setRootPath(path))
@@ -556,12 +534,10 @@ class FileManager(QTreeView):
         QModelIndex
             The model index of the selection
         """
-        index = self.selectedIndexes()
-        if not index or self.filePath(
-            self.__systemModel.modelIndex
-        ) not in self.filePath(index[0]):
+        indexes = self.selectedIndexes()
+        if not indexes or self.filePath(self.__systemModel.modelIndex) not in self.filePath(indexes[0]):  # fmt:skip
             return self.__systemModel.modelIndex
-        return index[0]
+        return indexes[0]
 
     def getCurrentSettings(self) -> Dict[str, Any]:
         """Returns either the workspace of global settings
@@ -646,3 +622,7 @@ class FileManager(QTreeView):
                 self._window.currentFile.path if self._window.currentFile else None,
                 self._window.tabView.tabList,
             )
+
+    def deleteLater(self) -> None:
+        self.window.tabView.widgetChanged.disconnect(self.setSelectedIndex)
+        return super().deleteLater()

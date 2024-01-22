@@ -80,7 +80,6 @@ class Search(QDialog):
 class GlobalSearchFile(QStandardItem):
     def __init__(self, file: str):
         super().__init__(file)
-
         self.setEditable(False)
 
 
@@ -90,7 +89,6 @@ class GlobalSearchMatch(QStandardItem):
         self.path = path
         self._index = index
         self.cs = cs
-
         self.setEditable(False)
 
 
@@ -143,8 +141,7 @@ class GlobalSearchModel(QStandardItemModel):
                     file = GlobalSearchFile(str(path.relative_to(currentFolder)))
                     file.appendRows(found)
                     self.appendRow(file)
-                except Exception as e:
-                    (e.__class__, e)
+                except Exception:
                     continue
             elif path.is_dir():
                 self.recursiveSearch(path, currentFolder, text, cs, pattern, excluded)

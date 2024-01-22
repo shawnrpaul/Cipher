@@ -34,6 +34,7 @@ class Application(QApplication):
         self.setApplicationVersion("1.4.0")
         self._background_tasks: list[asyncio.Task] = []
         self._isRunning = False
+        self._isClosing = False
 
     @staticmethod
     def instance() -> Application:
@@ -76,7 +77,8 @@ class Application(QApplication):
             self.close()
 
     def close(self):
-        self.quit()
+        self.aboutToQuit.emit()
+        self._isClosing = True
         self._isRunning = False
         for task in self._background_tasks:
             task.cancel()
@@ -141,6 +143,8 @@ class ServerApplication(Application):
         return self._localAppData
 
     def parseArgs(self, argv: list[str]):
+        if self._isClosing:
+            return self.server.sendResponse({"code": 401})
         parser = QCommandLineParser()
         parser.addHelpOption()
 

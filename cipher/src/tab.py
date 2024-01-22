@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QFileSystemWatcher
+from PyQt6.QtGui import QFocusEvent
 
 if TYPE_CHECKING:
     from .window import Window
@@ -18,3 +19,6 @@ class Tab:
     @property
     def window(self) -> Window:
         return self._window
+
+    def focusInEvent(self, _: QFocusEvent) -> None:
+        self.window.fileManager.setSelectedIndex(self)
