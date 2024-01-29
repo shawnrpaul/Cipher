@@ -160,7 +160,9 @@ class Editor(Tab, QsciScintilla):
         if not self.path.exists():
             return
         cursor = self.getCursorPosition()
+        self.setReadOnly(True)
         self.SendScintilla(self.SCI_SETTEXT, self.path.read_bytes())
+        self.setReadOnly(False)
         self.setCursorPosition(*cursor)
 
     def setShortcutKeys(self) -> None:
