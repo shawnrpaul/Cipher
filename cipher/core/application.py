@@ -12,7 +12,7 @@ import io
 from psutil import process_iter
 from PyQt6.QtCore import QCommandLineOption, QCommandLineParser, QFileSystemWatcher
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QMessageBox
 import requests
 import zipfile
 
@@ -230,6 +230,12 @@ class ServerApplication(Application):
             line = exc_tb.tb_lineno
             logging.error(f"{file.name}({line}) - {exc_type.__name__}: {exc_value}")
             if file.is_relative_to(os.getcwd()):
+                dialog = QMessageBox()
+                dialog.setWindowTitle("Cipher")
+                dialog.setText(
+                    f"Cipher has crashed.\n{file.name}({line}) - {exc_type.__name__}: {exc_value}"
+                )
+                dialog.exec()
                 return self.close()
         except Exception:
             logging.error(f"{exc_type.__name__}: {exc_value}")

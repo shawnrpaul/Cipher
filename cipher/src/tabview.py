@@ -1,6 +1,7 @@
 from __future__ import annotations
 from functools import singledispatchmethod
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Tuple
+from collections import deque
 from pathlib import Path
 from copy import copy
 
@@ -40,8 +41,8 @@ class TabView(QTabWidget):
     def __init__(self, window: Window) -> None:
         super().__init__(window)
         self._window = window
-        self.__tabList: List[Tab] = []
-        self.__stack: List[Tab] = []
+        self.__tabList: list[Tab] = []
+        self.__closedTabs: deque[Tab] = deque()
         self.setContentsMargins(0, 0, 0, 0)
         self.setTabsClosable(True)
         self.setMovable(True)
@@ -49,9 +50,7 @@ class TabView(QTabWidget):
         self.setAcceptDrops(True)
         self.tabCloseRequested.connect(self.removeTab)
         self.tabBar().tabMoved.connect(
-            lambda __from, __to: self.__tabList.insert(
-                __to, (self.__tabList.pop(__from))
-            )
+            lambda __from, __to: self.__tabList.insert(__to, (self.__tabList.pop(__from)))  # fmt: skip
         )
         self.currentChanged.connect(lambda _: self.widgetChanged.emit(self.currentFile))
 
@@ -72,7 +71,7 @@ class TabView(QTabWidget):
         return self.currentWidget()
 
     @property
-    def tabList(self) -> List[Tab]:
+    def tabList(self) -> list[Tab]:
         """Returns a copy of the tab list.
 
         Returns
@@ -112,7 +111,7 @@ class TabView(QTabWidget):
             self.createTab(Path(path.toLocalFile()))
         return super().dropEvent(a0)
 
-    def addTab(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> int:
+    def addTab(self, *args: Tuple[Any], **kwargs: dict[str, Any]) -> int:
         """Overrides the addTab function to add a tab to :attr:`tabList`
 
         Returns
@@ -137,9 +136,11 @@ class TabView(QTabWidget):
         """
         tab = self.__tabList.pop(index)
         tab._watcher.removePath(str(tab.path))
-        self.__stack.append(tab)
+        self.__closedTabs.append(tab)
+        if len(self.__closedTabs) > 10:
+            self.__closedTabs.popleft().deleteLater()
         self.tabClosed.emit(tab)
-        return super().removeTab(index)
+        super().removeTab(index)
 
     @removeTab.register
     def _(self, widget: Tab) -> None:
@@ -151,10 +152,12 @@ class TabView(QTabWidget):
             The editor to close
         """
         widget._watcher.removePath(str(widget.path))
-        self.__stack.append(widget)
+        self.__closedTabs.append(widget)
         self.__tabList.remove(widget)
+        if len(self.__closedTabs) > 10:
+            self.__closedTabs.popleft().deleteLater()
         self.tabClosed.emit(widget)
-        return super().removeTab(self.indexOf(widget))
+        super().removeTab(self.indexOf(widget))
 
     @singledispatchmethod
     def setTabText(self, index: int, a1: str) -> None:
@@ -182,7 +185,7 @@ class TabView(QTabWidget):
         """
         return super().setTabText(self.indexOf(widget), a1)
 
-    def openTabs(self, currentFile: str, files: List[str]) -> None:
+    def openTabs(self, currentFile: str, files: list[str]) -> None:
         """Opens all tabs. Used when the folder is changed.
 
         Parameters
@@ -203,12 +206,14 @@ class TabView(QTabWidget):
 
     def reopenTab(self) -> None:
         """Reopens the last closed tab. The tab will be skipped if it was reopened manually."""
-        while self.__stack:
-            editor = self.__stack.pop()
+        while self.__closedTabs:
+            editor = self.__closedTabs.pop()
             if not editor.path.exists():
+                editor.deleteLater()
                 continue
             for widget in self.__tabList:
                 if editor.path == widget.path:
+                    editor.deleteLater()
                     continue
             break
         else:
@@ -274,8 +279,10 @@ class TabView(QTabWidget):
 
     def createTab(self, path: Path) -> Tab | None:
         path = path.absolute()
-        if not path.exists() or not path.is_file() or self.getTab(path):
+        if not path.exists() or not path.is_file():
             return
+        if tab := self.getTab(path):
+            return self.setCurrentWidget(tab)
         if self.isBinary(path):
             if not filetype.is_image(path):
                 return

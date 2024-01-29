@@ -6,7 +6,7 @@ from importlib import import_module
 from pathlib import Path
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.Qsci import QsciAPIs, QsciLexer, QsciLexerCustom, QsciScintilla
-from PyQt6.QtGui import QDropEvent, QKeyEvent, QKeySequence
+from PyQt6.QtGui import QDropEvent, QKeyEvent, QKeySequence, QContextMenuEvent
 from PyQt6.QtWidgets import QFileDialog
 
 from .tab import Tab
@@ -42,6 +42,7 @@ class Editor(Tab, QsciScintilla):
         self.setObjectName(path.name)
         self._watcher.fileChanged.connect(self.updateText)
         self.saved.connect(lambda: window.fileManager.fileSaved.emit(self))
+        self.createStandardContextMenu()
         self.setUtf8(True)
         self.zoomOut(2)
 
@@ -84,19 +85,16 @@ class Editor(Tab, QsciScintilla):
         self._window.shortcut.fileChanged.connect(self.setShortcutKeys)
 
     @property
-    def lexer(self) -> QsciLexerCustom:
-        """Overrides the lexer to return the current lexer
-
-        Returns
-        -------
-        :class:`QsciLexerCustom`
-            The custom lexer used per language
-        """
-        return self._lexer
+    def lexer(self) -> QsciLexer:
+        return super().lexer()
 
     @property
-    def api(self) -> QsciAPIs:
-        return self._api
+    def api(self) -> QsciAPIs | None:
+        return self.lexer().apis()
+
+    def contextMenuEvent(self, a0: QContextMenuEvent) -> None:
+        self.menu.exec(self.viewport().mapToGlobal(a0.pos()))
+        return a0.accept()
 
     def dropEvent(self, e: QDropEvent) -> None:
         """Overrides the :meth:`dropEvent` to open a tab if a file was dropped
@@ -158,11 +156,11 @@ class Editor(Tab, QsciScintilla):
         return super().focusInEvent(_)
 
     def updateText(self) -> None:
-        """Updates the text. Triggers when :attr:`watcher` detects a change."""
+        """Updates the text. Triggered when :attr:`watcher` detects a change."""
         if not self.path.exists():
             return
         cursor = self.getCursorPosition()
-        self.setText(self.path.read_text("utf-8"))
+        self.SendScintilla(self.SCI_SETTEXT, self.path.read_bytes())
         self.setCursorPosition(*cursor)
 
     def setShortcutKeys(self) -> None:
@@ -220,6 +218,10 @@ class Editor(Tab, QsciScintilla):
     def find(self) -> None:
         """Starts the editor search"""
         Search(self).exec()
+
+    def createStandardContextMenu(self) -> None:
+        self.menu = super().createStandardContextMenu()
+        return self.menu
 
     def search(self, string: str, cs: bool = False, forward: bool = True) -> None:
         """Seaches for string in the editor
@@ -303,9 +305,8 @@ class Editor(Tab, QsciScintilla):
                 f"Failed to load lexer {lexerFolder} - {e.__class__.__name__}: {e}"
             )
 
-    def setLexer(self, lexer: QsciLexer | None = None) -> None:
-        self._lexer = lexer
-        self._api = QsciAPIs(lexer) if lexer else None
+    def setLexer(self, lexer: QsciLexer) -> None:
+        QsciAPIs(lexer)
         return super().setLexer(lexer)
 
     def getEditorStyles(self) -> Dict[str, Dict[Union[str, List[str]]]]:

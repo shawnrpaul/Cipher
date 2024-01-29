@@ -178,7 +178,8 @@ class FileManager(QTreeView):
 
     def setSelectedIndex(self, widget) -> None:
         if widget and (path := getattr(widget, "path", None)):
-            self.setCurrentIndex(self.__systemModel.index(str(path)))
+            return self.setCurrentIndex(self.__systemModel.index(str(path)))
+        self.setCurrentIndex(self.__systemModel.modelIndex)
 
     def createContextMenu(self, main: bool) -> None:
         """Creates a context menu when an index was right clicked."""
