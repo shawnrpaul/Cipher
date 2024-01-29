@@ -90,7 +90,7 @@ class Editor(Tab, QsciScintilla):
 
     @property
     def api(self) -> QsciAPIs | None:
-        return self.lexer().apis()
+        return self.lexer.apis()
 
     def contextMenuEvent(self, a0: QContextMenuEvent) -> None:
         self.menu.exec(self.viewport().mapToGlobal(a0.pos()))
