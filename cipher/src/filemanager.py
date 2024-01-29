@@ -279,7 +279,6 @@ class FileManager(QTreeView):
         index = self._window.tabView.addTab(editor, path.name)
         self._window.tabView.setCurrentIndex(index)
         self.fileCreated.emit(path)
-        self._window.git.status()
 
     def createFolder(self) -> None:
         """Creates a new folder"""
@@ -297,7 +296,6 @@ class FileManager(QTreeView):
         )
         if name and ok and name != index.data():
             self.__systemModel.mkdir(index, name)
-        self._window.git.status()
 
     def openFile(self, filePath: Optional[str] = None) -> None:
         """Opens a file
@@ -361,7 +359,6 @@ class FileManager(QTreeView):
             return
         path = Path(self.filePath(index)).absolute()
         newPath = path.rename(f"{path.parent}/{name}").absolute()
-        self._window.git.status()
         if newPath.is_file():
             for editor in self._window.tabView:
                 if editor.path == path:

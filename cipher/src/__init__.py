@@ -6,7 +6,6 @@ from .sidebar import *
 from .filemanager import *
 from .extensionlist import *
 from .search import *
-from .git import *
 from .tabview import *
 from .editor import *
 from .image import *

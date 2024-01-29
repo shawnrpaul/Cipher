@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 from .body import *
 from .extensionlist import *
 from .filemanager import *
-from .git import *
 from .menubar import *
 from .search import *
 from .sidebar import *
@@ -40,8 +39,6 @@ class Window(QMainWindow):
         The tree view of all files and folders
     extensionList: :class:`ExtensionList`
         The list view of all extensions
-    git: :class:`Git`
-        The tree view of (un)staged changes.
     search: :class:`GlobalSearch`
         The tree view of found phrases. Note: uses regex
     sidebar: :class:`Sidebar`
@@ -71,7 +68,6 @@ class Window(QMainWindow):
         self.tabView = TabView(self)
         self.fileManager = FileManager(self)
         self.extensionList = ExtensionList(self)
-        self.git = Git(self)
         self.search = GlobalSearch(self)
         self.terminal = Terminal(self)
         self.logs = Logs(self)

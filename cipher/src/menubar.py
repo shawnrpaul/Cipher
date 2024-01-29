@@ -31,7 +31,6 @@ class Menubar(QMenuBar):
         self.createFileMenu()
         self.createEditMenu()
         self.createViewMenu()
-        self.createGitMenu()
 
         self.window.shortcut.fileChanged.connect(self.updateShortcuts)
         self.updateShortcuts()
@@ -221,36 +220,6 @@ class Menubar(QMenuBar):
         if self.window.outputView.isHidden():
             self.window.outputView.show()
         self.window.terminal.run()
-
-    def createGitMenu(self) -> None:
-        """Creates the git menu box"""
-        git = self.addMenu("Git")
-        init = git.addAction("Init")
-        init.triggered.connect(self._window.git.init)
-        clone = git.addAction("Clone")
-        clone.triggered.connect(self._window.git.clone)
-        branch = git.addAction("Branch")
-        branch.triggered.connect(self._window.git.branch)
-
-        checkout = git.addAction("Checkout")
-        checkout.triggered.connect(self._window.git.checkout)
-        git.addSeparator()
-
-        status = git.addAction("Status")
-        status.triggered.connect(self._window.git.status)
-        add = git.addAction("Add")
-        add.triggered.connect(self._window.git.add)
-        remove = git.addAction("Remove")
-        remove.triggered.connect(self._window.git.remove)
-
-        git.addSeparator()
-
-        commit = git.addAction("Commit")
-        commit.triggered.connect(self._window.git.commit)
-        push = git.addAction("Push")
-        push.triggered.connect(self._window.git.push)
-        pull = git.addAction("Pull")
-        pull.triggered.connect(self._window.git.pull)
 
     def updateShortcuts(self) -> None:
         """Updates the shortcuts when `shortcuts.json` updates"""

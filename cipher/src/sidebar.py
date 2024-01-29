@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import QWidget, QFrame, QLabel, QVBoxLayout
 
 from .splitter import VSplitter
 from .extensionlist import ExtensionList
-from .git import Git
 from .search import GlobalSearch
 
 if TYPE_CHECKING:
@@ -34,7 +33,6 @@ class Sidebar(QFrame):
         self.createFolder()
         self.createExtensionList()
         self.createSearch()
-        self.createGitList()
 
     @property
     def window(self) -> Window:
@@ -57,6 +55,12 @@ class Sidebar(QFrame):
         settings.mousePressEvent = self.settingsMousePressEvent
         self.layout.addWidget(settings)
 
+    def settingsMousePressEvent(self, _: QMouseEvent = None) -> None:
+        path = self._window.fileManager.settingsPath
+        if not path.exists():
+            return
+        self._window.tabView.createTab(path)
+
     def createFolder(self) -> None:
         folder = QLabel(self)
         folder.setPixmap(
@@ -66,7 +70,7 @@ class Sidebar(QFrame):
         folder.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)
         folder.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
         folder.mousePressEvent = self.folderMousePressEvent
-        self.addWidget(folder)
+        self.addLabel(folder)
 
     def folderMousePressEvent(self, _: QMouseEvent) -> None:
         if isinstance(self._window.hsplit.widget(0), VSplitter):
@@ -89,7 +93,7 @@ class Sidebar(QFrame):
         )
         extensions.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
         extensions.mousePressEvent = self.extensionListMousePressEvent
-        self.addWidget(extensions)
+        self.addLabel(extensions)
 
     def extensionListMousePressEvent(self, _: QMouseEvent) -> None:
         if isinstance(self._window.hsplit.widget(0), ExtensionList):
@@ -110,7 +114,7 @@ class Sidebar(QFrame):
         search.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)
         search.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
         search.mousePressEvent = self.searchMousePressEvent
-        self.addWidget(search)
+        self.addLabel(search)
 
     def searchMousePressEvent(self, _: QMouseEvent) -> None:
         if isinstance(self._window.hsplit.widget(0), GlobalSearch):
@@ -121,31 +125,9 @@ class Sidebar(QFrame):
         self._window.search.textBox.selectAll()
         self._window.search.textBox.setFocus()
 
-    def createGitList(self) -> None:
-        git = QLabel(self)
-        git.setPixmap(
-            QPixmap(f"{self.window.localAppData}/icons/git.svg").scaled(32, 32)
-        )
-        git.setContentsMargins(1, 4, 0, 0)
-        git.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)
-        git.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
-        git.mousePressEvent = self.gitMousePressEvent
-        self.addWidget(git)
-
-    def gitMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window.hsplit.widget(0), Git):
-            self._window.git.setVisible(not self._window.git.isVisible())
-        else:
-            self._window.hsplit.replaceWidget(0, self._window.git)
-            self._window.git.setVisible(True)
-        self._window.git.setFocus()
-
-    def settingsMousePressEvent(self, _: QMouseEvent = None) -> None:
-        path = self._window.fileManager.settingsPath
-        if not path.exists():
-            return
-        self._window.tabView.createTab(path)
-
-    def addWidget(self, widget: QWidget):
+    def addLabel(self, label: QLabel) -> None:
         layout = self.layout
-        layout.insertWidget(layout.count() - 1, widget)
+        layout.insertWidget(layout.count() - 1, label)
+
+    def removeLabel(self, label: QLabel) -> None:
+        self.layout.removeWidget(label)
