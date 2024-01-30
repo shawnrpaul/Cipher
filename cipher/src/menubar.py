@@ -1,9 +1,9 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import json
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, List
 
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenuBar, QFileDialog, QMenu
@@ -27,7 +27,7 @@ class Menubar(QMenuBar):
         super().__init__()
         self.setObjectName("Menubar")
         self._window = window
-        self._menus: List[QAction] = []
+        self._menus: set[QAction] = set()
         self.createFileMenu()
         self.createEditMenu()
         self.createViewMenu()
@@ -41,8 +41,12 @@ class Menubar(QMenuBar):
 
     def addMenu(self, name: str) -> QMenu:
         menu = super().addMenu(name)
-        self._menus.append(menu)
+        self._menus.add(menu)
         return menu
+
+    def removeMenu(self, menu: QMenu) -> None:
+        self.removeAction(menu.menuAction())
+        self._menus.discard(menu)
 
     def createFileMenu(self) -> None:
         """Create the file menu box"""

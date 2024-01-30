@@ -272,3 +272,7 @@ class GlobalSearch(QFrame):
         layout.addWidget(self.searchView)
 
         self.setLayout(layout)
+
+    def focus(self) -> None:
+        self.textBox.selectAll()
+        self.textBox.focus()

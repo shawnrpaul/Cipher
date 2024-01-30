@@ -1,18 +1,43 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QMouseEvent, QPixmap
+from PyQt6.QtCore import QEvent, Qt
+from PyQt6.QtGui import QEnterEvent, QMouseEvent, QPixmap
 from PyQt6.QtWidgets import QWidget, QFrame, QLabel, QVBoxLayout
 
 from .splitter import VSplitter
-from .extensionlist import ExtensionList
-from .search import GlobalSearch
 
 if TYPE_CHECKING:
     from .window import Window
 
 __all__ = ("Sidebar",)
+
+
+class SidebarIcon(QLabel):
+    def __init__(self, widget: QWidget) -> None:
+        super().__init__()
+        self.widget = widget
+
+    @property
+    def window(self) -> Window:
+        return super().window()
+
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        return event.accept()
+
+    def leaveEvent(self, a0: QEvent) -> None:
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        return a0.accept()
+
+    def mousePressEvent(self, ev: QMouseEvent) -> None:
+        if isinstance(self.window.hsplit.widget(0), type(self.widget)):
+            self.widget.setVisible(not self.widget.isVisible())
+        else:
+            self.window.hsplit.replaceWidget(0, self.widget)
+            self.widget.setVisible(True)
+        self.widget.setFocus() if self.widget.isVisible() else ...
+        return ev.accept()
 
 
 class Sidebar(QFrame):
@@ -29,10 +54,7 @@ class Sidebar(QFrame):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
 
-        self.createSettings()
-        self.createFolder()
-        self.createExtensionList()
-        self.createSearch()
+        self._createIcons()
 
     @property
     def window(self) -> Window:
@@ -42,7 +64,30 @@ class Sidebar(QFrame):
     def layout(self) -> QVBoxLayout:
         return super().layout()
 
-    def createSettings(self) -> None:
+    def _createIcons(self) -> None:
+        self._createSettings()
+        self._createFolder()
+
+        extensions = self.createIcon(self.window.extensionList)
+        extensions.setContentsMargins(2, 0, 0, 0)
+        extensions.setPixmap(
+            QPixmap(f"{self.window.localAppData}/icons/extensions.svg").scaled(29, 29)
+        )
+
+        search = self.createIcon(self.window.search)
+        search.setContentsMargins(4, 5, 0, 0)
+        search.setPixmap(
+            QPixmap(f"{self.window.localAppData}/icons/search.svg").scaled(26, 26)
+        )
+
+    def _createSettings(self) -> None:
+        def settingsMousePressEvent(ev: QMouseEvent = None) -> None:
+            path = self.window.fileManager.settingsPath
+            if not path.exists():
+                return
+            self._window.tabView.createTab(path)
+            return ev.accept()
+
         settings = QLabel(self)
         settings.setPixmap(
             QPixmap(f"{self.window.localAppData}/icons/settings.svg").scaled(31, 31)
@@ -52,16 +97,21 @@ class Sidebar(QFrame):
             Qt.CursorShape.PointingHandCursor
         )
         settings.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
-        settings.mousePressEvent = self.settingsMousePressEvent
+        settings.mousePressEvent = settingsMousePressEvent
         self.layout.addWidget(settings)
 
-    def settingsMousePressEvent(self, _: QMouseEvent = None) -> None:
-        path = self._window.fileManager.settingsPath
-        if not path.exists():
-            return
-        self._window.tabView.createTab(path)
+    def _createFolder(self) -> None:
+        def folderMousePressEvent(ev: QMouseEvent) -> None:
+            if isinstance(self._window.hsplit.widget(0), VSplitter):
+                self._window.fileSplitter.setVisible(
+                    not self._window.fileSplitter.isVisible()
+                )
+            else:
+                self._window.hsplit.replaceWidget(0, self._window.fileSplitter)
+                self._window.fileSplitter.setVisible(True)
+            self._window.fileManager.setFocus() if self._window.fileManager.isVisible() else ...
+            return ev.accept()
 
-    def createFolder(self) -> None:
         folder = QLabel(self)
         folder.setPixmap(
             QPixmap(f"{self.window.localAppData}/icons/folder.svg").scaled(29, 29)
@@ -69,65 +119,19 @@ class Sidebar(QFrame):
         folder.setContentsMargins(3, 0, 0, 4)
         folder.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)
         folder.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
-        folder.mousePressEvent = self.folderMousePressEvent
-        self.addLabel(folder)
+        folder.mousePressEvent = folderMousePressEvent
+        self.addIcon(folder)
 
-    def folderMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window.hsplit.widget(0), VSplitter):
-            self._window.fileSplitter.setVisible(
-                not self._window.fileSplitter.isVisible()
-            )
-        else:
-            self._window.hsplit.replaceWidget(0, self._window.fileSplitter)
-            self._window.fileSplitter.setVisible(True)
-        self._window.fileManager.setFocus() if self._window.fileManager.isVisible() else ...
+    def createIcon(self, widget: QWidget) -> SidebarIcon:
+        icon = SidebarIcon(widget)
+        self.addIcon(icon)
+        return icon
 
-    def createExtensionList(self) -> None:
-        extensions = QLabel(self)
-        extensions.setPixmap(
-            QPixmap(f"{self.window.localAppData}/icons/extensions.svg").scaled(29, 29)
-        )
-        extensions.setContentsMargins(2, 0, 0, 0)
-        extensions.enterEvent = lambda _: self.setCursor(
-            Qt.CursorShape.PointingHandCursor
-        )
-        extensions.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
-        extensions.mousePressEvent = self.extensionListMousePressEvent
-        self.addLabel(extensions)
-
-    def extensionListMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window.hsplit.widget(0), ExtensionList):
-            self._window.extensionList.setVisible(
-                not self._window.extensionList.isVisible()
-            )
-        else:
-            self._window.hsplit.replaceWidget(0, self._window.extensionList)
-            self._window.extensionList.setVisible(True)
-        self._window.extensionList.setFocus()
-
-    def createSearch(self) -> None:
-        search = QLabel(self)
-        search.setPixmap(
-            QPixmap(f"{self.window.localAppData}/icons/search.svg").scaled(26, 26)
-        )
-        search.setContentsMargins(4, 5, 0, 0)
-        search.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)
-        search.leaveEvent = lambda _: self.setCursor(Qt.CursorShape.ArrowCursor)
-        search.mousePressEvent = self.searchMousePressEvent
-        self.addLabel(search)
-
-    def searchMousePressEvent(self, _: QMouseEvent) -> None:
-        if isinstance(self._window.hsplit.widget(0), GlobalSearch):
-            self._window.search.setVisible(not self._window.search.isVisible())
-        else:
-            self._window.hsplit.replaceWidget(0, self._window.search)
-            self._window.search.setVisible(True)
-        self._window.search.textBox.selectAll()
-        self._window.search.textBox.setFocus()
-
-    def addLabel(self, label: QLabel) -> None:
+    def addIcon(self, label: SidebarIcon) -> None:
         layout = self.layout
         layout.insertWidget(layout.count() - 1, label)
+        label.setParent(self)
 
-    def removeLabel(self, label: QLabel) -> None:
+    def removeIcon(self, label: SidebarIcon) -> None:
         self.layout.removeWidget(label)
+        label.setParent(None)
