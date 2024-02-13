@@ -226,15 +226,28 @@ class ServerApplication(Application):
         exc_tb: TracebackType,
     ):
         try:
-            file = Path(exc_tb.tb_frame.f_code.co_filename)
-            line = exc_tb.tb_lineno
-            logging.error(f"{file.name}({line}) - {exc_type.__name__}: {exc_value}")
-            if file.is_relative_to(os.getcwd()):
+            tbs, tb = [], exc_tb
+            while tb is not None:
+                tbs.append(
+                    {
+                        "file": Path(tb.tb_frame.f_code.co_filename),
+                        "line": tb.tb_lineno,
+                    }
+                )
+                tb = tb.tb_next
+            end = False
+            for tb in tbs[::-1]:
+                file, line = tb["file"], tb["line"]
+                if file.is_relative_to(self.localAppData):
+                    break
+                if end := file.is_relative_to(os.getcwd()):
+                    break
+            err = f"{file.name}({line}) - {exc_type.__name__}: {exc_value}"
+            logging.error(err)
+            if end:
                 dialog = QMessageBox()
                 dialog.setWindowTitle("Cipher")
-                dialog.setText(
-                    f"Cipher has crashed.\n{file.name}({line}) - {exc_type.__name__}: {exc_value}"
-                )
+                dialog.setText(f"Cipher has crashed.\n{err}")
                 dialog.exec()
                 return self.close()
         except Exception:

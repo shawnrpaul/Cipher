@@ -7,7 +7,7 @@ from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
 
-from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, QFile, pyqtSignal
+from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
 from PyQt6.QtGui import QFileSystemModel, QKeyEvent, QMouseEvent
 from PyQt6.QtWidgets import (
     QApplication,
@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QInputDialog,
     QLineEdit,
     QMenu,
+    QMessageBox,
     QSizePolicy,
     QTreeView,
 )
@@ -358,7 +359,15 @@ class FileManager(QTreeView):
         if not name or not ok or name == index.data():
             return
         path = Path(self.filePath(index)).absolute()
-        newPath = path.rename(f"{path.parent}/{name}").absolute()
+        counter = 0
+        names = name.split(".")
+        while True:
+            try:
+                newPath = path.rename(f"{path.parent}/{name}").absolute()
+                break
+            except FileExistsError:
+                counter += 1
+                name = f"{names[0]} ({counter}).{'.'.join(names[1:])}"
         if newPath.is_file():
             for editor in self._window.tabView:
                 if editor.path == path:
@@ -384,8 +393,12 @@ class FileManager(QTreeView):
             return
         index = selectedIndexes[0]
         if self.__systemModel.isDir(index):
-            if not QDir(self.__systemModel.filePath(index)).removeRecursively():
-                print("Failed to remove all files")
+            path = self.__systemModel.filePath(index)
+            if not QDir(path).removeRecursively():
+                dialog = QMessageBox(self.window)
+                dialog.setWindowTitle("Cipher")
+                dialog.setText(f"Failed to remove delete {path}")
+                dialog.exec()
         else:
             self.__systemModel.remove(index)
 
