@@ -8,11 +8,10 @@ from copy import copy
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtWidgets import QTabWidget
-import filetype
 
 from .tab import Tab
 from .editor import Editor
-from .image import createImage
+from .image import Image, GIF
 
 if TYPE_CHECKING:
     from .window import Window
@@ -43,6 +42,12 @@ class TabView(QTabWidget):
         self._window = window
         self.__tabList: list[Tab] = []
         self.__closedTabs: deque[Tab] = deque()
+        self._tabCls: dict[str, Tab] = {
+            ".gif": GIF,
+            ".jpg": Image,
+            ".webp": Image,
+            ".png": Image,
+        }
         self.setContentsMargins(0, 0, 0, 0)
         self.setTabsClosable(True)
         self.setMovable(True)
@@ -80,6 +85,11 @@ class TabView(QTabWidget):
             The list of editor that are currently open.
         """
         return copy(self.__tabList)
+
+    def setTabCls(self, ext: str, cls: Tab) -> None:
+        if not issubclass(cls, Tab):
+            return
+        self._tabCls[ext] = cls
 
     def __iter__(self) -> Iterator[Tab]:
         """Returns an iterator of a copy of the tablist"""
@@ -283,17 +293,13 @@ class TabView(QTabWidget):
             return
         if tab := self.getTab(path):
             return self.setCurrentWidget(tab)
-        if self.isBinary(path):
-            if not filetype.is_image(path):
+        if cls := self._tabCls.get(path.suffix):
+            tab = cls(self.window, path)
+        else:
+            if self.isBinary(path):
                 return
-            image = createImage(self._window, path)
-            self.addTab(image, path.name)
-            self.setCurrentWidget(image)
-            return image
-
-        editor = Editor(window=self._window, path=path)
-        editor.setText(path.read_text(encoding="utf-8"))
-        self.addTab(editor, path.name)
-        self.setCurrentWidget(editor)
-
-        return editor
+            tab = Editor(window=self._window, path=path)
+            tab.setText(path.read_text(encoding="utf-8"))
+        self.addTab(tab, path.name)
+        self.setCurrentWidget(tab)
+        return tab

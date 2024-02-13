@@ -65,6 +65,7 @@ class Editor(Tab, QsciScintilla):
         self.setEolVisibility(False)
         self.SendScintilla(self.SCI_SETMULTIPLESELECTION, 1)
         self.SendScintilla(self.SCI_SETADDITIONALSELECTIONTYPING, 1)
+        self.SendScintilla(self.SCI_SETMULTIPASTE, 1)
 
         styles = self.getEditorStyles()
         localAppData = f"{window.localAppData}/include"

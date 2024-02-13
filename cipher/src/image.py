@@ -38,9 +38,3 @@ class GIF(Tab, QLabel):
 
     def setVideo(self) -> None:
         self.setPixmap(QPixmap(str(self.path)))
-
-
-def createImage(window: Window, path: Path):
-    if path.suffix == ".gif":
-        return GIF(window, path)
-    return Image(window, path)
