@@ -86,6 +86,7 @@ class Editor(Tab, QsciScintilla):
         self.commands = self.standardCommands()
         self.setShortcutKeys()
         self._window.shortcut.fileChanged.connect(self.setShortcutKeys)
+        self.setText(path.read_text("utf-8"))
 
     @property
     def lexer(self) -> QsciLexer:

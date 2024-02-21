@@ -7,6 +7,8 @@ from PyQt6.QtCore import QFileSystemWatcher
 if TYPE_CHECKING:
     from .window import Window
 
+__all__ = ("Tab",)
+
 
 class Tab:
     def __init__(self, window: Window, path: Path) -> None:

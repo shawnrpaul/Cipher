@@ -86,10 +86,13 @@ class TabView(QTabWidget):
         """
         return copy(self.__tabList)
 
-    def setTabCls(self, ext: str, cls: Tab) -> None:
+    def setTabCls(self, ext: str, cls: Tab) -> bool:
         if not issubclass(cls, Tab):
-            return
+            return False
+        if self._tabCls.get(ext):
+            return False
         self._tabCls[ext] = cls
+        return True
 
     def __iter__(self) -> Iterator[Tab]:
         """Returns an iterator of a copy of the tablist"""
@@ -299,7 +302,6 @@ class TabView(QTabWidget):
             if self.isBinary(path):
                 return
             tab = Editor(window=self._window, path=path)
-            tab.setText(path.read_text(encoding="utf-8"))
         self.addTab(tab, path.name)
         self.setCurrentWidget(tab)
         return tab
