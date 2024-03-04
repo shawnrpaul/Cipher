@@ -9,8 +9,8 @@ from PyQt6.Qsci import QsciAPIs, QsciLexer, QsciLexerCustom, QsciScintilla
 from PyQt6.QtGui import QDropEvent, QKeyEvent, QKeySequence, QContextMenuEvent
 from PyQt6.QtWidgets import QFileDialog
 
+from .find import Find
 from ..tab import Tab
-from .search import Search
 
 if TYPE_CHECKING:
     from cipher import Window
@@ -223,7 +223,7 @@ class Editor(Tab, QsciScintilla):
 
     def find(self) -> None:
         """Starts the editor search"""
-        Search(self).exec()
+        Find(self).exec()
 
     def createStandardContextMenu(self) -> None:
         self.menu = super().createStandardContextMenu()

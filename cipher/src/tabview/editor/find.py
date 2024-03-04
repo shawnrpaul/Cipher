@@ -7,13 +7,13 @@ from PyQt6.QtWidgets import QCheckBox, QDialog, QLabel, QLineEdit, QPushButton
 if TYPE_CHECKING:
     from cipher import Editor
 
-__all__ = ("Search",)
+__all__ = ("Find",)
 
 
-class Search(QDialog):
+class Find(QDialog):
     def __init__(self, editor: Editor) -> None:
-        super().__init__()
-        self.setObjectName("Search")
+        super().__init__(editor)
+        self.setObjectName("Find")
         self.textBox = QLineEdit(self)
         self.textBox.setObjectName("Textbox")
         self.textBox.setGeometry(QRect(10, 30, 251, 21))

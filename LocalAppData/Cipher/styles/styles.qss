@@ -1,3 +1,7 @@
+* {
+    font-family: "JetBrainsMono Nerd Font";
+}
+
 Window {
     background-color: #1E1E1E;
     color: #1E1E1E;
@@ -13,22 +17,23 @@ Menubar::item::selected {
     color: #FFFFFF;
 }
 
-Body {
-    background-color: #FFFFFF;
-}
-
 QMenu {
     background-color: #3C3C3C;
     color: #FFFFFF;
 }
 
-QMenu::item::selected {
+QMenu::item::disabled {
+    background-color: #3C3C3C; 
+    color: #686868;
+}
+
+QMenu::item::enabled::selected {
     background-color: #454646; 
     color: #FFFFFF;
 }
 
-HSplitter {
-    background-color: #1E1E1E;
+Body {
+    background-color: #FFFFFF;
 }
 
 HSplitter::handle {
@@ -51,10 +56,6 @@ VSplitter::handle {
 
 VSplitter::handle::hover {
     background-color: #007ACC;
-}
-
-FileManagerSplitter {
-    background-color: #252526;
 }
 
 FileManagerSplitter::handle {
@@ -82,8 +83,7 @@ FileManager {
     background-color: #252526;
     color: #FFFFFF;
     border: none;
-    margin: 5px 5px 5px 5px; 
-    font-family: Calibri;
+    margin: 5px 5px 5px 5px;
     font-size: 14px;
     outline: 0;
 }
@@ -105,37 +105,41 @@ FileManager::item::selected {
 ExtensionList {
     background-color: #252526;
     border: none;
+    outline: 0;
 }
 
 ExtensionList::item {
     background-color: #252526;
     color: #FFFFFF;
+    border: none;
+    outline: 0;
 }
 
 ExtensionList::item::selected {
     background-color: #3C3C3C;
     color: #FFFFFF;
     border: none;
+    outline: 0;
 }
 
-GlobalSearch {
+Search {
     background-color: #252526;
     border: none;
 }
 
-GlobalSearch > QLineEdit {
+Search > QLineEdit {
     background-color: #3C3C3C;
     color: #FFFFFF;
     border: none;
     margin: 0px 4px 5px 8px;
 }
 
-GlobalSearch > QCheckBox {
+Search > QCheckBox {
     margin-left: 8px;
     color: #FFFFFF;
 }
 
-GlobalSearch > GlobalSearchView {
+Search > SearchView {
     background-color: #252526;
     color: #FFFFFF;
     margin-left: 8px;
@@ -143,13 +147,13 @@ GlobalSearch > GlobalSearchView {
     border: none;
 }
 
-GlobalSearch > GlobalSearchView::item::hover {
+Search > SearchView::item::hover {
     background-color: #3C3C3C;
     color: #FFFFFF;
     border: none;
 }
 
-GlobalSearch > GlobalSearchView::item::selected {
+Search > SearchView::item::selected {
     background-color: #3C3C3C;
     color: #FFFFFF;
     border: none;
@@ -184,6 +188,7 @@ TabView::pane {
     background-color: #1E1E1E;
     color: #1E1E1E;
 }
+
 TabView > QTabBar {
     background-color: #252526;
     color: #909685;
@@ -234,6 +239,13 @@ OutputView::pane {
 
 OutputView > QTabBar {
     background-color: #252526;
+    color: #1E1E1E;
+    border: none;
+}
+
+OutputView::pane {
+    background-color: #252526;
+    color: #1E1E1E;
     border: none;
 }
 
@@ -256,32 +268,32 @@ OutputView > QTabBar::tab::selected {
 }
 
 Terminal {
-    background-color: #3C3C3C;
+    background-color: #1E1E1E;
     color: #3C3C3C;
     border: none;
 }
 
 Terminal > QPlainTextEdit {
-    background-color: #3C3C3C;
+    background-color: #1E1E1E;
     color: #FFFFFF;
     margin: 5px 0 0 0;
     border: none;
 }
 
 Terminal > QLineEdit {
-    background-color: #3C3C3C;
+    background-color: #1E1E1E;
     color: #FFFFFF;
     margin: 2.5px 2px 8px 2px;
     padding: 0px 4px 0px 4px;
     border-style: solid;
     border-width: 3px;
-    border-color: #626262;
+    border-color: #4D4D4D;
     border-radius: 10px;
 }
 
 Logs {
     background-color: #1E1E1E; 
-    color: #FFFFFF; 
+    color: #FFFFFF;
     border: none;
 }
 
