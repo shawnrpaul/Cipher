@@ -287,7 +287,7 @@ class FileManager(QTreeView):
             indexes = self.selectedIndexes()
             if not indexes:
                 return
-            index = index[0]
+            index = indexes[0]
         else:
             index = self.getIndex()
         if not self.__systemModel.isDir(index):
