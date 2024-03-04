@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Callable, Tuple, TYPE_CHECKING
 import inspect
 
 
@@ -21,7 +21,7 @@ class Event:
     def __init__(self, func: Callable[..., Any] = None) -> None:
         self._instance: Extension = None
         self.func = func
-        self._error: Optional[Callable[..., Any]] = None
+        self._error: Callable[..., Any] | None = None
 
     async def invoke(self, *args, **kwargs) -> None:
         try:
@@ -33,7 +33,7 @@ class Event:
                 except Exception:
                     ...
 
-    def __call__(self, *args: Tuple[Any], **kwargs: Dict[Any, Any]) -> Any:
+    def __call__(self, *args: Tuple[Any], **kwargs: dict[Any, Any]) -> Any:
         window = self._instance.window
         window.createTask(self.invoke(*args, **kwargs))
 

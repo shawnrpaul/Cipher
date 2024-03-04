@@ -1,14 +1,13 @@
 from __future__ import annotations
-
+from typing import TYPE_CHECKING, Any, Iterable, Union
+from copy import copy
+from pathlib import Path
 import json
 import subprocess
 import sys
-from copy import copy
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
 
 from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
-from PyQt6.QtGui import QFileSystemModel, QKeyEvent, QMouseEvent
+from PyQt6.QtGui import QKeyEvent, QMouseEvent
 from PyQt6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -20,28 +19,14 @@ from PyQt6.QtWidgets import (
     QTreeView,
 )
 
-from .editor import Editor
+from .model import FileSystemModel
+from .splitter import FileManagerSplitter
+from ..tabview import Tab, Editor
 
 if TYPE_CHECKING:
-    from .window import Window
+    from ..window import Window
 
-__all__ = ("FileManager",)
-
-
-class FileSystemModel(QFileSystemModel):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.setRootPath(None)
-        self.setReadOnly(False)
-
-    @property
-    def currentFolder(self) -> Optional[Path]:
-        return copy(self.__currentFolder)
-
-    def setRootPath(self, path: Optional[Path]) -> QModelIndex:
-        self.__currentFolder = path
-        self.modelIndex = super().setRootPath(str(path) if path else None)
-        return self.modelIndex
+__all__ = ("FileManager", "FileManagerSplitter")
 
 
 class FileManager(QTreeView):
@@ -67,7 +52,7 @@ class FileManager(QTreeView):
     workspaceChanged = pyqtSignal(object)
     folderCreated = pyqtSignal(Path)
     fileCreated = pyqtSignal(Path)
-    fileSaved = pyqtSignal(Editor)
+    fileSaved = pyqtSignal(Tab)
 
     def __init__(self, window: Window, main: bool = True) -> None:
         super().__init__()
@@ -112,7 +97,7 @@ class FileManager(QTreeView):
         return self._window
 
     @property
-    def currentFolder(self) -> Optional[Path]:
+    def currentFolder(self) -> Path | None:
         """Returns the :class:`~pathlib.Path` if there is a workspace.
 
         Returns
@@ -298,7 +283,7 @@ class FileManager(QTreeView):
         if name and ok and name != index.data():
             self.__systemModel.mkdir(index, name)
 
-    def openFile(self, filePath: Optional[str] = None) -> None:
+    def openFile(self, filePath: str | None = None) -> None:
         """Opens a file
 
         Parameters
@@ -402,10 +387,10 @@ class FileManager(QTreeView):
         else:
             self.__systemModel.remove(index)
 
-    def setFolder(self, path: Optional[Path]) -> None:
+    def setFolder(self, path: Path | None) -> None:
         self.setRootIndex(self.__systemModel.setRootPath(path))
 
-    def changeFolder(self, folderPath: Optional[str]) -> None:
+    def changeFolder(self, folderPath: str | None) -> None:
         """Changes the workspace and triggers :attr:`workspaceChanged`
 
         Parameters
@@ -550,32 +535,32 @@ class FileManager(QTreeView):
             return self.__systemModel.modelIndex
         return indexes[0]
 
-    def getCurrentSettings(self) -> Dict[str, Any]:
+    def getCurrentSettings(self) -> dict[str, Any]:
         """Returns either the workspace of global settings
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
         """
         with open(self.settingsPath) as f:
             return json.load(f)
 
-    def getGlobalSettings(self) -> Dict[str, Any]:
+    def getGlobalSettings(self) -> dict[str, Any]:
         """Returns global settings
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
         """
         with open(f"{self._window.localAppData}/settings.json") as f:
             return json.load(f)
 
-    def getWorkspaceSettings(self) -> Dict[str, Union[str, Any]]:
+    def getWorkspaceSettings(self) -> dict[str, Union[str, Any]]:
         """Returns workspace settings
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
         """
         if not self.currentFolder:
             return {"project": None, "currentFile": None, "openedFiles": []}

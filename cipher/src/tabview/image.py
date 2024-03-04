@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import QLabel
 from .tab import Tab
 
 if TYPE_CHECKING:
-    from .window import Window
+    from ..window import Window
 
 
 class Image(Tab, QLabel):

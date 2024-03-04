@@ -1,19 +1,19 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Union
-
-import json
+from typing import TYPE_CHECKING
 from importlib import import_module
 from pathlib import Path
+import json
+
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.Qsci import QsciAPIs, QsciLexer, QsciLexerCustom, QsciScintilla
 from PyQt6.QtGui import QDropEvent, QKeyEvent, QKeySequence, QContextMenuEvent
 from PyQt6.QtWidgets import QFileDialog
 
-from .tab import Tab
+from ..tab import Tab
 from .search import Search
 
 if TYPE_CHECKING:
-    from .window import Window
+    from cipher import Window
 
 __all__ = ("Editor",)
 
@@ -315,7 +315,7 @@ class Editor(Tab, QsciScintilla):
         QsciAPIs(lexer)
         return super().setLexer(lexer)
 
-    def getEditorStyles(self) -> Dict[str, Dict[Union[str, List[str]]]]:
+    def getEditorStyles(self) -> dict[str, dict[str | list[str]]]:
         """Returns the editor styles"""
         with open(f"{self._window.localAppData}/styles/lexer.json") as f:
             return json.load(f)

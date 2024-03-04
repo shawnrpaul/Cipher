@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QFileSystemWatcher
 
 if TYPE_CHECKING:
-    from .window import Window
+    from ..window import Window
 
 __all__ = ("Tab",)
 

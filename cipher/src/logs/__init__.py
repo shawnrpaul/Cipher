@@ -7,7 +7,7 @@ from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import QPlainTextEdit
 
 if TYPE_CHECKING:
-    from .window import Window
+    from cipher import Window
 
 
 __all__ = ("Logs",)

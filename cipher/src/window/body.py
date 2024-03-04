@@ -1,11 +1,10 @@
 from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 from PyQt6.QtWidgets import QWidget, QFrame, QHBoxLayout, QSizePolicy
 
 if TYPE_CHECKING:
-    from .window import Window
+    from . import Window
 
 __all__ = ("Body",)
 

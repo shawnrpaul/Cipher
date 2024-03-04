@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import singledispatchmethod
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Tuple
 from collections import deque
 from pathlib import Path
 from copy import copy
@@ -14,9 +14,9 @@ from .editor import Editor
 from .image import Image, GIF
 
 if TYPE_CHECKING:
-    from .window import Window
+    from ..window import Window
 
-__all__ = ("TabView",)
+__all__ = ("TabView", "Tab", "Editor", "Image", "GIF")
 
 
 class TabView(QTabWidget):
@@ -64,7 +64,7 @@ class TabView(QTabWidget):
         return self._window
 
     @property
-    def currentFile(self) -> Optional[Tab]:
+    def currentFile(self) -> Tab | None:
         """Returns the current :class:`Editor` if opened
 
         Alias for :func:`currentWidget` function

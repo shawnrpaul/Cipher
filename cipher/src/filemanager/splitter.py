@@ -1,16 +1,14 @@
 from __future__ import annotations
-from pathlib import Path
 from typing import TYPE_CHECKING
+from pathlib import Path
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QSplitter, QSizePolicy, QFrame, QSplitterHandle, QVBoxLayout
+from PyQt6.QtWidgets import QSizePolicy, QFrame, QVBoxLayout
 
-from .filemanager import FileManager
+from ..splitter import VSplitter
 
 if TYPE_CHECKING:
-    from .window import Window
-
-__all__ = ("VSplitter", "HSplitter", "FileManagerSplitter")
+    from . import FileManager
+    from ..window import Window
 
 
 class Explorer(QFrame):
@@ -34,36 +32,6 @@ class Explorer(QFrame):
         self.setLayout(layout)
 
 
-class BaseSplitter(QSplitter):
-    def __init__(self, window: Window) -> None:
-        super().__init__(window)
-        self._window = window
-        self.setMouseTracking(True)
-
-    @property
-    def window(self) -> Window:
-        return self._window
-
-    def createHandle(self) -> QSplitterHandle:
-        handle = super().createHandle()
-        handle.setAttribute(Qt.WidgetAttribute.WA_Hover)
-        return handle
-
-
-class HSplitter(BaseSplitter):
-    def __init__(self, window: Window) -> None:
-        super().__init__(window)
-        self.setObjectName("HSplitter")
-        self.setOrientation(Qt.Orientation.Horizontal)
-
-
-class VSplitter(BaseSplitter):
-    def __init__(self, window: Window) -> None:
-        super().__init__(window)
-        self.setObjectName("VSplitter")
-        self.setOrientation(Qt.Orientation.Vertical)
-
-
 class FileManagerSplitter(VSplitter):
     def __init__(self, window: Window) -> None:
         super().__init__(window)
@@ -83,11 +51,20 @@ class FileManagerSplitter(VSplitter):
                 return True
         return False
 
+    def widget(self, index: int) -> Explorer:
+        return super().widget(index)
+
+    def fileManager(self, index: int) -> FileManager:
+        return self.widget(index).fileManager
+
     def addFileManager(self, path: Path) -> None:
         for i in range(0, self.count()):
             explorer: Explorer = self.widget(i)
             if explorer.fileManager.currentFolder == path:
                 return
+
+        from . import FileManager
+
         fileManager = FileManager(self._window, False)
         fileManager.setFolder(path)
         self.addWidget(Explorer(fileManager))

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtWidgets import QTabWidget
 
 if TYPE_CHECKING:
-    from .window import Window
+    from cipher import Window
 
 __all__ = ("OutputView",)
 

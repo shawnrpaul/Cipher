@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from pathlib import Path
 import logging
 
@@ -8,20 +8,20 @@ from PyQt6.QtGui import QCloseEvent, QIcon
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 
 from .body import *
-from .extensionlist import *
-from .filemanager import *
-from .menubar import *
-from .search import *
-from .sidebar import *
-from .splitter import *
-from .tabview import *
-from .outputview import *
-from .terminal import *
-from .logs import *
+from ..extensionlist import *
+from ..filemanager import *
+from ..menubar import *
+from ..search import *
+from ..sidebar import *
+from ..splitter import *
+from ..tabview import *
+from ..outputview import *
+from ..terminal import *
+from ..logs import *
 
 if TYPE_CHECKING:
     from cipher.core import ServerApplication
-    from .tab import Tab
+    from cipher import Tab
 
 __all__ = ("Window",)
 
@@ -68,7 +68,7 @@ class Window(QMainWindow):
         self.tabView = TabView(self)
         self.fileManager = FileManager(self)
         self.extensionList = ExtensionList(self)
-        self.search = GlobalSearch(self)
+        self.search = Search(self)
         self.terminal = Terminal(self)
         self.logs = Logs(self)
         self.outputView = OutputView(self)
@@ -103,12 +103,12 @@ class Window(QMainWindow):
         self.showMaximized()
 
     @property
-    def currentFolder(self) -> Optional[Path]:
+    def currentFolder(self) -> Path | None:
         """Returns the `path` of current folder. Returns `None` if there isn't a current folder."""
         return self.fileManager.currentFolder
 
     @property
-    def currentFile(self) -> Optional[Tab]:
+    def currentFile(self) -> Tab | None:
         """Returns the current `Editor` tab. Returns `None` if there isn't a current tab."""
         return self.tabView.currentFile
 
@@ -137,7 +137,7 @@ class Window(QMainWindow):
     def createTask(self, coro) -> None:
         return self.application.createTask(coro)
 
-    def resumeSession(self):
+    def resumeSession(self) -> None:
         settings = self.fileManager.getGlobalSettings()
         folder = settings.get("lastFolder")
         if folder and not Path(folder).absolute().exists():

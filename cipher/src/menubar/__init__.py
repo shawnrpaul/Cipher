@@ -9,7 +9,7 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenuBar, QFileDialog, QMenu
 
 if TYPE_CHECKING:
-    from .window import Window
+    from ..window import Window
 
 __all__ = ("Menubar",)
 
@@ -54,16 +54,16 @@ class Menubar(QMenuBar):
 
         saveFile = fileMenu.addAction("Save File")
         saveFile.triggered.connect(
-            lambda: self._window.currentFile.saveFile()
-            if self._window.currentFile
-            else ...
+            lambda: (
+                self._window.currentFile.saveFile() if self._window.currentFile else ...
+            )
         )
 
         saveAs = fileMenu.addAction("Save File As")
         saveAs.triggered.connect(
-            lambda: self._window.currentFile.saveAs()
-            if self._window.currentFile
-            else ...
+            lambda: (
+                self._window.currentFile.saveAs() if self._window.currentFile else ...
+            )
         )
 
         fileMenu.addSeparator()
@@ -120,9 +120,9 @@ class Menubar(QMenuBar):
 
         paste = editMenu.addAction("Paste")
         paste.triggered.connect(
-            lambda: self._window.currentFile.paste()
-            if self._window.currentFile
-            else ...
+            lambda: (
+                self._window.currentFile.paste() if self._window.currentFile else ...
+            )
         )
 
         find = editMenu.addAction("Find")
@@ -184,9 +184,11 @@ class Menubar(QMenuBar):
         view = self.addMenu("View")
 
         view.addAction("Fullscreen").triggered.connect(
-            lambda: self.window.showFullScreen()
-            if not self.window.isFullScreen()
-            else self.window.showMaximized()
+            lambda: (
+                self.window.showFullScreen()
+                if not self.window.isFullScreen()
+                else self.window.showMaximized()
+            )
         )
         view.addAction("Explorer").triggered.connect(self.explorer)
         view.addAction("Terminal").triggered.connect(self.terminal)

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Type
+from typing import Type
 from types import TracebackType
 from pathlib import Path
 import asyncio
@@ -222,7 +222,7 @@ class ServerApplication(Application):
     def excepthook(
         self,
         exc_type: Type[BaseException],
-        exc_value: Optional[BaseException],
+        exc_value: BaseException | None,
         exc_tb: TracebackType,
     ):
         try:
