@@ -176,7 +176,7 @@ class ServerApplication(Application):
                 window = self.mainWindow()
             if path.is_dir():
                 if not window.currentFolder:
-                    window.fileManager.changeFolder(str(path))
+                    window.fileManager.changeFolder(path)
             else:
                 window.tabView.createTab(path)
             self.server.sendResponse({"code": 200})

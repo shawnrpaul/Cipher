@@ -58,6 +58,7 @@ class TabView(QTabWidget):
             lambda __from, __to: self.__tabList.insert(__to, (self.__tabList.pop(__from)))  # fmt: skip
         )
         self.currentChanged.connect(lambda _: self.widgetChanged.emit(self.currentFile))
+        self.widgetChanged.connect(lambda widget: widget.setFocus() if widget else ...)
 
     @property
     def window(self) -> Window:

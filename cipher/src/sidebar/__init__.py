@@ -81,10 +81,10 @@ class Sidebar(QFrame):
 
         def folderMousePressEvent(ev: QMouseEvent) -> None:
             if isinstance(window.hsplit.widget(0), VSplitter):
-                window.fileSplitter.setVisible(not window.fileSplitter.isVisible())
+                window.fileManager.setVisible(not window.fileManager)
             else:
-                window.hsplit.replaceWidget(0, window.fileSplitter)
-                window.fileSplitter.setVisible(True)
+                window.hsplit.replaceWidget(0, window.fileManager)
+                window.fileManager.setVisible(True)
             (window.fileManager.setFocus() if window.fileManager.isVisible() else ...)
             return ev.accept()
 

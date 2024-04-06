@@ -54,6 +54,7 @@ class Editor(Tab, QsciScintilla):
         self.setAutoCompletionCaseSensitivity(False)
         self.setAutoCompletionUseSingle(QsciScintilla.AutoCompletionUseSingle.AcusNever)
         self.setCallTipsStyle(QsciScintilla.CallTipsStyle.CallTipsContext)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.setAnnotationDisplay(QsciScintilla.AnnotationDisplay.AnnotationBoxed)
         self.setBraceMatching(QsciScintilla.BraceMatch.SloppyBraceMatch)

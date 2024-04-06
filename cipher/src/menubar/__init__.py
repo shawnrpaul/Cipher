@@ -69,30 +69,30 @@ class Menubar(QMenuBar):
         fileMenu.addSeparator()
 
         newFile = fileMenu.addAction("New File")
-        newFile.triggered.connect(self._window.fileManager.createFile)
+        newFile.triggered.connect(self._window.fileManager.treeView.createFile)
 
         newFolder = fileMenu.addAction("New Folder")
-        newFolder.triggered.connect(self._window.fileManager.createFolder)
+        newFolder.triggered.connect(self._window.fileManager.treeView.createFolder)
 
         fileMenu.addSeparator()
 
         openFile = fileMenu.addAction("Open File")
-        openFile.triggered.connect(self._window.fileManager.openFile)
+        openFile.triggered.connect(self._window.fileManager.treeView.openFile)
 
         openFile = fileMenu.addAction("Open File Path")
-        openFile.triggered.connect(self._window.fileManager.openFilePath)
+        openFile.triggered.connect(self._window.fileManager.treeView.openFilePath)
 
         reopen = fileMenu.addAction("Reopen Closed Tab")
         reopen.triggered.connect(self._window.tabView.reopenTab)
 
         openFolder = fileMenu.addAction("Open Folder")
-        openFolder.triggered.connect(self._window.fileManager.openFolder)
+        openFolder.triggered.connect(self._window.fileManager.treeView.openFolder)
 
         openFolderTreeView = fileMenu.addAction("Open Folder in Tree View")
         openFolderTreeView.triggered.connect(self.openFolderTreeView)
 
         closeFolder = fileMenu.addAction("Close Folder")
-        closeFolder.triggered.connect(self._window.fileManager.closeFolder)
+        closeFolder.triggered.connect(self._window.fileManager.treeView.closeFolder)
 
     def openFolderTreeView(self) -> None:
         if not self._window.currentFolder:
@@ -102,7 +102,7 @@ class Menubar(QMenuBar):
         )
         if not folder:
             return
-        self._window.fileSplitter.addFileManager(Path(folder))
+        self._window.fileManager.addTreeView(Path(folder))
 
     def createEditMenu(self) -> None:
         """Creates the edit menu box"""

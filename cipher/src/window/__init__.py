@@ -76,11 +76,10 @@ class Window(QMainWindow):
         self.menubar = Menubar(self)
 
         self.hsplit = HSplitter(self)
-        self.fileSplitter = FileManagerSplitter(self)
         self.vsplit = VSplitter(self)
         self.vsplit.addWidget(self.tabView)
         self.vsplit.addWidget(self.outputView)
-        self.hsplit.addWidget(self.fileSplitter)
+        self.hsplit.addWidget(self.fileManager)
         self.hsplit.addWidget(self.vsplit)
 
         body = Body(self)

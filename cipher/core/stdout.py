@@ -13,5 +13,4 @@ class Stdout:
         for window in self.application._windows:
             window.logs.write(text)
 
-    def flush(self) -> None:
-        ...
+    def flush(self) -> None: ...
