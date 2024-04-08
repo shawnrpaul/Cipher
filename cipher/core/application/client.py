@@ -1,13 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 import json
 import sys
 
 from PyQt6.QtCore import QUrl
 from PyQt6.QtWebSockets import QWebSocket
-
-if TYPE_CHECKING:
-    from .application import ClientApplication
+from .base import BaseApplication
 
 
 class Client(QWebSocket):
@@ -24,12 +21,18 @@ class Client(QWebSocket):
     app = application
 
     def onConnect(self) -> None:
-        self.sendTextMessage(json.dumps({"argv": sys.argv}))
+        self.sendTextMessage(json.dumps({"code": 0, "argv": sys.argv}))
 
     def parseMessage(self, message: str) -> None:
         data = json.loads(message)
-        self.application.close()
+        self.application.exit()
         if data["code"] != 200:
             print(data["message"], file=sys.stderr)
-            sys.exit(1)
-        sys.exit(0)
+            return self.application.exit(1)
+        return self.application.exit(0)
+
+
+class ClientApplication(BaseApplication):
+    def __init__(self, argv: list[str]) -> None:
+        super().__init__(argv)
+        self.client = Client(self)

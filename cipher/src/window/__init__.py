@@ -49,6 +49,7 @@ class Window(QMainWindow):
         Sends a windows notification. Meant to be used by :class:`Extension`
     """
 
+    started = pyqtSignal()
     closed = pyqtSignal()
 
     def __init__(self, app: ServerApplication) -> None:
@@ -100,6 +101,8 @@ class Window(QMainWindow):
         self.vsplit.setSizes([height, height])
 
         self.showMaximized()
+        self.closed.connect(lambda: self.application.closeWindow(self))
+        self.started.emit()
 
     @property
     def currentFolder(self) -> Path | None:
@@ -162,8 +165,7 @@ class Window(QMainWindow):
         self.hide()
         self.closed.emit()
         self.fileManager.saveSettings()
-        super().closeEvent(_)
-        self.application.closeWindow(self)
+        return super().closeEvent(_)
 
     def log(self, text: str, newline: bool = False, level=logging.ERROR):
         self.logs.log(text, newline=newline, level=level)

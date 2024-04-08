@@ -37,7 +37,7 @@ class ExtensionList(QListWidget):
         self.itemClicked.connect(
             lambda item: window.tabView.createTab(Path(f"{item.path}/settings.json"))
         )
-        self.addExtensions()
+        window.started.connect(self.addExtensions)
 
     @property
     def window(self) -> Window:

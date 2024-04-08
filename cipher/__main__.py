@@ -1,5 +1,5 @@
-from cipher.core import Application
+from cipher.core import BaseApplication
 
 
 if __name__ == "__main__":
-    Application.getApplication()
+    BaseApplication.getApplication().exec()
