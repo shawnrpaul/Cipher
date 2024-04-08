@@ -114,8 +114,8 @@ class ServerApplication(BaseApplication):
         )
 
         self._windows: list[Window] = []
-        # sys.stdout = sys.stderr = Stdout(self)
-        # sys.excepthook = self.excepthook
+        sys.stdout = sys.stderr = Stdout(self)
+        sys.excepthook = self.excepthook
 
     @property
     def isRunning(self) -> bool:

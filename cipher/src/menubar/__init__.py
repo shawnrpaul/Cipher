@@ -191,9 +191,7 @@ class Menubar(QMenuBar):
             )
         )
         view.addAction("Explorer").triggered.connect(self.explorer)
-        view.addAction("Terminal").triggered.connect(self.terminal)
         view.addAction("Logs").triggered.connect(self.logs)
-        view.addAction("Run").triggered.connect(self.run)
         view.addAction("Close Editor").triggered.connect(
             self._window.tabView.closeCurrentTab
         )
@@ -205,27 +203,12 @@ class Menubar(QMenuBar):
         widget.setVisible(visible)
         widget.setFocus() if visible else ...
 
-    def terminal(self) -> None:
-        outputView = self.window.outputView
-        if (
-            not outputView.isHidden()
-            and outputView.currentWidget() == self.window.terminal
-        ):
-            return outputView.hide()
-        outputView.show()
-        outputView.setCurrentWidget(self.window.terminal)
-
     def logs(self) -> None:
         outputView = self.window.outputView
         if not outputView.isHidden() and outputView.currentWidget() == self.window.logs:
             return outputView.hide()
         outputView.show()
         outputView.setCurrentWidget(self.window.logs)
-
-    def run(self) -> None:
-        if self.window.outputView.isHidden():
-            self.window.outputView.show()
-        self.window.terminal.run()
 
     def updateShortcuts(self) -> None:
         """Updates the shortcuts when `shortcuts.json` updates"""

@@ -16,7 +16,6 @@ from ..sidebar import *
 from ..splitter import *
 from ..tabview import *
 from ..outputview import *
-from ..terminal import *
 from ..logs import *
 
 if TYPE_CHECKING:
@@ -70,7 +69,6 @@ class Window(QMainWindow):
         self.fileManager = FileManager(self)
         self.extensionList = ExtensionList(self)
         self.search = Search(self)
-        self.terminal = Terminal(self)
         self.logs = Logs(self)
         self.outputView = OutputView(self)
         self.sidebar = Sidebar(self)

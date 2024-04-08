@@ -14,6 +14,5 @@ class OutputView(QTabWidget):
         super().__init__()
         self._window = window
         self.setTabsClosable(False)
-        self.addTab(window.terminal, "Terminal")
         self.addTab(window.logs, "Logs")
         self.hide()
