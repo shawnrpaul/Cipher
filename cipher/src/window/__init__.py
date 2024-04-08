@@ -139,8 +139,12 @@ class Window(QMainWindow):
     def resumeSession(self) -> None:
         settings = self.fileManager.getGlobalSettings()
         folder = settings.get("lastFolder")
-        if folder and not Path(folder).absolute().exists():
-            folder = None
+        if folder:
+            path = Path(folder).absolute()
+            if not path.exists():
+                path = None
+        else:
+            path = None
         self.fileManager.changeFolder(folder)
         if self.currentFolder:
             settings = self.fileManager.getWorkspaceSettings()

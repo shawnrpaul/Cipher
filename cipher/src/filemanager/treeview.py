@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Iterable, Union
-from copy import copy
 from pathlib import Path
 import json
 import subprocess
@@ -284,7 +283,7 @@ class TreeView(QTreeView):
         if not folder:
             return
 
-        self.changeFolder(folder)
+        self.changeFolder(Path(folder))
 
     def closeFolder(self) -> None:
         """Closes the workspace if open"""
