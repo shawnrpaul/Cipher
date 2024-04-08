@@ -382,12 +382,6 @@ class TreeView(QTreeView):
             "showHidden", globalSettings.get("showHidden", False)
         )
         window.settings["showHidden"] = showHidden
-        window.settings["username"] = workSpacesettings.get(
-            "username", globalSettings.get("username")
-        )
-        window.settings["password"] = workSpacesettings.get(
-            "password", globalSettings.get("password")
-        )
         window.settings["search-pattern"] = workSpacesettings.get(
             "search-pattern", globalSettings.get("search-pattern", [])
         )
