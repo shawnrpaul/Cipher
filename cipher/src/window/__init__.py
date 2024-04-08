@@ -58,8 +58,6 @@ class Window(QMainWindow):
         self._mainWindow = False
         self.settings = {
             "showHidden": False,
-            "username": None,
-            "password": None,
             "hiddenPaths": [],
             "search-pattern": [],
             "search-exclude": [],

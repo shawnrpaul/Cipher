@@ -11,7 +11,6 @@ A text editor written using PyQt6 and QScintilla.
 - Multiple Folders
 - Folder/File Hiding
 - Search
-- Git (Work in Progress)
 - Send Notifications
 - Custom Extensions
 - Custom styling
