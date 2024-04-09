@@ -7,6 +7,7 @@ from pathlib import Path
 import json
 import sys
 
+import aiofiles
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QListWidgetItem
 from cipher.ext import Extension
@@ -70,11 +71,11 @@ class ExtensionItem(QListWidgetItem):
         self.setStatus(ExtensionItem.Status.ENABLED)
 
     async def enable(self) -> None:
-        with open(f"{self.path}/settings.json") as f:
-            data = json.load(f)
+        async with aiofiles.open(f"{self.path}/settings.json") as f:
+            data = json.loads(await f.read())
         data["enabled"] = True
-        with open(f"{self.path}/settings.json", "w") as f:
-            json.dump(data, f, indent=4)
+        async with aiofiles.open(f"{self.path}/settings.json", "w") as f:
+            await f.write(json.dumps(data, indent=4))
         await self.initialize()
 
     async def reload(self) -> None:
@@ -89,11 +90,11 @@ class ExtensionItem(QListWidgetItem):
         await self.initialize()
 
     async def disable(self) -> None:
-        with open(f"{self.path}/settings.json") as f:
-            data = json.load(f)
+        async with aiofiles.open(f"{self.path}/settings.json") as f:
+            data = json.loads(await f.read())
         data["enabled"] = False
-        with open(f"{self.path}/settings.json", "w") as f:
-            json.dump(data, f, indent=4)
+        async with aiofiles.open(f"{self.path}/settings.json", "w") as f:
+            await f.write(json.dumps(data, indent=4))
         await self.ext.unload()
         self.ext = None
         self._clear_modules()
