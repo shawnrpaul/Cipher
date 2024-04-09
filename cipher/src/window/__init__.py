@@ -126,6 +126,7 @@ class Window(QMainWindow):
     def loop(self):
         return self.application.loop
 
+    @property
     def isMainWindow(self) -> bool:
         return self._mainWindow
 

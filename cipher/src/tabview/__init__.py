@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QTabWidget
 from .tab import Tab
 from .editor import Editor
 from .image import Image, GIF
+from .settings import Settings
 
 if TYPE_CHECKING:
     from ..window import Window
@@ -47,6 +48,7 @@ class TabView(QTabWidget):
             ".jpg": Image,
             ".webp": Image,
             ".png": Image,
+            ".cipher": Settings,
         }
         self.setContentsMargins(0, 0, 0, 0)
         self.setTabsClosable(True)

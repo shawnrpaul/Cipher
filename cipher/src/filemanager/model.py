@@ -39,9 +39,9 @@ class FileSystemModel(QFileSystemModel):
             The path of global or workspace settings
         """
         return (
-            Path(f"{self.currentFolder}/.cipher/settings.json").absolute()
+            Path(f"{self.currentFolder}/.cipher/settings.cipher").absolute()
             if self.currentFolder
-            else Path(f"{self.window.localAppData}/settings.json").absolute()
+            else Path(f"{self.window.localAppData}/settings.cipher").absolute()
         )
 
     def setRootPath(self, path: Path | None) -> QModelIndex:

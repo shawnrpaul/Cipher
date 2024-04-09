@@ -78,7 +78,7 @@ class TreeView(QTreeView):
         self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
 
         self._globalSettings = QFileSystemWatcher(
-            [f"{window.localAppData}/settings.json"], self
+            [f"{window.localAppData}/settings.cipher"], self
         )
         self._globalSettings.fileChanged.connect(lambda: self.updateSettings())
         self._workspaceSettings = QFileSystemWatcher(self)
@@ -458,7 +458,7 @@ class TreeView(QTreeView):
             if not (hiddenPaths := settings.get("hiddenPaths"), []):
                 settings["hiddenPaths"] = hiddenPaths
             hiddenPaths.append(str(path))
-            with open(f"{self.currentFolder}/.cipher/settings.json", "w") as f:
+            with open(f"{self.currentFolder}/.cipher/settings.cipher", "w") as f:
                 json.dump(settings, f, indent=4)
 
     def findIndex(self, path: str) -> QModelIndex:
@@ -494,7 +494,7 @@ class TreeView(QTreeView):
         -------
         dict[str, Any]
         """
-        with open(f"{self.window.localAppData}/settings.json") as f:
+        with open(f"{self.window.localAppData}/settings.cipher") as f:
             return json.load(f)
 
     def getWorkspaceSettings(self) -> dict[str, Union[str, Any]]:
@@ -516,7 +516,7 @@ class TreeView(QTreeView):
                 with open(f"{path}/run.sh", "w") as f:
                     f.write("")
 
-        path = Path(f"{path}/settings.json").absolute()
+        path = Path(f"{path}/settings.cipher").absolute()
         if not path.exists():
             with open(path, "w") as f:
                 json.dump(
@@ -544,17 +544,17 @@ class TreeView(QTreeView):
         settings["additionalPaths"] = [
             str(path) for path in self.window.fileManager.getPaths()
         ]
-        with open(f"{self.currentFolder}/.cipher/settings.json", "w") as f:
+        with open(f"{self.currentFolder}/.cipher/settings.cipher", "w") as f:
             json.dump(settings, f, indent=4)
 
     def saveSettings(self) -> None:
         """Saves the workspace when the window is closed. If another instance of the window is open, the function returns"""
-        if not self.window.isMainWindow():
+        if not self.window.isMainWindow:
             return
         settings = self.getGlobalSettings()
         settings["lastFolder"] = str(self.currentFolder) if self.currentFolder else None
         window = self.window
-        with open(f"{window.localAppData}/settings.json", "w") as f:
+        with open(f"{window.localAppData}/settings.cipher", "w") as f:
             json.dump(settings, f, indent=4)
         if self.currentFolder:
             self.saveWorkspaceFiles(

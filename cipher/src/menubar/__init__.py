@@ -157,7 +157,7 @@ class Menubar(QMenuBar):
     def editGlobalSettings(self) -> None:
         """Opens the global settings as a tab to edit"""
         self._window.tabView.createTab(
-            Path(f"{self._window.localAppData}/settings.json")
+            Path(f"{self._window.localAppData}/settings.cipher")
         )
 
     def editWorkspaceSettings(self) -> None:
@@ -166,7 +166,7 @@ class Menubar(QMenuBar):
         if not self._window.currentFolder:
             return self.editGlobalSettings()
         self._window.tabView.createTab(
-            Path(f"{self._window.currentFolder}/.cipher/settings.json")
+            Path(f"{self._window.currentFolder}/.cipher/settings.cipher")
         )
 
     def editRunFile(self) -> None:

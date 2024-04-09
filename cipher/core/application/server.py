@@ -196,7 +196,7 @@ class ServerApplication(BaseApplication):
 
     def closeWindow(self, window: Window):
         self._windows.remove(window)
-        if window.isMainWindow():
+        if window.isMainWindow:
             if not self._windows:
                 return self.exit(0)
             self._windows[0].setMainWindow(True)
