@@ -223,20 +223,20 @@ class TabView(QTabWidget):
     def reopenTab(self) -> None:
         """Reopens the last closed tab. The tab will be skipped if it was reopened manually."""
         while self.__closedTabs:
-            editor = self.__closedTabs.pop()
-            if not editor.path.exists():
-                editor.deleteLater()
+            tab = self.__closedTabs.pop()
+            if not tab.path.exists():
+                tab.deleteLater()
                 continue
             for widget in self.__tabList:
-                if editor.path == widget.path:
-                    editor.deleteLater()
+                if tab.path == widget.path:
+                    tab.deleteLater()
                     continue
             break
         else:
             return
-        editor._watcher.addPath(str(editor.path))
-        self.addTab(editor, editor.objectName())
-        self.setCurrentWidget(editor)
+        tab._watcher.addPath(str(tab.path))
+        self.addTab(tab, tab.path.name)
+        self.setCurrentWidget(tab)
 
     def changeTab(self) -> None:
         """Changes the tab. Used by :class:`Menubar` when Ctrl+Tab is pressed."""

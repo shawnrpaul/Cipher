@@ -69,40 +69,30 @@ class Menubar(QMenuBar):
         fileMenu.addSeparator()
 
         newFile = fileMenu.addAction("New File")
-        newFile.triggered.connect(self._window.fileManager.treeView.createFile)
+        newFile.triggered.connect(self._window.fileManager.createFile)
 
         newFolder = fileMenu.addAction("New Folder")
-        newFolder.triggered.connect(self._window.fileManager.treeView.createFolder)
+        newFolder.triggered.connect(self._window.fileManager.createFolder)
 
         fileMenu.addSeparator()
 
         openFile = fileMenu.addAction("Open File")
-        openFile.triggered.connect(self._window.fileManager.treeView.openFile)
+        openFile.triggered.connect(self._window.fileManager.openFile)
 
         openFile = fileMenu.addAction("Open File Path")
-        openFile.triggered.connect(self._window.fileManager.treeView.openFilePath)
+        openFile.triggered.connect(self._window.fileManager.openFilePath)
 
         reopen = fileMenu.addAction("Reopen Closed Tab")
         reopen.triggered.connect(self._window.tabView.reopenTab)
 
         openFolder = fileMenu.addAction("Open Folder")
-        openFolder.triggered.connect(self._window.fileManager.treeView.openFolder)
+        openFolder.triggered.connect(self._window.fileManager.openFolder)
 
         openFolderTreeView = fileMenu.addAction("Open Folder in Tree View")
-        openFolderTreeView.triggered.connect(self.openFolderTreeView)
+        openFolderTreeView.triggered.connect(self.window.fileManager.openFolderTreeView)
 
         closeFolder = fileMenu.addAction("Close Folder")
-        closeFolder.triggered.connect(self._window.fileManager.treeView.closeFolder)
-
-    def openFolderTreeView(self) -> None:
-        if not self._window.currentFolder:
-            return
-        folder = QFileDialog.getExistingDirectory(
-            self, "Pick a Folder", "C:/", options=QFileDialog().options()
-        )
-        if not folder:
-            return
-        self._window.fileManager.addTreeView(Path(folder))
+        closeFolder.triggered.connect(self._window.fileManager.closeFolder)
 
     def createEditMenu(self) -> None:
         """Creates the edit menu box"""

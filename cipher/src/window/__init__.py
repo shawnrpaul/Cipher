@@ -4,7 +4,7 @@ from pathlib import Path
 import logging
 
 from PyQt6.QtCore import QEvent, pyqtSignal
-from PyQt6.QtGui import QCloseEvent, QIcon
+from PyQt6.QtGui import QCloseEvent, QIcon, QClipboard
 from PyQt6.QtWidgets import QMainWindow, QSystemTrayIcon
 
 from .body import *
@@ -71,7 +71,6 @@ class Window(QMainWindow):
         self.outputView = OutputView(self)
         self.sidebar = Sidebar(self)
         self.menubar = Menubar(self)
-
         self.hsplit = HSplitter(self)
         self.vsplit = VSplitter(self)
         self.vsplit.addWidget(self.tabView)
@@ -133,24 +132,12 @@ class Window(QMainWindow):
     def setMainWindow(self, main: bool = False) -> bool:
         self._mainWindow = main
 
+    @property
+    def clipboard(self) -> QClipboard:
+        return self.application.clipboard()
+
     def createTask(self, coro) -> None:
         return self.application.createTask(coro)
-
-    def resumeSession(self) -> None:
-        settings = self.fileManager.getGlobalSettings()
-        folder = settings.get("lastFolder")
-        if folder:
-            path = Path(folder).absolute()
-            if not path.exists():
-                path = None
-        else:
-            path = None
-        self.fileManager.changeFolder(folder)
-        if self.currentFolder:
-            settings = self.fileManager.getWorkspaceSettings()
-            self.tabView.openTabs(
-                settings.get("currentFile"), settings.get("openedFiles", [])
-            )
 
     def event(self, event: QEvent) -> bool:
         if hasattr(self, "extensionList"):
@@ -158,10 +145,13 @@ class Window(QMainWindow):
                 self.application.sendEvent(ext, event)
         return super().event(event)
 
+    def resumeSession(self) -> None:
+        self.fileManager.resumeSession()
+
     def closeEvent(self, _: QCloseEvent) -> None:
         self.hide()
         self.closed.emit()
-        self.fileManager.saveSettings()
+        self.fileManager.saveSession()
         return super().closeEvent(_)
 
     def log(self, text: str, newline: bool = False, level=logging.ERROR):

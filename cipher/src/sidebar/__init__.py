@@ -56,8 +56,6 @@ class Sidebar(QFrame):
     def _createSettings(self) -> None:
         def settingsMousePressEvent(ev: QMouseEvent = None) -> None:
             path = self.window.fileManager.settingsPath
-            if not path.exists():
-                return
             self.window.tabView.createTab(path)
             return ev.accept()
 

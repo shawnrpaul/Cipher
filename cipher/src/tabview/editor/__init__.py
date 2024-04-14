@@ -39,7 +39,7 @@ class Editor(Tab, QsciScintilla):
     def __init__(self, window: Window, path: Path) -> None:
         Tab.__init__(self, window, path)
         QsciScintilla.__init__(self)
-        self.setObjectName(path.name)
+        self.setObjectName("Editor")
         self._watcher.fileChanged.connect(self.updateText)
         self.saved.connect(lambda: window.fileManager.fileSaved.emit(self))
         self.createStandardContextMenu()

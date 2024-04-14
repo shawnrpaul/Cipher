@@ -1,15 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Iterable, Union
+from typing import TYPE_CHECKING
 from pathlib import Path
-import json
 import subprocess
-import sys
+import os
 
-from PyQt6.QtCore import QDir, QFileSystemWatcher, QModelIndex, Qt, pyqtSignal
+from PyQt6.QtCore import QDir, QModelIndex, Qt, pyqtSignal
 from PyQt6.QtGui import QKeyEvent, QMouseEvent
 from PyQt6.QtWidgets import (
-    QApplication,
-    QFileDialog,
     QInputDialog,
     QLineEdit,
     QMenu,
@@ -19,12 +16,12 @@ from PyQt6.QtWidgets import (
 )
 
 from .model import FileSystemModel
-from ..tabview import Tab, Editor
+from ..tabview import Tab
 
 if TYPE_CHECKING:
     from ..window import Window
 
-__all__ = ("TreeView", "MainTreeView")
+__all__ = ("TreeView",)
 
 
 class TreeView(QTreeView):
@@ -37,8 +34,6 @@ class TreeView(QTreeView):
 
     Attributes
     ----------
-    workspaceChanged: :class:`pyqtSignal`
-        A signal emitted when the workspace is changed
     folderCreated: :class:`pyqtSignal`
         A signal emitted when the folder is created
     fileCreated: :class:`pyqtSignal`
@@ -47,18 +42,18 @@ class TreeView(QTreeView):
         A signal emitted when a file is saved
     """
 
-    workspaceChanged = pyqtSignal(object)
     folderCreated = pyqtSignal(Path)
     fileCreated = pyqtSignal(Path)
     fileSaved = pyqtSignal(Tab)
 
-    def __init__(self, window: Window) -> None:
-        super().__init__(window)
+    def __init__(self, parent) -> None:
+        super().__init__(parent)
         self.setObjectName("FileManager")
-        self.createContextMenu()
-        self._systemModel = FileSystemModel(self)
+        systemModel = FileSystemModel(self)
+        self._hiddenPaths = []
+        self._createContextMenu()
 
-        self.setModel(self._systemModel)
+        self.setModel(systemModel)
         self.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
         self.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
         self.setEditTriggers(QTreeView.EditTrigger.NoEditTriggers)
@@ -71,22 +66,25 @@ class TreeView(QTreeView):
         self.clicked.connect(self.view)
         self.setIndentation(10)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setHeaderHidden(True)
         self.setColumnHidden(1, True)
         self.setColumnHidden(2, True)
         self.setColumnHidden(3, True)
-        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
 
-        self._globalSettings = QFileSystemWatcher(
-            [f"{window.localAppData}/settings.cipher"], self
-        )
-        self._globalSettings.fileChanged.connect(lambda: self.updateSettings())
-        self._workspaceSettings = QFileSystemWatcher(self)
-        self._workspaceSettings.fileChanged.connect(lambda: self.updateSettings())
+        self.fileCreated.connect(parent.fileCreated.emit)
+        self.folderCreated.connect(parent.fileCreated.emit)
+        self.fileCreated.connect(parent.fileCreated.emit)
 
     @property
     def window(self) -> Window:
         return super().window()
+
+    @property
+    def model(self) -> FileSystemModel:
+        return super().model()
+
+    systemModel = model
 
     @property
     def currentFolder(self) -> Path | None:
@@ -97,18 +95,7 @@ class TreeView(QTreeView):
         :class:`~typing.Optional[~pathlib.Path]`
             The path of the workspace
         """
-        return self._systemModel.currentFolder
-
-    @property
-    def settingsPath(self) -> Path:
-        """Returns the current settings.
-
-        Returns
-        -------
-        :class:`Path`
-            The path of global or workspace settings
-        """
-        return self._systemModel.settingsPath
+        return self.systemModel.currentFolder
 
     def mousePressEvent(self, e: QMouseEvent):
         self.setFocus()
@@ -151,38 +138,36 @@ class TreeView(QTreeView):
         editor.setFocus() if (editor := self.window.tabView.createTab(path)) else ...
 
     def setSelectedIndex(self, widget) -> None:
+        model = self.systemModel
         if widget and (path := getattr(widget, "path", None)):
-            return self.setCurrentIndex(self._systemModel.index(str(path)))
-        self.setCurrentIndex(self._systemModel.modelIndex)
+            return self.setCurrentIndex(model.index(str(path)))
+        self.setCurrentIndex(model.modelIndex)
 
-    def createContextMenu(self) -> None:
+    def _createContextMenu(self) -> None:
         """Creates a context menu when an index was right clicked."""
         self.menu = QMenu(self.window)
         self.menu.setObjectName("FileContextMenu")
-        createFolder = self.menu.addAction("New Folder")
-        createFolder.triggered.connect(self.createFolder)
-        createFile = self.menu.addAction("New File")
-        createFile.triggered.connect(self.createFile)
-        self.menu.addSeparator()
-        rename = self.menu.addAction("Rename")
-        rename.triggered.connect(self.rename)
-        delete = self.menu.addAction("Delete")
-        delete.triggered.connect(self.delete)
-        self.menu.addSeparator()
-        copyPath = self.menu.addAction("Copy Path")
-        copyPath.triggered.connect(self.copyPath)
 
-        if sys.platform == "win32":
-            showInFolder = self.menu.addAction("Show in Folder")
-            showInFolder.triggered.connect(self.showInFolder)
+        self.menu.addAction("New Folder").triggered.connect(self.createFolder)
+        self.menu.addAction("New File").triggered.connect(self.createFile)
 
-        hide = self.menu.addAction("Hide")
-        hide.triggered.connect(self.hideIndex)
         self.menu.addSeparator()
-        addFolder = self.menu.addAction("Add Folder to Tree View")
-        addFolder.triggered.connect(lambda: self.window.menubar.openFolderTreeView())
-        remove = self.menu.addAction("Remove from Tree View")
-        remove.triggered.connect(self.deleteLater)
+        self.menu.addAction("Rename").triggered.connect(self.rename)
+        self.menu.addAction("Delete").triggered.connect(self.delete)
+
+        self.menu.addSeparator()
+        self.menu.addAction("Copy Path").triggered.connect(self.copyPath)
+
+        if self.window.application.platformName() == "windows":
+
+            def showInFolder() -> None:
+                """Opens the file or folder in the file explorer"""
+                subprocess.run(
+                    f'explorer /select,"{Path(self.filePath(self.getCurrentIndex()))}"',
+                    creationflags=0x08000000,
+                )
+
+            self.menu.addAction("Show in Folder").triggered.connect(showInFolder)
 
     def filePath(self, index: QModelIndex) -> str:
         """Used to get a file path. Uses :meth:`~FileSystemModel.filePath`
@@ -197,7 +182,7 @@ class TreeView(QTreeView):
         str
             The path of a file
         """
-        return self._systemModel.filePath(index)
+        return self.systemModel.filePath(index)
 
     def setFilter(self, filters: QDir.Filter) -> None:
         """Sets the `FileSystemModel` filters
@@ -207,7 +192,7 @@ class TreeView(QTreeView):
         filters : QDir.Filter
             An enum of filters for the system model
         """
-        return self._systemModel.setFilter(filters)
+        return self.systemModel.setFilter(filters)
 
     def createFile(self) -> None:
         """Creates a new file."""
@@ -218,9 +203,15 @@ class TreeView(QTreeView):
             index = indexes[0]
         else:
             index = self.getCurrentIndex()
-        if not self._systemModel.isDir(index):
+        name, ok = QInputDialog.getText(
+            self, "File Name", "Give a name", QLineEdit.EchoMode.Normal, ""
+        )
+        if not name or not ok:
+            return
+        model = self.systemModel
+        if not model.isDir(index):
             index = index.parent()
-        path = self._systemModel.createFile(index)
+        path = model.createFile(index, name)
         self.window.tabView.createTab(path)
         self.fileCreated.emit(path)
 
@@ -233,61 +224,15 @@ class TreeView(QTreeView):
             index = indexes[0]
         else:
             index = self.getCurrentIndex()
-        if not self._systemModel.isDir(index):
+        name, ok = QInputDialog.getText(
+            self, "Folder Name", "Give a name", QLineEdit.EchoMode.Normal, ""
+        )
+        if not name or not ok:
+            return
+        model = self.systemModel
+        if not model.isDir(index):
             index = index.parent()
-        self._systemModel.createFolder(index)
-
-    def openFile(self, filePath: str | None = None) -> None:
-        """Opens a file
-
-        Parameters
-        ----------
-        filePath: :class:`~typing.Optional[str]`
-            The file path of the file to open, by default None
-        """
-        if not filePath:
-            options = QFileDialog().options()
-            filePath, _ = QFileDialog.getOpenFileName(
-                self,
-                "Pick a file",
-                str(self.currentFolder) if self.currentFolder else "C:/",
-                "All Files (*);;C++ (*cpp *h *hpp);;JavaScript (*js);;JSON (*json);;Python (*py)",
-                options=options,
-            )
-
-            if not filePath:
-                return
-
-        path = Path(filePath).absolute()
-        if not path.is_file():
-            return
-        self.window.tabView.createTab(path)
-
-    def openFilePath(self) -> None:
-        """Opens a file with a given file path"""
-        filePath, ok = QInputDialog.getText(
-            self, "File Name", "Give a name", QLineEdit.EchoMode.Normal, ""
-        )
-        if not filePath or not ok:
-            return
-        self.openFile(filePath)
-
-    def openFolder(self) -> None:
-        """Changes the workspace"""
-        folder = QFileDialog.getExistingDirectory(
-            self,
-            "Pick a Folder",
-            str(self.currentFolder) if self.currentFolder else "C:/",
-            options=QFileDialog().options(),
-        )
-        if not folder:
-            return
-
-        self.changeFolder(Path(folder))
-
-    def closeFolder(self) -> None:
-        """Closes the workspace if open"""
-        self.changeFolder(None) if self.currentFolder else ...
+        model.createFolder(index, name)
 
     def rename(self) -> None:
         """Renames a folder or file"""
@@ -315,8 +260,7 @@ class TreeView(QTreeView):
                     editor._watcher.removePath(str(editor.path))
                     editor.path = newPath
                     editor._watcher.addPath(str(editor.path))
-                    break
-            return
+                    return
 
         for editor in window.tabView:
             if editor.path.is_relative_to(path):
@@ -332,137 +276,67 @@ class TreeView(QTreeView):
         if not selectedIndexes:
             return
         index = selectedIndexes[0]
-        if self._systemModel.isDir(index):
-            path = self._systemModel.filePath(index)
-            if not QDir(path).removeRecursively():
+        model = self.systemModel
+        path = self.filePath(index)
+        if model.isDir(index):
+            if QDir(path).removeRecursively():
+                for editor in self.window.tabView:
+                    if editor.path.is_relative_to(path):
+                        self.window.tabView.removeTab(editor)
+            else:
                 dialog = QMessageBox(self.window)
                 dialog.setWindowTitle("Cipher")
                 dialog.setText(f"Failed to remove delete {path}")
                 dialog.exec()
         else:
-            self._systemModel.remove(index)
+            if model.remove(index):
+                for editor in self.window.tabView:
+                    if editor.path.is_relative_to(path):
+                        return self.window.tabView.removeTab(editor)
+
+            dialog = QMessageBox(self.window)
+            dialog.setWindowTitle("Cipher")
+            dialog.setText(f"Failed to remove delete {path}")
+            dialog.exec()
 
     def setFolder(self, path: Path | None) -> None:
-        if self.currentFolder:
-            self._workspaceSettings.removePath(str(self.currentFolder))
-        self.setRootIndex(self._systemModel.setRootPath(path))
-        if path:
-            self._workspaceSettings.addPath(str(Path(self.settingsPath)))
+        for hiddenPath in self._hiddenPaths:
+            index = self.systemModel.index(hiddenPath)
+            if self.isRowHidden(index.row(), index.parent()):
+                self.setRowHidden(index.row(), index.parent(), False)
+        self._hiddenPaths.clear()
+        self.setRootIndex(self.systemModel.setRootPath(path))
 
-    def changeFolder(self, path: Path | None) -> None:
-        """Changes the workspace and triggers :attr:`workspaceChanged`
-
-        Parameters
-        ----------
-        folderPath: :class:`~typing.Optional[str]`
-            The path of the folder to open. Pass None to close the folder
-        """
-        if path and not path.exists():
-            path = None
-        self.setFolder(path)
-        self.workspaceChanged.emit(path)
-        self.updateSettings(True)
-
-    def updateSettings(self, changeFolder: bool = False) -> None:
-        """Updates the user settings
-
-        Parameters
-        ----------
-        changeFolder: :class:`bool`
-            Whether the workspace is changing or not, by default False
-        """
-        globalSettings = self.getGlobalSettings()
-        workSpacesettings = self.getWorkspaceSettings()
+    def updateSettings(self) -> None:
         window = self.window
-        if changeFolder:
-            window.tabView.openTabs(
-                workSpacesettings["currentFile"], workSpacesettings["openedFiles"]
-            )
-        showHidden = workSpacesettings.get(
-            "showHidden", globalSettings.get("showHidden", False)
-        )
-        window.settings["showHidden"] = showHidden
-        window.settings["search-pattern"] = workSpacesettings.get(
-            "search-pattern", globalSettings.get("search-pattern", [])
-        )
-        window.settings["search-pattern"] = (
-            []
-            if not isinstance(window.settings["search-pattern"], list)
-            else window.settings["search-pattern"]
-        )
-        window.settings["search-exclude"] = workSpacesettings.get(
-            "search-exclude", globalSettings.get("search-exclude", [])
-        )
-        window.settings["search-exclude"] = (
-            []
-            if not isinstance(window.settings["search-exclude"], list)
-            else window.settings["search-exclude"]
-        )
-        hiddenPaths = window.settings["hiddenPaths"]
-        window.settings["hiddenPaths"] = [
-            "/".join([self._systemModel.rootPath(), *str(path).split("\\")])
-            for path in list(
-                {
-                    *workSpacesettings.get("hiddenPaths", []),
-                    *globalSettings.get("hiddenPaths", []),
-                }
-            )
-        ]
-        for path in set(hiddenPaths).difference(set(window.settings["hiddenPaths"])):
-            file = self._systemModel.index(path)
-            self.setRowHidden(file.row(), file.parent(), False)
+        model = self.systemModel
+        showHidden = window.settings["showHidden"]
+        toHide = set(window.settings["hiddenPaths"]).difference(self._hiddenPaths)
+        toUnhide = set(self._hiddenPaths).difference(window.settings["hiddenPaths"])
+        self._hiddenPaths.extend(toHide)
+        rootPath = model.rootPath()
+        for path in toUnhide:
+            index = model.index(os.path.join(rootPath, path))
+            self.setRowHidden(index.row(), index.parent(), False)
+            self._hiddenPaths.remove(path)
+        for path in self._hiddenPaths:
+            index = model.index(os.path.join(rootPath, path))
+            if not self.isRowHidden(index.row(), index.parent()):
+                self.setRowHidden(index.row(), index.parent(), True)
         if showHidden:
-            for path in window.settings["hiddenPaths"]:
-                file = self._systemModel.index(path)
-                self.setRowHidden(file.row(), file.parent(), False)
-        else:
-            for path in window.settings["hiddenPaths"]:
-                file = self._systemModel.index(path)
-                self.setRowHidden(file.row(), file.parent(), True)
+            for path in self._hiddenPaths:
+                index = model.index(os.path.join(rootPath, path))
+                self.setRowHidden(index.row(), index.parent(), False)
         filters = QDir.Filter.NoDotAndDotDot | QDir.Filter.AllDirs | QDir.Filter.Files
         if showHidden:
             filters = filters | QDir.Filter.Hidden
         self.setFilter(filters)
-        if self.currentFolder:
-            for path in workSpacesettings.get("additionalPaths", []):
-                if (path := Path(path)).exists():
-                    window.fileManager.addTreeView(path)
 
     def copyPath(self) -> None:
         """Copies the path of an index"""
-        cb = QApplication.clipboard()
+        cb = self.window.clipboard
         cb.clear()
         cb.setText(self.filePath(self.getCurrentIndex()))
-
-    if sys.platform == "win32":
-
-        def showInFolder(self) -> None:
-            """Opens the file or folder in the file explorer"""
-            subprocess.run(
-                f'explorer /select,"{Path(self.filePath(self.getCurrentIndex()))}"',
-                creationflags=0x08000000,
-            )
-
-    def hideIndex(self) -> None:
-        """Hides the index. Will return when the editor is restarted. Note: For a permanant solution, edit the global or workspace settings."""
-        files = self.selectedIndexes()
-        if not files:
-            return
-        file = files[0]
-        self.setRowHidden(file.row(), file.parent(), True)
-        if self.currentFolder:
-            path = Path(self._systemModel.filePath(file)).relative_to(
-                self.currentFolder
-            )
-            settings = self.getWorkspaceSettings()
-            if not (hiddenPaths := settings.get("hiddenPaths"), []):
-                settings["hiddenPaths"] = hiddenPaths
-            hiddenPaths.append(str(path))
-            with open(f"{self.currentFolder}/.cipher/settings.cipher", "w") as f:
-                json.dump(settings, f, indent=4)
-
-    def findIndex(self, path: str) -> QModelIndex:
-        return self._systemModel.index(path)
 
     def getCurrentIndex(self) -> QModelIndex:
         """Gets the current selected index. If no index is selected, returns the index of the workspace.
@@ -473,116 +347,7 @@ class TreeView(QTreeView):
             The model index of the selection
         """
         indexes = self.selectedIndexes()
-        if not indexes or self.filePath(self._systemModel.modelIndex) not in self.filePath(indexes[0]):  # fmt:skip
-            return self._systemModel.modelIndex
+        model = self.systemModel
+        if not indexes or self.filePath(model.modelIndex) not in self.filePath(indexes[0]):  # fmt:skip
+            return self.model.modelIndex
         return indexes[0]
-
-    def getCurrentSettings(self) -> dict[str, Any]:
-        """Returns either the workspace of global settings
-
-        Returns
-        -------
-        dict[str, Any]
-        """
-        with open(self.settingsPath) as f:
-            return json.load(f)
-
-    def getGlobalSettings(self) -> dict[str, Any]:
-        """Returns global settings
-
-        Returns
-        -------
-        dict[str, Any]
-        """
-        with open(f"{self.window.localAppData}/settings.cipher") as f:
-            return json.load(f)
-
-    def getWorkspaceSettings(self) -> dict[str, Union[str, Any]]:
-        """Returns workspace settings
-
-        Returns
-        -------
-        dict[str, Any]
-        """
-        if not self.currentFolder:
-            return {"project": None, "currentFile": None, "openedFiles": []}
-        path = Path(f"{self.currentFolder}/.cipher").absolute()
-        if not path.exists():
-            path.mkdir()
-            if sys.platform == "win32":
-                with open(f"{path}/run.bat", "w") as f:
-                    f.write("@echo off\nEXIT")
-            else:
-                with open(f"{path}/run.sh", "w") as f:
-                    f.write("")
-
-        path = Path(f"{path}/settings.cipher").absolute()
-        if not path.exists():
-            with open(path, "w") as f:
-                json.dump(
-                    {"project": None, "currentFile": None, "openedFiles": []},
-                    f,
-                    indent=4,
-                )
-
-        with open(path) as f:
-            return json.load(f)
-
-    def saveWorkspaceFiles(self, currentFile: Path, files: Iterable[Editor]) -> None:
-        """Saves the open files when the workspace is changed
-
-        Parameters
-        ----------
-        currentFile : `~pathlib.Path`
-            The current tab
-        files : Iterable[Editor]
-            All tabs that are currently open
-        """
-        settings = self.getWorkspaceSettings()
-        settings["currentFile"] = str(currentFile) if currentFile else None
-        settings["openedFiles"] = tuple(str(widget.path) for widget in files)
-        settings["additionalPaths"] = [
-            str(path) for path in self.window.fileManager.getPaths()
-        ]
-        with open(f"{self.currentFolder}/.cipher/settings.cipher", "w") as f:
-            json.dump(settings, f, indent=4)
-
-    def saveSettings(self) -> None:
-        """Saves the workspace when the window is closed. If another instance of the window is open, the function returns"""
-        if not self.window.isMainWindow:
-            return
-        settings = self.getGlobalSettings()
-        settings["lastFolder"] = str(self.currentFolder) if self.currentFolder else None
-        window = self.window
-        with open(f"{window.localAppData}/settings.cipher", "w") as f:
-            json.dump(settings, f, indent=4)
-        if self.currentFolder:
-            self.saveWorkspaceFiles(
-                window.currentFile.path if window.currentFile else None,
-                window.tabView.tabList,
-            )
-
-
-class MainTreeView(TreeView):
-    def __init__(self, window: Window) -> None:
-        super().__init__(window)
-        self.updateSettings()
-
-    def createContextMenu(self) -> None:
-        super().createContextMenu()
-        window = self.window
-
-        def changeFolder():
-            folder = QFileDialog.getExistingDirectory(
-                self, "Pick a Folder", "C:/", options=QFileDialog().options()
-            )
-            if not folder:
-                return
-            path = Path(folder)
-            if window.fileManager.hasPath(path):
-                return
-            self.setFolder(path)
-
-        self.menu.removeAction(self.menu.actions()[-1])
-        changeDir = self.menu.addAction("Change Folder")
-        changeDir.triggered.connect(changeFolder)
