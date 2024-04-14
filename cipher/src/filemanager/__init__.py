@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Any, Iterator, TYPE_CHECKING
 from pathlib import Path
 import json
+import os
 
 from PyQt6.QtCore import pyqtSignal, QFileSystemWatcher
 from PyQt6.QtWidgets import QFrame, QFileDialog, QInputDialog, QLineEdit, QVBoxLayout
@@ -23,10 +24,11 @@ class FileManager(QFrame):
 
     def __init__(self, window: Window) -> None:
         super().__init__(window)
+        self._window = window
         self._treeViews: list[TreeView] = [TreeView(self)]
         self._splitter = TreeViewSplitter(self)
 
-        self._globalSettings = QFileSystemWatcher([f"{window.localAppData}/settings.cipher"], self)  # fmt:skip
+        self._globalSettings = QFileSystemWatcher([os.path.join(window.localAppData,"settings.cipher")], self)  # fmt:skip
         self._globalSettings.fileChanged.connect(self.updateSettings)
         self._workspaceSettings = QFileSystemWatcher(self)
         self._workspaceSettings.fileChanged.connect(self.updateSettings)
@@ -39,7 +41,7 @@ class FileManager(QFrame):
 
     @property
     def window(self) -> Window:
-        return super().window()
+        return self._window
 
     @property
     def treeView(self) -> TreeView:
@@ -55,9 +57,10 @@ class FileManager(QFrame):
 
     @property
     def settingsPath(self) -> Path | None:
+        os.path.join
         if self.currentFolder:
-            return Path(f"{self.currentFolder}/.cipher/settings.cipher")
-        return Path(f"{self.window.localAppData}/settings.cipher")
+            return Path(os.path.join(self.currentFolder, ".cipher", "settings.cipher"))
+        return Path(os.path.join(self.window.localAppData, "settings.cipher"))
 
     def __iter__(self) -> Iterator[TreeView]:
         return iter(self._treeViews)
@@ -165,13 +168,15 @@ class FileManager(QFrame):
         self.clearTreeViews()
         if self.currentFolder:
             self._workspaceSettings.removePath(
-                f"{self.currentFolder}/.cipher/settings.cipher"
+                os.path.join(self.currentFolder, ".cipher", "settings.cipher")
             )
         treeView.setFolder(path)
         self.updateSettings()
         self.openWorkspaceFiles()
         if path:
-            self._workspaceSettings.addPath(f"{path}/.cipher/settings.cipher")
+            self._workspaceSettings.addPath(
+                os.path.join(path, ".cipher", "settings.cipher")
+            )
 
     def closeFolder(self) -> None:
         self.saveWorkspaceFiles()
@@ -208,22 +213,22 @@ class FileManager(QFrame):
         return self.treeView.createFolder()
 
     def getGlobalSettings(self) -> dict:
-        with open(f"{self.window.localAppData}/settings.cipher") as f:
+        with open(os.path.join(self.window.localAppData, "settings.cipher")) as f:
             return json.load(f)
 
     def getWorkspaceSettings(self) -> dict:
         if not self.currentFolder:
             return {}
-        folder = Path(f"{self.currentFolder}/.cipher")
+        folder = Path(os.path.join(self.currentFolder, ".cipher"))
         if not folder.exists():
             folder.mkdir()
             if self.window.application.platformName() == "windows":
-                with open(f"{folder}/run.bat", "w") as f:
+                with open(os.path.join(folder, "run.bat"), "w") as f:
                     f.write("@echo off\nEXIT")
             else:
-                with open(f"{folder}/run.sh", "w") as f:
+                with open(os.path.join(folder, "run.sh"), "w") as f:
                     f.write("")
-            with open(f"{folder}/session.json", "w") as f:
+            with open(os.path.join(folder, "session.json"), "w") as f:
                 json.dump({"currentFile": None, "openedFiles": []}, f, indent=4)
             data = {
                 "showHidden": False,
@@ -231,22 +236,22 @@ class FileManager(QFrame):
                 "search-pattern": [],
                 "search-exclude": [],
             }
-            with open(f"{folder}/settings.cipher", "w") as f:
+            with open(os.path.join(folder, "settings.cipher"), "w") as f:
                 json.dump(data, f, indent=4)
             return data
-        with open(f"{folder}/settings.cipher") as f:
+        with open(os.path.join(folder, "settings.cipher")) as f:
             return json.load(f)
 
     def openWorkspaceFiles(self) -> None:
         window = self.window
-        path = f"{self.currentFolder}/.cipher/session.json"
+        path = os.path.join(self.currentFolder, ".cipher", "session.json")
         with open(path) as f:
             session = json.load(f)
         window.tabView.openTabs(session["currentFile"], session["openedFiles"])
 
     def saveWorkspaceFiles(self) -> None:
         window = self.window
-        path = f"{self.currentFolder}/.cipher/session.json"
+        path = os.path.join(self.currentFolder, ".cipher", "session.json")
         with open(path) as f:
             session = json.load(f)
         session["currentFile"] = (
@@ -257,7 +262,7 @@ class FileManager(QFrame):
             json.dump(session, f, indent=4)
 
     def resumeSession(self) -> None:
-        with open(f"{self.window.localAppData}/session.json") as f:
+        with open(os.path.join(self.window.localAppData, "session.json")) as f:
             session = json.load(f)
         folder = Path(path) if (path := session.get("lastFolder")) else None
         if folder is None or not folder.exists():
@@ -268,7 +273,7 @@ class FileManager(QFrame):
         window = self.window
         if self.currentFolder:
             self.saveWorkspaceFiles()
-        path = f"{self.window.localAppData}/session.json"
+        path = os.path.join(self.window.localAppData, "session.json")
         with open(path) as f:
             session = json.load(f)
         session["lastFolder"] = str(self.currentFolder) if self.currentFolder else None

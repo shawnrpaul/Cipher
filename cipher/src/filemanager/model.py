@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from pathlib import Path
+import os
 
 from PyQt6.QtCore import QObject, QModelIndex
 from PyQt6.QtGui import QFileSystemModel
@@ -70,7 +71,7 @@ class FileSystemModel(QFileSystemModel):
         Path
             The path of the new file
         """
-        path = Path(f"{self.filePath(index)}/{name}").absolute()
+        path = Path(os.path.join(self.filePath(index), name)).absolute()
         counter = 0
         name = str(path).split(".")
         while path.exists():

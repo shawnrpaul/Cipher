@@ -35,7 +35,9 @@ class ExtensionList(QListWidget):
         self._window = window
         self.setMaximumWidth(self.screen().size().width() // 2)
         self.itemClicked.connect(
-            lambda item: window.tabView.createTab(Path(f"{item.path}/settings.json"))
+            lambda item: window.tabView.createTab(
+                Path(os.path.join(item.path, "settings.json"))
+            )
         )
         window.started.connect(self.addExtensions)
 
@@ -76,7 +78,9 @@ class ExtensionList(QListWidget):
         reloadExtension.triggered.connect(self.reloadExtension)
         menu.addSeparator()
         menu.addAction("Settings").triggered.connect(
-            lambda: self.window.tabView.createTab(Path(f"{index.path}/settings.json"))
+            lambda: self.window.tabView.createTab(
+                Path(Path(os.path.join(index.path, "settings.json")))
+            )
         )
 
         match index.status:
@@ -95,12 +99,12 @@ class ExtensionList(QListWidget):
         return super().selectedItems()
 
     def addExtensions(self) -> None:
-        extensions = f"{self.window.localAppData}/include/extension"
+        extensions = os.path.join(self.window.localAppData, "include", "extension")
         for folder in os.listdir(extensions):
-            path = Path(f"{extensions}/{folder}").absolute()
+            path = Path(os.path.join(extensions, folder)).absolute()
             if path.is_file():
                 continue
-            settings = Path(f"{path}/settings.json").absolute()
+            settings = Path(os.path.join(path, "settings.json")).absolute()
             if not settings.exists():
                 continue
             self.window.createTask(self.addExtension(path, settings))
@@ -124,9 +128,9 @@ class ExtensionList(QListWidget):
             return
         if not (name := data.get("name")):
             return
-        icon = f"{path}/icon.ico"
+        icon = os.path.join(path, "icon.ico")
         if not Path(icon).exists():
-            icon = f"{self.window.localAppData}/icons/blank.ico"
+            icon = os.path.join(self.window.localAppData, "icons", "blank.ico")
         enabled = data.get("enabled")
         item = ExtensionItem(name, icon, path)
         self.addItem(item)

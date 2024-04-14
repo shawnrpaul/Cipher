@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from pathlib import Path
 import logging
+import os
 
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QIcon, QClipboard
@@ -85,7 +86,9 @@ class Window(QMainWindow):
         self.setCentralWidget(body)
 
         self.systemTray = QSystemTrayIcon(self)
-        self.systemTray.setIcon(QIcon(f"{self.localAppData}/icons/window.png"))
+        self.systemTray.setIcon(
+            QIcon(os.path.join(self.localAppData, "icons", "window.png"))
+        )
 
         originalWidth = self.screen().size().width()
         originalHeight = self.screen().size().height()

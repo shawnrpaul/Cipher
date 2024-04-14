@@ -247,7 +247,7 @@ class TreeView(QTreeView):
         names = name.split(".")
         while True:
             try:
-                newPath = path.rename(f"{path.parent}/{name}").absolute()
+                newPath = path.rename(path.parent, name).absolute()
                 break
             except FileExistsError:
                 counter += 1

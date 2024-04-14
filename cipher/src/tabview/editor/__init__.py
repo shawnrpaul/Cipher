@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from importlib import import_module
 from pathlib import Path
 import json
+import os
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.Qsci import QsciAPIs, QsciLexer, QsciLexerCustom, QsciScintilla
@@ -69,11 +70,11 @@ class Editor(Tab, QsciScintilla):
         self.SendScintilla(self.SCI_SETMULTIPASTE, 1)
 
         styles = self.getEditorStyles()
-        localAppData = f"{window.localAppData}/include"
+        localAppData = os.path.join(window.localAppData, "include")
         lexer = None
         if info := styles.get(path.suffix):
             language, folder = info.get("language"), info.get("lexer")
-            if Path(f"{localAppData}/lexer/{language}/{folder}").exists():
+            if Path(os.path.join(localAppData, "lexer", language, folder)).exists():
                 lexer = self.loadLexer(language, folder)
 
         if not lexer:
@@ -171,7 +172,7 @@ class Editor(Tab, QsciScintilla):
         self.setCursorPosition(*cursor)
 
     def setShortcutKeys(self) -> None:
-        with open(f"{self._window.localAppData}/shortcuts.json") as f:
+        with open(os.path.join(self._window.localAppData, "shortcuts.json")) as f:
             shortcuts = json.load(f)
         for command in self.commands.commands():
             command = command.command()
@@ -318,5 +319,5 @@ class Editor(Tab, QsciScintilla):
 
     def getEditorStyles(self) -> dict[str, dict[str | list[str]]]:
         """Returns the editor styles"""
-        with open(f"{self._window.localAppData}/styles/lexer.json") as f:
+        with open(os.path.join(self._window.localAppData, "styles", "lexer.json")) as f:
             return json.load(f)

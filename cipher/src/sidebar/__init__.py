@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+import os
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QMouseEvent, QPixmap
@@ -44,13 +45,17 @@ class Sidebar(QFrame):
         extensions = self.createIcon(self.window.extensionList)
         extensions.setContentsMargins(2, 0, 0, 0)
         extensions.setPixmap(
-            QPixmap(f"{self.window.localAppData}/icons/extensions.svg").scaled(29, 29)
+            QPixmap(
+                os.path.join(self.window.localAppData, "icons", "extensions.svg")
+            ).scaled(29, 29)
         )
 
         search = self.createIcon(self.window.search)
         search.setContentsMargins(4, 5, 0, 0)
         search.setPixmap(
-            QPixmap(f"{self.window.localAppData}/icons/search.svg").scaled(26, 26)
+            QPixmap(
+                os.path.join(self.window.localAppData, "icons", "search.svg")
+            ).scaled(26, 26)
         )
 
     def _createSettings(self) -> None:
@@ -61,7 +66,9 @@ class Sidebar(QFrame):
 
         settings = QLabel(self)
         settings.setPixmap(
-            QPixmap(f"{self.window.localAppData}/icons/settings.svg").scaled(31, 31)
+            QPixmap(
+                os.path.join(self.window.localAppData, "icons", "settings.svg")
+            ).scaled(31, 31)
         )
         settings.setAlignment(Qt.AlignmentFlag.AlignCenter)
         settings.setContentsMargins(1, 0, 0, 10)
@@ -88,7 +95,7 @@ class Sidebar(QFrame):
 
         folder = QLabel(self)
         folder.setPixmap(
-            QPixmap(f"{window.localAppData}/icons/folder.svg").scaled(29, 29)
+            QPixmap(os.path.join(window.localAppData, "icons", "folder.svg")).scaled(29, 29)  # fmt:skip
         )
         folder.setContentsMargins(3, 0, 0, 4)
         folder.enterEvent = lambda _: self.setCursor(Qt.CursorShape.PointingHandCursor)

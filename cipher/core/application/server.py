@@ -92,7 +92,7 @@ class Server(QWebSocketServer):
 class ServerApplication(BaseApplication):
     def __init__(self, argv: list[str]) -> None:
         super().__init__(argv)
-        self.setWindowIcon(QIcon(f"{self.localAppData}/icons/window.png"))
+        self.setWindowIcon(QIcon(os.path.join(self.localAppData, "icons", "window.png")))  # fmt:skip
 
         self._background_tasks: list[asyncio.Task] = []
         self._isRunning = False
@@ -102,7 +102,7 @@ class ServerApplication(BaseApplication):
         asyncio.set_event_loop(self.loop)
 
         self.server = Server(self)
-        styles = f"{self.localAppData}/styles/styles.qss"
+        styles = os.path.join(self.localAppData, "styles", "styles.qss")
         self._styles = QFileSystemWatcher(self)
         self._styles.addPath(styles)
         self._styles.fileChanged.connect(
@@ -110,7 +110,7 @@ class ServerApplication(BaseApplication):
         )
         self.setStyleSheet(open(styles).read())
         self._shortcut = QFileSystemWatcher(
-            [f"{self.localAppData}/shortcuts.json"], self
+            [os.path.join(self.localAppData, "shortcuts.json")], self
         )
 
         self._windows: list[Window] = []

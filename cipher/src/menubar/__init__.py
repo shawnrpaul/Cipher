@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import json
 import sys
+import os
 from pathlib import Path
 
 from PyQt6.QtGui import QAction
@@ -124,14 +125,14 @@ class Menubar(QMenuBar):
         styles = editMenu.addAction("Styles")
         styles.triggered.connect(
             lambda: self._window.tabView.createTab(
-                Path(f"{self._window.localAppData}/styles/styles.qss")
+                Path(os.path.join(self.window.localAppData, "styles", "styles.qss"))
             )
         )
 
         shortcut = editMenu.addAction("Shortcuts")
         shortcut.triggered.connect(
             lambda: self._window.tabView.createTab(
-                Path(f"{self._window.localAppData}/shortcuts.json")
+                Path(os.path.join(self.window.localAppData, "shortcuts.json"))
             )
         )
 
@@ -147,7 +148,7 @@ class Menubar(QMenuBar):
     def editGlobalSettings(self) -> None:
         """Opens the global settings as a tab to edit"""
         self._window.tabView.createTab(
-            Path(f"{self._window.localAppData}/settings.cipher")
+            Path(os.path.join(self.window.localAppData, "settings.cipher"))
         )
 
     def editWorkspaceSettings(self) -> None:
@@ -156,7 +157,7 @@ class Menubar(QMenuBar):
         if not self._window.currentFolder:
             return self.editGlobalSettings()
         self._window.tabView.createTab(
-            Path(f"{self._window.currentFolder}/.cipher/settings.cipher")
+            Path(os.path.join(self.window.currentFolder, ".cipher", "settings.cipher"))
         )
 
     def editRunFile(self) -> None:
@@ -164,9 +165,9 @@ class Menubar(QMenuBar):
         if not self._window.currentFolder:
             return
         if sys.platform == "win32":
-            path = Path(f"{self._window.currentFolder}/.cipher/run.bat")
+            path = Path(os.path.join(self.window.currentFolder, ".cipher", "run.bat"))
         else:
-            path = Path(f"{self._window.currentFolder}/.cipher/run.sh")
+            path = Path(os.path.join(self.window.currentFolder, ".cipher", "run.sh"))
         self._window.tabView.createTab(path)
 
     def createViewMenu(self) -> None:
@@ -202,7 +203,7 @@ class Menubar(QMenuBar):
 
     def updateShortcuts(self) -> None:
         """Updates the shortcuts when `shortcuts.json` updates"""
-        with open(f"{self.window.localAppData}/shortcuts.json") as f:
+        with open(os.path.join(self.window.localAppData, "shortcuts.json")) as f:
             shortcuts = json.load(f)
         for menu in self._menus:
             for action in menu.actions():

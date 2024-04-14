@@ -6,6 +6,7 @@ from enum import IntEnum
 from pathlib import Path
 import json
 import sys
+import os
 
 import aiofiles
 from PyQt6.QtGui import QIcon
@@ -71,10 +72,11 @@ class ExtensionItem(QListWidgetItem):
         self.setStatus(ExtensionItem.Status.ENABLED)
 
     async def enable(self) -> None:
-        async with aiofiles.open(f"{self.path}/settings.json") as f:
+        path = os.path.join(self.path, "settings.json")
+        async with aiofiles.open(path) as f:
             data = json.loads(await f.read())
         data["enabled"] = True
-        async with aiofiles.open(f"{self.path}/settings.json", "w") as f:
+        async with aiofiles.open(path, "w") as f:
             await f.write(json.dumps(data, indent=4))
         await self.initialize()
 
@@ -90,10 +92,11 @@ class ExtensionItem(QListWidgetItem):
         await self.initialize()
 
     async def disable(self) -> None:
-        async with aiofiles.open(f"{self.path}/settings.json") as f:
+        path = os.path.join(self.path, "settings.json")
+        async with aiofiles.open(path) as f:
             data = json.loads(await f.read())
         data["enabled"] = False
-        async with aiofiles.open(f"{self.path}/settings.json", "w") as f:
+        async with aiofiles.open(path, "w") as f:
             await f.write(json.dumps(data, indent=4))
         await self.ext.unload()
         self.ext = None

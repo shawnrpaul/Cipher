@@ -49,11 +49,11 @@ class BaseApplication(QApplication):
                 with zipfile.ZipFile(io.BytesIO(req.content)) as zip_file:
                     zip_file.extractall(_env)
 
-            sys.path.insert(0, f"{self._localAppData}/include")
-            sys.path.insert(0, f"{self._localAppData}/site-packages")
+            sys.path.insert(0, os.path.join(self._localAppData, "include"))
+            sys.path.insert(0, os.path.join(self._localAppData, "site-packages"))
 
             logging.basicConfig(
-                filename=f"{self._localAppData}/logs.log",
+                filename=os.path.join(self._localAppData, "logs.log"),
                 format="%(levelname)s:%(asctime)s: %(message)s",
                 level=logging.ERROR,
             )
