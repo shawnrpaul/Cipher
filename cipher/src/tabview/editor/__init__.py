@@ -5,10 +5,9 @@ from pathlib import Path
 import json
 import os
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.Qsci import QsciAPIs, QsciLexer, QsciLexerCustom, QsciScintilla
 from PyQt6.QtGui import QDropEvent, QKeyEvent, QKeySequence, QContextMenuEvent
-from PyQt6.QtWidgets import QFileDialog
 
 from .find import Find
 from ..tab import Tab
@@ -186,42 +185,30 @@ class Editor(Tab, QsciScintilla):
             self.commands.find(command).setKey(key)
 
     def saveFile(self) -> None:
-        """Saves the editor"""
-        self._watcher.removePath(str(self.path))
-        self.path.write_text(self.text(), encoding="utf-8")
-        self._watcher.addPath(str(self.path))
+        super().saveFile()
         self.saved.emit()
 
     def saveAs(self) -> None:
-        """Saves the editor as a new file"""
-        file, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save as",
-            str(self._window.currentFolder) if self._window.currentFolder else "C:/",
-            "All Files (*);;Python files (*.py);;JSON files (*.json)",
-        )
-        if not file:
-            return
-        self._watcher.removePath(str(self.path))
-        self.path = Path(file)
-        self.path.write_text(self.text(), "utf-8")
-        self._watcher.addPath(str(self.path))
-        self._window.tabView.setTabText(
-            self._window.tabView.currentIndex(), self.path.name
-        )
+        super().saveAs()
         self.saved.emit()
 
     def copy(self) -> None:
         """Copies the selected text. If no text is selected, the line will copied"""
         if not self.hasSelectedText():
             return self.SendScintilla(self.SCI_LINECOPY)
-        return super().copy()
+        return QsciScintilla.copy(self)
+
+    def text(self) -> str:
+        return QsciScintilla.text(self)
 
     def cut(self) -> None:
         """Cuts the selected text. If no text is selected, the line will cut"""
         if not self.hasSelectedText():
             return self.SendScintilla(self.SCI_LINECUT)
-        return super().cut()
+        return QsciScintilla.cut(self)
+
+    def paste(self) -> None:
+        return QsciScintilla.paste(self)
 
     def find(self) -> None:
         """Starts the editor search"""
