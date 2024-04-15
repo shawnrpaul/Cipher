@@ -292,7 +292,8 @@ class TreeView(QTreeView):
             if model.remove(index):
                 for editor in self.window.tabView:
                     if editor.path.is_relative_to(path):
-                        return self.window.tabView.removeTab(editor)
+                        self.window.tabView.removeTab(editor)
+                return
 
             dialog = QMessageBox(self.window)
             dialog.setWindowTitle("Cipher")
