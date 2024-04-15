@@ -179,6 +179,8 @@ class FileManager(QFrame):
             )
 
     def closeFolder(self) -> None:
+        if not self.currentFolder:
+            return
         self.saveWorkspaceFiles()
         self.window.tabView.closeTabs()
         self.treeView.setFolder(None)
