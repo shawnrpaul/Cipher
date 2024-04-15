@@ -1,13 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
+from pathlib import Path
+from functools import singledispatchmethod
 import json
 import sys
 import os
-from pathlib import Path
 
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMenuBar, QFileDialog, QMenu
+from PyQt6.QtWidgets import QMenuBar, QMenu
 
 if TYPE_CHECKING:
     from ..window import Window
@@ -40,10 +40,16 @@ class Menubar(QMenuBar):
     def window(self) -> Window:
         return self._window
 
+    @singledispatchmethod
     def addMenu(self, name: str) -> QMenu:
         menu = super().addMenu(name)
         self._menus.add(menu)
         return menu
+
+    @addMenu.register
+    def _(self, menu: QMenu) -> QAction:
+        self._menus.add(menu)
+        return super().addMenu(menu)
 
     def removeMenu(self, menu: QMenu) -> None:
         self.removeAction(menu.menuAction())
