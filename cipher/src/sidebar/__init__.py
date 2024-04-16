@@ -7,7 +7,7 @@ from PyQt6.QtGui import QMouseEvent, QPixmap
 from PyQt6.QtWidgets import QWidget, QFrame, QLabel, QVBoxLayout
 
 from .icon import Icon
-from ..splitter import VSplitter
+from ..filemanager import FileManager
 
 if TYPE_CHECKING:
     from ..window import Window
@@ -85,8 +85,8 @@ class Sidebar(QFrame):
         window = self.window
 
         def folderMousePressEvent(ev: QMouseEvent) -> None:
-            if isinstance(window.hsplit.widget(0), VSplitter):
-                window.fileManager.setVisible(not window.fileManager)
+            if isinstance(window.hsplit.widget(0), FileManager):
+                window.fileManager.setVisible(not window.fileManager.isVisible())
             else:
                 window.hsplit.replaceWidget(0, window.fileManager)
                 window.fileManager.setVisible(True)
