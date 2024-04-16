@@ -35,12 +35,9 @@ class Logs(QPlainTextEdit):
         value = self.scrollbar.value()
         max = self.scrollbar.maximum()
         super().setPlainText(text)
-        self.scrollbar.setValue(self.scrollbar.maximum()) if value != max else ...
+        self.scrollbar.setValue(self.scrollbar.maximum()) if value == max else ...
 
-    def write(self, text: str):
+    def write(self, text: str, *, flush: bool = False):
+        if flush:
+            text += "\n"
         self.setPlainText(f"{self.toPlainText()}{text}")
-
-    def log(self, text: str, *, newline: bool = False, level=logging.ERROR):
-        self.write(text)
-        self.write("\n") if newline else ...
-        logging.log(msg=text, level=level)

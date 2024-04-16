@@ -157,8 +157,8 @@ class Window(QMainWindow):
         self.fileManager.saveSession()
         return super().closeEvent(_)
 
-    def log(self, text: str, newline: bool = False, level=logging.ERROR):
-        self.logs.log(text, newline=newline, level=level)
+    def log(self, text: str, *, flush: bool = False):
+        self.logs.write(text, flush=flush)
 
     def showMessage(self, msg: str) -> None:
         self.systemTray.showMessage("Cipher", msg=msg, msecs=30_000)
