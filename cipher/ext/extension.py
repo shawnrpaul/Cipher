@@ -3,7 +3,7 @@ from typing import Any, TYPE_CHECKING
 
 from PyQt6.QtCore import QEvent, QObject
 from PyQt6.QtGui import QKeyEvent, QMouseEvent
-from .event import Event
+from .core import Event
 
 if TYPE_CHECKING:
     from cipher import Window
@@ -32,8 +32,7 @@ class ExtensionMeta(type):
         return self
 
 
-class ExtensionCore(type(QObject), ExtensionMeta, AsyncMixin):
-    ...
+class ExtensionCore(type(QObject), ExtensionMeta, AsyncMixin): ...
 
 
 class Extension(QObject, metaclass=ExtensionCore):
@@ -68,23 +67,17 @@ class Extension(QObject, metaclass=ExtensionCore):
         if type == QEvent.Type.MouseMove:
             return self.mouseMoveEvent(event)
 
-    def keyPressEvent(self, a0: QKeyEvent) -> None:
-        ...
+    def keyPressEvent(self, a0: QKeyEvent) -> None: ...
 
-    def keyReleaseEvent(self, a0: QKeyEvent) -> None:
-        ...
+    def keyReleaseEvent(self, a0: QKeyEvent) -> None: ...
 
-    def mousePressEvent(self, a0: QMouseEvent) -> None:
-        ...
+    def mousePressEvent(self, a0: QMouseEvent) -> None: ...
 
-    def mouseDoubleClickEvent(self, a0: QMouseEvent) -> None:
-        ...
+    def mouseDoubleClickEvent(self, a0: QMouseEvent) -> None: ...
 
-    def mouseReleaseEvent(self, a0: QMouseEvent) -> None:
-        ...
+    def mouseReleaseEvent(self, a0: QMouseEvent) -> None: ...
 
-    def mouseMoveEvent(self, a0: QMouseEvent) -> None:
-        ...
+    def mouseMoveEvent(self, a0: QMouseEvent) -> None: ...
 
     async def unload(self) -> Any:
         for event in self.__events__:

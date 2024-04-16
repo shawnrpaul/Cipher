@@ -1,2 +1,2 @@
-from .event import *
+from .core import *
 from .extension import *
